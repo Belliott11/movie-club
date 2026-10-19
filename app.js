@@ -133,6 +133,7 @@ function movieCard(m) {
     ${scale}<span class="diff">${note}</span>
   </summary><div class="body">
     <div class="rates">${mem.map(n => `<label>${esc(n)}<select data-m="${m.id}" data-r="${esc(n)}"><option value="">–</option>${[...Array(10)].map((_, i) => (i + 1) / 2).map(v => `<option ${m.ratings[n] === v ? "selected" : ""}>${v}</option>`).join("")}</select></label>`).join("")}</div>
+    <p><a class="btn" href="#/m/${m.id}">Cast, crew &amp; synopsis</a></p>
     <div class="out"><b>Outside:</b>
       ${[["imdb", "IMDb /10"], ["rt", "RT /100"], ["mc", "Metacritic /100"], ["lb", "Letterboxd /5"]].map(([k, l]) => `<label>${l}<input type="number" step="any" data-m="${m.id}" data-o="${k}" value="${m[k] ?? ""}"></label>`).join("")}
     </div></div></details>`;
@@ -198,10 +199,54 @@ const vStats = () => {
   <h3>Biggest gap vs outside ratings</h3>${gap.length ? `<ol>${gap.map(m => `<li>${esc(m.title)} — us ${fmt(groupAvg(m))} vs ${fmt(outsideAvg(m))}</li>`).join("")}</ol>` : "<p class='hint'>Enter outside ratings on movies to see this.</p>"}`;
 };
 
+// ---------- film detail page (TMDB) ----------
+const tcache = {};
+const IMG = "https://image.tmdb.org/t/p/";
+async function loadDetail(m) {
+  if (tcache[m.id] || tcache[m.id] === false) return;
+  tcache[m.id] = false;
+  let id = m.tmdb_id;
+  if (!id) {
+    const r = await tmdb("/search/movie", `&query=${encodeURIComponent(m.title)}&year=${m.year}`);
+    id = r?.results?.[0]?.id;
+    if (id) { m.tmdb_id = id; persist(); if (sb) sb.from("movies").update({ tmdb_id: id }).eq("id", m.id).then(() => {}); }
+  }
+  tcache[m.id] = id ? await tmdb(`/movie/${id}`, "&append_to_response=credits,videos") : null;
+  render();
+}
+const vDetail = m => {
+  const back = `<p><a href="#" class="back">← All films</a></p>`;
+  if (!m) return back + "<p>Film not found.</p>";
+  const rate = Object.entries(m.ratings).sort((a, b) => b[1] - a[1]).map(([n, v]) => `<li>${esc(n)} <b>${v}</b></li>`).join("");
+  const head = `<h2 class="dt">${esc(m.title)} <small>${m.year || ""}</small></h2>`;
+  const mine = `<h3>Our ratings</h3><p class="big">${fmt(groupAvg(m))} <small>average from ${Object.keys(m.ratings).length} people · ${esc(m.pick)}'s pick</small></p><ul class="plain">${rate}</ul>`;
+  if (!CONFIG.TMDB_KEY) return back + head + mine;
+  const d = tcache[m.id];
+  if (d === undefined || d === false) { loadDetail(m); return back + head + "<p class='hint'>Loading details…</p>" + mine; }
+  if (d === null) return back + head + "<p class='hint'>No match found on TMDB.</p>" + mine;
+  const crew = j => (d.credits?.crew || []).filter(c => j.includes(c.job)).map(c => c.name).filter((x, i, a) => a.indexOf(x) === i);
+  const row = (l, a) => a.length ? `<div><dt>${l}</dt><dd>${a.map(esc).join(", ")}</dd></div>` : "";
+  const trailer = (d.videos?.results || []).find(v => v.site === "YouTube" && v.type === "Trailer");
+  const cast = (d.credits?.cast || []).slice(0, 14);
+  return back + `<div class="detail">
+    ${d.poster_path ? `<img class="poster" src="${IMG}w500${d.poster_path}" alt="Poster for ${esc(m.title)}">` : ""}
+    <div>${head}
+      <p class="hint">${[d.runtime && d.runtime + " min", (d.genres || []).map(g => g.name).join(", "), d.vote_average ? "TMDB " + fmt(d.vote_average, 1) + "/10" : ""].filter(Boolean).map(esc).join(" · ")}</p>
+      ${d.tagline ? `<p class="tag">${esc(d.tagline)}</p>` : ""}
+      <p class="syn">${esc(d.overview || "No synopsis available.")}</p>
+      <dl class="crew">${row("Director", crew(["Director"]))}${row("Writing", crew(["Screenplay", "Writer", "Story"]))}${row("Cinematography", crew(["Director of Photography"]))}${row("Music", crew(["Original Music Composer", "Music"]))}</dl>
+      ${trailer ? `<p><a class="btn" href="https://www.youtube.com/watch?v=${esc(trailer.key)}" target="_blank" rel="noopener">Watch trailer</a></p>` : ""}
+    </div></div>
+    ${mine}
+    <h3>Cast</h3><ul class="cast">${cast.map(c => `<li>${c.profile_path ? `<img src="${IMG}w185${c.profile_path}" alt="" loading="lazy">` : `<span class="noimg"></span>`}<b>${esc(c.name)}</b><small>${esc(c.character)}</small></li>`).join("")}</ul>`;
+};
+
 function render() {
   $("#sub").textContent = S.movies.length ? `${S.movies.length} films watched · next pick: ${nextPicker()[0]?.n || "tick who's here on Next up"}` : "";
   $("#me").innerHTML = `<option value="">Who are you?</option>` + members().map(n => `<option ${n === me ? "selected" : ""}>${esc(n)}</option>`).join("") + `<option value="__new">+ new person…</option>`;
-  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
+  const hm = location.hash.match(/^#\/m\/(.+)$/);
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", !hm && b.dataset.tab === tab));
+  if (hm) { $("#view").innerHTML = vDetail(S.movies.find(m => String(m.id) === decodeURIComponent(hm[1]))); return; }
   const open = [...document.querySelectorAll("details[open]")].map(d => d.querySelector(".t")?.textContent);
   $("#view").innerHTML = { movies: vMovies, next: vNext, suggest: vSuggest, watch: vWatch, stats: vStats }[tab]();
   document.querySelectorAll("details").forEach(d => open.includes(d.querySelector(".t")?.textContent) && d.querySelector(".t") && (d.open = true));
@@ -222,7 +267,7 @@ document.addEventListener("change", async e => {
 });
 document.addEventListener("click", async e => {
   const t = e.target;
-  if (t.dataset.tab) { tab = t.dataset.tab; return render(); }
+  if (t.dataset.tab) { tab = t.dataset.tab; if (location.hash) history.replaceState(null, "", location.pathname); return render(); }
   if (t.id === "seed") { t.disabled = true; const have = watchedKeys(); for (const [ti, y, p, r] of SEED) if (!have.has(key(ti, y))) await addMovie(ti, y, p, r); return render(); }
   const sg = id => S.suggestions.find(s => s.id == id);
   if (t.dataset.vote) {
@@ -254,4 +299,5 @@ document.addEventListener("submit", async e => {
   render();
 });
 
+window.addEventListener("hashchange", () => { render(); scrollTo(0, 0); });
 load().then(() => { render(); fillAll(); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);

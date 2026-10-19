@@ -98,6 +98,24 @@ button.on{background:var(--us);color:#fff}
 .x{background:none;color:var(--mut);box-shadow:none;padding:0 6px}
 .x:hover{box-shadow:none;color:var(--ink)}
 code{background:var(--paper);padding:1px 6px;border-radius:4px}
+/* film detail */
+.back{color:var(--mut);text-decoration:none;font-weight:600}.back:hover{color:var(--ink)}
+.dt{font-size:clamp(1.8rem,6vw,2.8rem);line-height:1.05;font-weight:800;letter-spacing:-.025em;margin:0 0 6px}
+.dt small{font:500 1rem "Public Sans";color:var(--mut)}
+.detail{display:grid;grid-template-columns:minmax(150px,230px) 1fr;gap:24px;align-items:start;margin-top:8px}
+.poster{width:100%;border-radius:var(--r);display:block;background:var(--paper)}
+.tag{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;font-weight:500;margin:10px 0}
+.syn{max-width:62ch;line-height:1.6}
+.crew{margin:14px 0}.crew div{display:grid;grid-template-columns:8.5rem 1fr;gap:8px;padding:5px 0}
+.crew dt{color:var(--mut);font-size:.9rem}.crew dd{margin:0}
+.big{font:800 2rem "Bricolage Grotesque",sans-serif;margin:0 0 6px}.big small{font:400 .9rem "Public Sans";color:var(--mut)}
+.plain{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px}
+.cast{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;max-width:none}
+.cast li{display:flex;flex-direction:column;gap:2px;margin:0}.cast b{font-weight:600;font-size:.9rem;line-height:1.25}.cast small{line-height:1.25}
+.cast img,.noimg{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:var(--paper);display:block}
+footer{margin-top:40px;color:var(--mut);font-size:.8rem}footer a{color:inherit}
+a.btn{text-decoration:none}
+@media(max-width:600px){.detail{grid-template-columns:1fr}.poster{max-width:220px}}
 @media(max-width:520px){.num{font-size:1.8rem}.card summary{padding:12px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -112,6 +130,7 @@ code{background:var(--paper);padding:1px 6px;border-radius:4px}
   <button data-tab="suggest">Suggestions</button><button data-tab="watch">Watchlists</button><button data-tab="stats">Stats</button>
 </nav>
 <main id="view">Loading…</main>
+<footer>Film data and images from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <script src="seed.js"></script>
