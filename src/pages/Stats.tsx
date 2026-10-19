@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
-import { Avatar, hueOf } from "@/components/Avatar"
+import { Avatar } from "@/components/Avatar"
 import { TrendChart } from "@/components/Charts"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Scale } from "@/components/Scale"
@@ -121,7 +121,7 @@ export default function Stats() {
       <section>
         <h3 className="mb-1 text-xl font-bold">Most divisive</h3>
         <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-label="Who each dot is">
-          {[...new Set(divisive.flatMap(m => Object.keys(m.ratings)))].sort().map(n => <li key={n} className="flex items-center gap-1.5"><span aria-hidden className="size-3 rounded-full" style={{ background: `oklch(0.52 0.15 ${hueOf(n)})` }} />{n}</li>)}
+          {[...new Set(divisive.flatMap(m => Object.keys(m.ratings)))].sort().map(n => <li key={n} className="flex items-center gap-1.5"><Avatar name={n} size="xs" />{n}</li>)}
         </ul>
         <ul className="flex flex-col gap-3">
           {divisive.map(m => (
@@ -183,13 +183,13 @@ function Tile({ label, value, suffix }: { label: string; value: string; suffix?:
 function RaterDots({ m }: { m: Movie }) {
   const seen = new Map<number, number>()
   return (
-    <div className="relative mt-1 h-9" role="img" aria-label={Object.entries(m.ratings).map(([n, v]) => `${n} ${v}`).join(", ")}>
+    <div className="relative mt-1 h-12" role="img" aria-label={Object.entries(m.ratings).map(([n, v]) => `${n} ${v}`).join(", ")}>
       <div className="absolute inset-x-0 bottom-2 h-0.5 bg-border" />
       {[1, 2, 3, 4].map(i => <span key={i} className="absolute bottom-1.5 h-2.5 w-0.5 bg-border" style={{ left: `${(i / 5) * 100}%` }} />)}
       {Object.entries(m.ratings).map(([n, v]) => {
         const stack = seen.get(v) ?? 0
         seen.set(v, stack + 1)
-        return <span key={n} title={`${n}: ${v}`} className="absolute -ml-2 size-4 rounded-full border-2 border-card" style={{ left: `${(v / 5) * 100}%`, bottom: 2 + stack * 11, background: `oklch(0.52 0.15 ${hueOf(n)})` }} />
+        return <span key={n} title={`${n}: ${v}`} className="absolute -ml-2.5 rounded-full ring-2 ring-card" style={{ left: `${(v / 5) * 100}%`, bottom: 0 + stack * 14 }}><Avatar name={n} size="xs" className="block size-5" /></span>
       })}
     </div>
   )
