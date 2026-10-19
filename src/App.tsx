@@ -1,4 +1,6 @@
+import { Clapperboard } from "@/components/Clapperboard"
 import { Hero } from "@/components/Hero"
+import { HouseLights } from "@/components/HouseLights"
 import { Leader } from "@/components/Leader"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getClubCode, setClubCode, StoreProvider, useStore } from "@/lib/store"
@@ -10,7 +12,7 @@ import { pickHeroFilm } from "@/lib/hero"
 import { key, pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import Films from "@/pages/Films"
 import MemberPage from "@/pages/MemberPage"
 import FilmPage from "@/pages/FilmPage"
@@ -39,6 +41,15 @@ function Shell() {
   const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini } = useStore()
   const { pull, busy, ready: willRefresh } = usePull(refresh)
   const [adding, setAdding] = useState(false)
+  // easter egg: five quick taps on the title bring up a clapperboard
+  const [slate, setSlate] = useState(false)
+  const taps = useRef({ n: 0, t: 0 })
+  const tapTitle = () => {
+    const now = Date.now(), k = taps.current
+    k.n = now - k.t < 1500 ? k.n + 1 : 1
+    k.t = now
+    if (k.n >= 5) { k.n = 0; setSlate(true) }
+  }
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
   const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
@@ -61,6 +72,18 @@ function Shell() {
           </span>
         </div>
       )}
+      {slate && (
+        <Clapperboard
+          onClose={() => setSlate(false)}
+          fields={[
+            ["Production", "Movie Club"],
+            ["Scene", String(movies.length)],
+            ["Take", String(movies.reduce((n, m) => n + Object.keys(m.ratings).length, 0))],
+            ["Director", up || "Whoever's turn it is"],
+            ["Date", new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })],
+          ]}
+        />
+      )}
       {toast && (
         <div role="status" className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background shadow-xl md:bottom-6">
           <span className="min-w-0 flex-1">{toast.msg}</span>
@@ -69,7 +92,12 @@ function Shell() {
       )}
     <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
       <Hero film={heroFilm} still={heroStill}>
-        <label className="ml-auto flex flex-col gap-0.5 text-xs text-white/80">
+        <header>
+          <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
+          {movies.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
+        </header>
+        <div className="flex flex-wrap items-end gap-3">
+        <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
           You are
           <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
             <option value="">Who are you?</option>
@@ -77,10 +105,8 @@ function Shell() {
             <option value="__new">+ New person…</option>
           </select>
         </label>
-        <header>
-          <h1 className="text-5xl leading-[0.95] font-extrabold tracking-tight drop-shadow sm:text-6xl">Movie Club</h1>
-          {movies.length > 0 && <p className="mt-2 text-sm text-white/80">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
-        </header>
+        <HouseLights />
+        </div>
       </Hero>
       {offline && <p role="status" className="mb-3 rounded-lg bg-card px-3 py-2 text-sm">No connection. Showing the last data saved on this device; edits won't save until you're back online.</p>}
       {adding && (

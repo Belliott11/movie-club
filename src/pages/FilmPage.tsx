@@ -117,7 +117,7 @@ ${recapLines(m, movies).join(" ")}`
             return <li key={n} className="max-w-[62ch]"><b>{n}</b> <span className="text-muted-foreground">{m.ratings[n] != null ? m.ratings[n] : ""}</span><br />{text}</li>
           })}
         </ul>
-        {!Object.keys(takes).some(k => k.startsWith(`${m.id}|`)) && <p className="text-muted-foreground">No takes yet. Add the first one below.</p>}
+        {!Object.keys(takes).some(k => k.startsWith(`${m.id}|`)) && <p className="text-muted-foreground">No takes yet. Somebody has to be the first critic in the room.</p>}
         {me ? (
           <form className="mt-3 flex max-w-xl gap-2" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); setTake(m, me, String(f.get("take") || "")) }}>
             <Input key={`${m.id}|${me}|${takes[`${m.id}|${me}`] ?? ""}`} name="take" maxLength={200} defaultValue={takes[`${m.id}|${me}`] ?? ""} placeholder={`Your take on ${m.title}, in one line`} aria-label="Your take" className="h-10 flex-1" />

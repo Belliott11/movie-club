@@ -115,7 +115,7 @@ export default function Watch() {
               </li>
             ))}
           </ul>
-        ) : <p className="text-muted-foreground">Nobody has imported anything yet.</p>}
+        ) : <p className="text-muted-foreground">Nobody has imported yet. Upload an export to get the reels rolling.</p>}
       </section>
       <section>
         <h3 className="mb-2 text-xl font-bold">On more than one watchlist (not watched yet)</h3>

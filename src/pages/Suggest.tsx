@@ -103,7 +103,7 @@ export default function Suggest() {
             {sorted.map(s => <li key={s.id}><SuggestionCard s={s} /></li>)}
           </ul>
         ) : (
-          <p className="text-muted-foreground">Nothing suggested yet. Add a film above and everyone can vote on it.</p>
+          <p className="text-muted-foreground">No suggestions yet. The projector is warmed up: add a film above and everyone can vote on it.</p>
         )}
       </section>
       <section>

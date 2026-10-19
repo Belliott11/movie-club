@@ -50,7 +50,7 @@ export default function Next() {
             ))}
           </Card>
         ) : (
-          <p className="text-muted-foreground">Switch on whoever is coming and the pick order shows here.</p>
+          <p className="text-muted-foreground">Switch on whoever is coming and the seats fill up.</p>
         )}
       </section>
       <section>

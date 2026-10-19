@@ -56,7 +56,7 @@ export default function Films() {
       {movies.length === 0 && (
         <Card className="items-start gap-3 px-5">
           <h2 className="text-lg font-bold">No films yet</h2>
-          <p className="text-muted-foreground">Import the club's 21 films from Letterboxd, or add the first one yourself.</p>
+          <p className="text-muted-foreground">The screen is blank. Import the club's 21 films, or add the first one yourself.</p>
           <Button className="h-10 px-4" onClick={seed}>Import club history</Button>
         </Card>
       )}

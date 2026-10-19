@@ -20,7 +20,7 @@ const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 export default function Stats() {
   const { movies, members, watchlist, suggestions, renameMember, removeMember } = useStore()
   const rated = movies.filter(m => Object.keys(m.ratings).length)
-  if (!rated.length) return <p className="text-muted-foreground">Stats show up once the club has rated a film.</p>
+  if (!rated.length) return <p className="text-muted-foreground">Stats appear after the first screening: rate a film and the credits start rolling.</p>
 
   const sum = overview(movies)
   const people = memberStats(movies, members).filter(p => p.count).map(p => ({ ...p, tilt: tilt(movies, p.n), attend: p.count / rated.length }))
