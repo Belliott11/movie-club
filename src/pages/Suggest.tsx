@@ -1,16 +1,51 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { X } from "lucide-react"
-import { hasTmdb, IMG, tmdb } from "@/lib/api"
+import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
+import type { Suggestion } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
+const infoCache = new Map<string, any>()
+/** Poster, synopsis and score for a suggested title, looked up once per browser session. */
+function useInfo(title: string, year: number | null) {
+  const k = key(title, year)
+  const [info, setInfo] = useState<any>(infoCache.get(k))
+  useEffect(() => {
+    if (!hasTmdb() || infoCache.has(k)) return
+    let dead = false
+    searchFilm(title, year).then(r => {
+      infoCache.set(k, r || null)
+      if (!dead) setInfo(r || null)
+    })
+    return () => { dead = true }
+  }, [k, title, year])
+  return info
+}
+
+function SuggestionCard({ s }: { s: Suggestion }) {
+  const { me, vote, removeSuggestion } = useStore()
+  const info = useInfo(s.title, s.year)
+  return (
+    <Card className="h-full gap-2 px-3">
+      {info?.poster_path ? <img src={`${IMG}w154${info.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
+      <h4 className="font-display text-lg leading-tight font-bold">{s.title} <small className="font-sans text-sm font-medium text-muted-foreground">{s.year || ""}</small></h4>
+      <p className="text-xs text-muted-foreground">{info?.vote_average ? `TMDB ${+info.vote_average.toFixed(1)}/10 · ` : ""}suggested by {s.by}</p>
+      {info?.overview && <p className="line-clamp-5 text-sm leading-snug">{info.overview}</p>}
+      <div className="mt-auto flex items-center gap-2">
+        <Button variant={s.votes?.includes(me) ? "default" : "outline"} className="h-10 min-w-14 px-3" onClick={() => vote(s)} aria-label={`Vote for ${s.title}`}>▲ {s.votes?.length || 0}</Button>
+        <Button variant="ghost" size="icon" className="ml-auto size-10" aria-label={`Remove ${s.title}`} onClick={() => removeSuggestion(s)}><X /></Button>
+      </div>
+    </Card>
+  )
+}
+
 type Rec = { id: number; title: string; year: number; because: string; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
-  const { movies, suggestions, me, suggest, vote, removeSuggestion } = useStore()
+  const { movies, suggestions, suggest } = useStore()
   const [recs, setRecs] = useState<Rec[] | null>(null)
   const sorted = [...suggestions].sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0))
 
@@ -50,14 +85,8 @@ export default function Suggest() {
       <section>
         <h3 className="mb-2 text-xl font-bold">Suggested by the club</h3>
         {sorted.length ? (
-          <ul className="flex flex-col gap-1.5">
-            {sorted.map(s => (
-              <li key={s.id} className="flex items-center gap-2">
-                <Button size="default" variant={s.votes?.includes(me) ? "default" : "outline"} className="h-10 min-w-14 px-3" onClick={() => vote(s)} aria-label={`Vote for ${s.title}`}>▲ {s.votes?.length || 0}</Button>
-                <span>{s.title} <small className="text-muted-foreground">{s.year || ""} · by {s.by}</small></span>
-                <Button variant="ghost" size="icon" className="ml-auto size-10" aria-label={`Remove ${s.title}`} onClick={() => removeSuggestion(s)}><X /></Button>
-              </li>
-            ))}
+          <ul className="grid grid-cols-2 gap-3">
+            {sorted.map(s => <li key={s.id}><SuggestionCard s={s} /></li>)}
           </ul>
         ) : (
           <p className="text-muted-foreground">Nothing suggested yet. Add a film above and everyone can vote on it.</p>
