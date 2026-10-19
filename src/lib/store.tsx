@@ -19,7 +19,7 @@ type Store = {
   ready: boolean; error: string; movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]
   mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
   setMe: (n: string) => void; toggleAttend: (n: string) => void
-  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>) => Promise<void>
+  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
   seed: () => Promise<void>
@@ -100,17 +100,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => { dead = true }
   }, [ready, patchMovie])
 
-  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}) => {
+  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
     const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
     let id: Id = Date.now() + Math.random()
     if (sb) {
-      const { data, error } = await sb.from("movies").insert({ seq, title, year, pick }).select().single()
+      const { data, error } = await sb.from("movies").insert({ seq, title, year, pick, tmdb_id: tmdbId }).select().single()
       if (error) return alert(error.message)
       id = data.id
       const rows = Object.entries(ratings).map(([member, value]) => ({ movie_id: id, member, value }))
       if (rows.length) fail((await sb.from("ratings").insert(rows)).error)
     }
-    setMovies(ms => [...ms, { id, seq, title, year, pick, ratings }])
+    setMovies(ms => [...ms, { id, seq, title, year, pick, ratings, tmdb_id: tmdbId }])
   }, [])
 
   const setRating: Store["setRating"] = useCallback(async (m, member, v) => {

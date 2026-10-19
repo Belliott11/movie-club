@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { FilmRow } from "@/components/FilmRow"
+import { FilmSearch } from "@/components/FilmSearch"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,14 +10,17 @@ import { useStore } from "@/lib/store"
 export default function Films() {
   const { movies, attending, me, addMovie, seed } = useStore()
   const [adding, setAdding] = useState(false)
+  const [title, setTitle] = useState("")
+  const [year, setYear] = useState("")
+  const [tmdbId, setTmdbId] = useState<number | null>(null)
   const best = bestFilm(movies)
   const next = pickOrder(movies, attending)[0]?.n || me
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
-    await addMovie(String(f.get("title")).trim(), +String(f.get("year")), String(f.get("pick")).trim())
-    setAdding(false)
+    await addMovie(title.trim(), +year, String(f.get("pick")).trim(), {}, tmdbId)
+    setAdding(false); setTitle(""); setYear(""); setTmdbId(null)
   }
 
   return (
@@ -36,8 +40,8 @@ export default function Films() {
       {adding ? (
         <Card className="px-4">
           <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
-            <Input name="title" placeholder="Title" required className="h-10 min-w-40 flex-1" />
-            <Input name="year" type="number" placeholder="Year" required className="h-10 w-24" />
+            <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
+            <Input name="year" type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
             <Input name="pick" placeholder="Picked by" defaultValue={next} required className="h-10 w-36" />
             <Button type="submit" className="h-10 px-4">Add film</Button>
             <Button type="button" variant="ghost" className="h-10 px-4" onClick={() => setAdding(false)}>Cancel</Button>
