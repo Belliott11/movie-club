@@ -70,17 +70,17 @@ export default function Suggest() {
         ) : recs === null ? (
           <p className="text-muted-foreground">Loading…</p>
         ) : (
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-2 gap-3">
             {recs.slice(0, 20).map(r => {
               const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
               return (
                 <li key={r.id}>
-                  <Card className="h-full flex-row gap-3 px-3">
-                    {r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-20 shrink-0 self-start rounded-md object-cover" /> : <span className="aspect-[2/3] w-20 shrink-0 self-start rounded-md bg-muted" />}
+                  <Card className="h-full gap-2 px-3">
+                    {r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <h4 className="font-display text-lg leading-tight font-bold">{r.title} <small className="font-sans text-sm font-medium text-muted-foreground">{r.year || ""}</small></h4>
                       <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}because you liked {r.because}</p>
-                      <p className="line-clamp-4 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
+                      <p className="line-clamp-5 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
                       <Button variant={done ? "ghost" : "outline"} disabled={done} className="mt-auto h-9 w-fit px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
                     </div>
                   </Card>
