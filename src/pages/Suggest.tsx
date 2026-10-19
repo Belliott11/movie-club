@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { X } from "lucide-react"
+import { Eye, EyeOff, X } from "lucide-react"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -46,7 +46,7 @@ function SuggestionCard({ s }: { s: Suggestion }) {
 type Rec = { id: number; title: string; year: number; because: string; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
-  const { movies, suggestions, suggest } = useStore()
+  const { movies, suggestions, suggest, flags, me, setFlag } = useStore()
   const [recs, setRecs] = useState<Rec[] | null>(null)
   const sorted = [...suggestions].sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0))
 
@@ -61,7 +61,7 @@ export default function Suggest() {
         const r = await tmdb<{ results?: any[] }>(`/movie/${m.tmdb_id}/recommendations`)
         let n = 0
         for (const x of r?.results || []) {
-          if (n === 2) break
+          if (n === 6) break
           const year = +(x.release_date || "").slice(0, 4)
           if (seen.has(key(x.title, year)) || out.some(q => q.id === x.id)) continue
           out.push({ id: x.id, title: x.title, year, because: m.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
@@ -73,6 +73,11 @@ export default function Suggest() {
     return () => { dead = true }
   }, [movies])
 
+  // up to 6 candidates per film are loaded; each person sees the first 2 they haven't marked seen or not interested
+  const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind
+  const sources = [...new Set((recs ?? []).map(r => r.because))]
+  const visible = sources.flatMap(src => (recs ?? []).filter(r => r.because === src && !myFlag(r.id)).slice(0, 2))
+  const hidden = (recs ?? []).filter(r => myFlag(r.id))
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -106,7 +111,8 @@ export default function Suggest() {
           <p className="text-muted-foreground">Loading…</p>
         ) : (
           <ul className="grid grid-cols-2 gap-3">
-            {recs.map(r => {
+            {visible.map(r => {
+              const seenBy = flags.filter(f => f.tmdb_id === r.id && f.kind === "seen" && f.member !== me).map(f => f.member)
               const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
               return (
                 <li key={r.id}>
@@ -116,13 +122,33 @@ export default function Suggest() {
                       <h4 className="font-display text-lg leading-tight font-bold">{r.title} <small className="font-sans text-sm font-medium text-muted-foreground">{r.year || ""}</small></h4>
                       <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}because you liked {r.because}</p>
                       <p className="line-clamp-5 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
-                      <Button variant={done ? "ghost" : "outline"} disabled={done} className="mt-auto h-9 w-fit px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
+                      {seenBy.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenBy.join(", ")}</p>}
+                      <div className="mt-auto flex flex-col gap-1.5 pt-1">
+                        <Button variant={done ? "ghost" : "outline"} disabled={done} className="h-10 w-full px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
+                        <div className="flex flex-col gap-1.5 min-[440px]:flex-row">
+                          <Button variant="ghost" className="h-10 flex-1 gap-1 px-2 text-xs" onClick={() => setFlag(r.id, r.title, "seen")}><Eye aria-hidden />Seen it</Button>
+                          <Button variant="ghost" className="h-10 flex-1 gap-1 px-2 text-xs" onClick={() => setFlag(r.id, r.title, "skip")}><EyeOff aria-hidden />Not interested</Button>
+                        </div>
+                      </div>
                     </div>
                   </Card>
                 </li>
               )
             })}
           </ul>
+        )}
+        {hidden.length > 0 && (
+          <details className="mt-4">
+            <summary className="min-h-11 cursor-pointer py-2 text-sm text-muted-foreground">Hidden for {me || "you"} ({hidden.length})</summary>
+            <ul className="flex flex-col gap-1">
+              {hidden.map(r => (
+                <li key={r.id} className="flex items-center gap-2">
+                  <span className="min-w-0 flex-1 truncate">{r.title} <small className="text-muted-foreground">{r.year || ""} · {myFlag(r.id) === "seen" ? "seen" : "not interested"}</small></span>
+                  <Button variant="ghost" className="h-10 px-3" onClick={() => setFlag(r.id, r.title, null)}>Bring back</Button>
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </section>
     </div>

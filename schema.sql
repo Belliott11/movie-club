@@ -34,3 +34,11 @@ create table if not exists takes (
 );
 alter table takes enable row level security;
 create policy "open" on takes for all using (true) with check (true);
+
+-- "Seen" and "not interested" marks on recommendations, one per person per film.
+create table if not exists rec_flags (
+  member text, tmdb_id int, kind text not null check (kind in ('seen', 'skip')),
+  primary key (member, tmdb_id)
+);
+alter table rec_flags enable row level security;
+create policy "open" on rec_flags for all using (true) with check (true);

@@ -7,3 +7,4 @@ export type Movie = {
 export type WatchItem = { member: string; title: string; year: number }
 export type Suggestion = { id: Id; title: string; year: number | null; by: string; votes: string[] }
 export type Mini = { p: string | null; v: number | null }
+export type RecFlag = { member: string; tmdb_id: number; kind: "seen" | "skip" }

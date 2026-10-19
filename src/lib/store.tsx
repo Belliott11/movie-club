@@ -4,7 +4,7 @@ import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
 import { isUnused, mergeMovies, mergeSuggestions, mergeWatch } from "./people"
 import { SEED } from "./seed"
 import { key, membersOf } from "./stats"
-import type { Id, Mini, Movie, Suggestion, WatchItem } from "./types"
+import type { Id, Mini, Movie, RecFlag, Suggestion, WatchItem } from "./types"
 
 // Optional edit lock: when schema-lock.sql is applied, writes need the club code sent as a header.
 const CODE_KEY = "club-code"
@@ -33,7 +33,7 @@ export type Takes = Record<string, string> // "movieId|member" -> one-line take
 
 type Store = {
   ready: boolean; error: string; offline: boolean
-  movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]; takes: Takes
+  movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]; takes: Takes; flags: RecFlag[]
   mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
   toast: Toast | null; dismissToast: () => void
   refresh: () => Promise<void>
@@ -46,6 +46,8 @@ type Store = {
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   setTake: (m: Movie, member: string, text: string) => Promise<void>
+  /** Marks a recommendation as seen or not interesting for the signed-in person; null clears it. */
+  setFlag: (tmdbId: number, title: string, kind: RecFlag["kind"] | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
   deleteMovie: (m: Movie) => Promise<void>
   seed: () => Promise<void>
@@ -64,6 +66,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [movies, setMovies] = useState<Movie[]>([])
   const [watchlist, setWatchlist] = useState<WatchItem[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [flags, setFlags] = useState<RecFlag[]>(() => lsGet("rec-flags-local", []))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
   const [me, setMeState] = useState(() => localStorage.getItem("me") || "")
@@ -103,6 +106,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!mem.error) setExtra(e => [...new Set([...e, ...(mem.data as { name: string }[]).map(x => x.name)])])
       const tk = await sb.from("takes").select("*")
       if (!tk.error) setTakes(t => ({ ...t, ...Object.fromEntries((tk.data as any[]).map(x => [`${x.movie_id}|${x.member}`, x.text as string])) }))
+      const fl = await sb.from("rec_flags").select("*")
+      if (!fl.error) setFlags(local => [...(fl.data as RecFlag[]), ...local.filter(l => !(fl.data as RecFlag[]).some(f => f.member === l.member && f.tmdb_id === l.tmdb_id))])
       setOffline(false)
       lsSet(SNAP, { movies: ms, watchlist: w.data, suggestions: s.data })
     } catch (e) {
@@ -214,6 +219,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const { error } = t ? await sb.from("takes").upsert({ movie_id: m.id, member, text: t }) : await sb.from("takes").delete().match({ movie_id: m.id, member })
     if (error) alert("Saved on this device only. To share takes with everyone, run the takes table SQL from schema.sql in Supabase.")
   }, [])
+
+  const setFlag: Store["setFlag"] = useCallback(async (tmdbId, title, kind) => {
+    if (!me) return alert("Pick your name first.")
+    const prev = flags.find(f => f.member === me && f.tmdb_id === tmdbId)?.kind ?? null
+    const write = async (k: RecFlag["kind"] | null) => {
+      setFlags(all => {
+        const next = all.filter(f => !(f.member === me && f.tmdb_id === tmdbId))
+        if (k) next.push({ member: me, tmdb_id: tmdbId, kind: k })
+        lsSet("rec-flags-local", next)
+        return next
+      })
+      if (!sb) return
+      const { error } = k ? await sb.from("rec_flags").upsert({ member: me, tmdb_id: tmdbId, kind: k }) : await sb.from("rec_flags").delete().match({ member: me, tmdb_id: tmdbId })
+      if (error) alert("Saved on this device only. To share seen and not-interested picks across your devices, run the rec_flags table SQL from schema.sql in Supabase.")
+    }
+    await write(kind)
+    if (kind) notify(kind === "seen" ? `Marked ${title} as seen` : `Hiding ${title}`, () => { write(prev) })
+  }, [me, flags, notify])
 
   const seed = useCallback(async () => {
     const have = new Set(movRef.current.map(m => key(m.title, m.year)))
@@ -334,8 +357,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, mini, me, attending, members, shared: !!sb, toast, dismissToast,
-    refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, patchMovie, deleteMovie, seed,
+    ready, error, offline, movies, watchlist, suggestions, takes, flags, mini, me, attending, members, shared: !!sb, toast, dismissToast,
+    refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
