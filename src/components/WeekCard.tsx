@@ -1,6 +1,8 @@
-import { IMG } from "@/lib/api"
+import { useEffect, useState } from "react"
+import { filmDetail, hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { fmt, groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
+import { buttonVariants } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { StarRating } from "./StarRating"
 
@@ -8,6 +10,22 @@ import { StarRating } from "./StarRating"
 export function WeekCard() {
   const { movies, mini, me, attending, setRating } = useStore()
   const m = [...movies].sort((a, b) => b.seq - a.seq)[0]
+  const [d, setD] = useState<any>(null)
+  const [where, setWhere] = useState<any>(null)
+
+  // synopsis, director, trailer and where to watch (US) from TMDB
+  useEffect(() => {
+    if (!m || !hasTmdb()) return
+    let dead = false
+    ;(async () => {
+      const id = m.tmdb_id || (await searchFilm(m.title, m.year))?.id
+      if (!id) return
+      const [detail, prov] = await Promise.all([filmDetail(id), tmdb<any>(`/movie/${id}/watch/providers`)])
+      if (dead) return
+      setD(detail); setWhere(prov?.results?.US || null)
+    })()
+    return () => { dead = true }
+  }, [m?.id, m?.tmdb_id])
   if (!m) return null
 
   // who we expect to rate: tonight's switches if set, else whoever rated the previous film
@@ -17,6 +35,9 @@ export function WeekCard() {
   const info = mini[key(m.title, m.year)]
   const g = groupAvg(m)
   const mine = me ? m.ratings[me] ?? null : null
+  const director = ((d?.credits?.crew || []) as any[]).filter(c => c.job === "Director").map(c => c.name).join(", ")
+  const trailer = ((d?.videos?.results || []) as any[]).find(v => v.site === "YouTube" && v.type === "Trailer")
+  const streaming: string[] = [...new Set([...(where?.flatrate || []), ...(where?.free || []), ...(where?.rent || []).slice(0, 3)].map((p: any) => p.provider_name as string))]
 
   return (
     <Card className="rise gap-3 px-4">
@@ -32,6 +53,20 @@ export function WeekCard() {
           {expected.length > 0 && waiting.length === 0 && <p className="text-sm text-pos">Everyone has rated it</p>}
         </div>
       </div>
+      {d && (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">
+            {[d.runtime && `${d.runtime} min`, (d.genres || []).map((g: any) => g.name).join(", "), director && `Directed by ${director}`].filter(Boolean).join(" · ")}
+          </p>
+          {d.overview && <p className="line-clamp-4 max-w-[62ch] text-sm leading-relaxed">{d.overview}</p>}
+          {streaming.length > 0 && <p className="text-sm"><span className="text-muted-foreground">Where to watch:</span> {streaming.slice(0, 6).join(", ")}{streaming.length > 6 && <span className="text-muted-foreground"> +{streaming.length - 6} more</span>}</p>}
+          <div className="flex flex-wrap gap-2">
+            {trailer && <a className={buttonVariants({ variant: "outline", className: "h-10 px-4" })} href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noopener">Watch trailer</a>}
+            {where?.link && <a className={buttonVariants({ variant: "outline", className: "h-10 px-4" })} href={where.link} target="_blank" rel="noopener">All watch options</a>}
+            <a className={buttonVariants({ variant: "ghost", className: "h-10 px-4" })} href={`#/films/${encodeURIComponent(String(m.id))}`}>Cast &amp; crew</a>
+          </div>
+        </div>
+      )}
       {me ? (
         <div className="flex flex-wrap items-center gap-x-3">
           <span className="text-sm text-muted-foreground">Your rating</span>
