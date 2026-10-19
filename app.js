@@ -31,12 +31,29 @@ async function addMovie(title, year, pick, ratings = {}) {
     const rows = Object.entries(ratings).map(([member, value]) => ({ movie_id: m.id, member, value }));
     if (rows.length) await must(sb.from("ratings").insert(rows));
   } else m.id = Date.now() + Math.random();
-  S.movies.push(m); persist();
+  S.movies.push(m); persist(); fillOutside(m).then(render);
 }
 async function setRating(m, member, v) {
   if (v === "") { delete m.ratings[member]; if (sb) await must(sb.from("ratings").delete().match({ movie_id: m.id, member })); }
   else { m.ratings[member] = +v; if (sb) await must(sb.from("ratings").upsert({ movie_id: m.id, member, value: +v })); }
   persist();
+}
+// Auto-fill IMDb / Rotten Tomatoes / Metacritic from OMDb (needs CONFIG.OMDB_KEY).
+async function fillOutside(m) {
+  if (!CONFIG.OMDB_KEY || [m.imdb, m.rt, m.mc].some(x => x != null)) return false;
+  try {
+    const r = await (await fetch(`https://www.omdbapi.com/?apikey=${CONFIG.OMDB_KEY}&t=${encodeURIComponent(m.title)}&y=${m.year}`)).json();
+    if (r.Response !== "True") return false;
+    const rt = (r.Ratings || []).find(x => x.Source === "Rotten Tomatoes")?.Value;
+    const f = { imdb: parseFloat(r.imdbRating), rt: rt ? parseFloat(rt) : NaN, mc: parseFloat(r.Metascore) };
+    Object.keys(f).forEach(k => isNaN(f[k]) && delete f[k]);
+    if (!Object.keys(f).length) return false;
+    await setOutside(m, f); return true;
+  } catch { return false; }
+}
+async function fillAll() {
+  let n = 0; for (const m of S.movies) n += await fillOutside(m) ? 1 : 0;
+  if (n) render();
 }
 async function setOutside(m, f) {
   Object.assign(m, f); persist();
@@ -232,4 +249,4 @@ document.addEventListener("submit", async e => {
   render();
 });
 
-load().then(render).catch(err => $("#view").textContent = "Could not load data: " + err.message);
+load().then(() => { render(); fillAll(); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);
