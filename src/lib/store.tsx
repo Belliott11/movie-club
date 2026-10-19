@@ -25,6 +25,7 @@ type Store = {
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
+  deleteMovie: (m: Movie) => Promise<void>
   seed: () => Promise<void>
   importWatchlist: (items: WatchItem[]) => Promise<void>
   suggest: (title: string, year: number | null) => Promise<void>
@@ -111,6 +112,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => { dead = true }
   }, [ready, patchMovie])
 
+  const deleteMovie = useCallback(async (m: Movie) => {
+    setMovies(ms => ms.filter(x => x.id !== m.id))
+    if (sb) fail((await sb.from("movies").delete().eq("id", m.id)).error) // ratings go with it (on delete cascade)
+  }, [])
+
   const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
     const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
     let id: Id = Date.now() + Math.random()
@@ -194,6 +200,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
-  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, refresh, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
+  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, refresh, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, deleteMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

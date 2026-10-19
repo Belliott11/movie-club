@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react"
 import { FilmRow } from "@/components/FilmRow"
 import { FilmSearch } from "@/components/FilmSearch"
+import { WeekCard } from "@/components/WeekCard"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -25,6 +26,7 @@ export default function Films() {
 
   return (
     <div className="flex flex-col gap-3">
+      <WeekCard />
       <p className="flex flex-wrap gap-x-5 text-sm text-muted-foreground">
         <span><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Our average</span>
         <span><i className="mr-1.5 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside average (IMDb, Rotten Tomatoes, Metacritic, Letterboxd, out of 5)</span>

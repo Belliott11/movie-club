@@ -5,6 +5,9 @@ import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 import { buttonVariants } from "@/components/ui/button"
 import { AddPerson } from "./AddPerson"
+import { FilmSearch } from "./FilmSearch"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { fieldCls } from "./field"
 import { Scale } from "./Scale"
@@ -18,8 +21,14 @@ export function outsideChips(m: Movie, tmdbScore?: number | null) {
 }
 
 export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
-  const { mini, members, setRating, patchMovie } = useStore()
+  const { mini, members, setRating, patchMovie, deleteMovie } = useStore()
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [title, setTitle] = useState(m.title)
+  const [year, setYear] = useState(String(m.year))
+  const [pick, setPick] = useState(m.pick)
+  const [tmdbId, setTmdbId] = useState<number | null | undefined>(undefined) // undefined = unchanged
   const g = groupAvg(m), o = outsideAvg(m), d = g != null && o != null ? g - o : null
   const info = mini[key(m.title, m.year)]
   const chips = outsideChips(m, info?.v)
@@ -40,7 +49,7 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
         <span className={`row-span-2 self-center font-display text-4xl leading-none font-extrabold tracking-tight ${best ? "text-gold" : ""}`} title={best ? "Highest rated" : "Group average"}>
           {fmt(g)}
         </span>
-        <span className="text-sm text-muted-foreground">{m.pick}'s pick · {Object.keys(m.ratings).length} ratings</span>
+        <span className="text-sm text-muted-foreground">{m.pick}'s pick · {Object.keys(m.ratings).length} {Object.keys(m.ratings).length === 1 ? "rating" : "ratings"}</span>
         <span className="col-span-2"><Scale us={g} world={o} /></span>
         <span className="col-span-2 mt-0.5 flex flex-wrap gap-x-3.5 text-sm text-muted-foreground">
           {chips.length ? chips.map(([l, v, u]) => <span key={l}><b className="font-semibold text-foreground">{l}</b> {fmt(v, 1)}{u}</span>) : <span>Looking up outside ratings…</span>}
@@ -72,9 +81,41 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
               </label>
             ))}
           </div>
-          <a href={`#/films/${encodeURIComponent(String(m.id))}`} className={buttonVariants({ variant: "outline", className: "h-10 w-fit px-4" })}>
-            Cast, crew &amp; synopsis
-          </a>
+          {editing ? (
+            <form
+              className="flex flex-wrap items-center gap-2"
+              onSubmit={async e => {
+                e.preventDefault()
+                const f: Partial<Movie> = { title: title.trim(), year: +year, pick: pick.trim() }
+                if (tmdbId !== undefined) f.tmdb_id = tmdbId
+                else if (key(f.title!, f.year!) !== key(m.title, m.year)) f.tmdb_id = null // a different film now: look it up again
+                await patchMovie(m, f)
+                setEditing(false)
+              }}
+            >
+              <FilmSearch value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : year); setTmdbId(h.id) }} aria-label="Title" required />
+              <Input type="number" value={year} onChange={e => setYear(e.target.value)} aria-label="Year" required className="h-10 w-24" />
+              <Input value={pick} onChange={e => setPick(e.target.value)} aria-label="Picked by" required className="h-10 w-36" />
+              <Button type="submit" className="h-10 px-4">Save</Button>
+              <Button type="button" variant="ghost" className="h-10 px-4" onClick={() => { setEditing(false); setTitle(m.title); setYear(String(m.year)); setPick(m.pick); setTmdbId(undefined) }}>Cancel</Button>
+            </form>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <a href={`#/films/${encodeURIComponent(String(m.id))}`} className={buttonVariants({ variant: "outline", className: "h-10 w-fit px-4" })}>
+                Cast, crew &amp; synopsis
+              </a>
+              <Button variant="outline" className="h-10 px-4" onClick={() => setEditing(true)}>Edit film</Button>
+              {confirmDelete ? (
+                <span className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-1">
+                  <span className="text-sm">Delete {m.title} and its {Object.keys(m.ratings).length} ratings?</span>
+                  <Button variant="destructive" className="h-9 px-3" onClick={() => deleteMovie(m)}>Delete</Button>
+                  <Button variant="ghost" className="h-9 px-3" onClick={() => setConfirmDelete(false)}>Keep</Button>
+                </span>
+              ) : (
+                <Button variant="ghost" className="h-10 px-4 text-destructive" onClick={() => setConfirmDelete(true)}>Delete</Button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </Card>
