@@ -121,12 +121,16 @@ async function importWatchlist(file) {
 function movieCard(m) {
   const g = groupAvg(m), o = outsideAvg(m), d = g != null && o != null ? g - o : null;
   const mem = [...new Set([...members(), ...Object.keys(m.ratings)])];
+  const pos = v => `left:${(v / 5 * 100).toFixed(1)}%`;
+  const scale = `<div class="scale" aria-hidden="true">${[1, 2, 3, 4].map(i => `<span class="tick" style="${pos(i)}"></span>`).join("")}
+    ${g != null && o != null ? `<span class="gap" style="left:${Math.min(g, o) / 5 * 100}%;width:${Math.abs(g - o) / 5 * 100}%"></span>` : ""}
+    ${o != null ? `<span class="dot w" style="${pos(o)}"></span>` : ""}${g != null ? `<span class="dot u" style="${pos(g)}"></span>` : ""}</div>`;
+  const note = d == null ? (o == null ? "No outside rating yet" : "") : Math.abs(d) < 0.05 ? "Matches the outside average" : `<b>${fmt(Math.abs(d))}</b> ${d > 0 ? "above" : "below"} the outside average (${fmt(o)})`;
   return `<details class="card"><summary>
     <span class="t">${esc(m.title)} <small>${m.year || ""}</small></span>
-    <span class="meta">${esc(m.pick)}'s pick</span>
-    <span class="avg" title="Group average">${fmt(g)}</span>
-    <span class="avg o" title="Outside average (out of 5)">${fmt(o)}</span>
-    <span class="diff ${d > 0 ? "up" : "down"}">${d == null ? "" : (d > 0 ? "+" : "") + fmt(d)}</span>
+    <span class="meta">${esc(m.pick)}'s pick · ${Object.keys(m.ratings).length} ratings</span>
+    <span class="num" title="Group average">${fmt(g)}</span>
+    ${scale}<span class="diff">${note}</span>
   </summary><div class="body">
     <div class="rates">${mem.map(n => `<label>${esc(n)}<select data-m="${m.id}" data-r="${esc(n)}"><option value="">–</option>${[...Array(10)].map((_, i) => (i + 1) / 2).map(v => `<option ${m.ratings[n] === v ? "selected" : ""}>${v}</option>`).join("")}</select></label>`).join("")}</div>
     <div class="out"><b>Outside:</b>
@@ -134,7 +138,7 @@ function movieCard(m) {
     </div></div></details>`;
 }
 const vMovies = () => `
-  <p class="hint">Columns: group avg · outside avg (IMDb/RT/Metacritic/Letterboxd normalized to 5) · difference. Tap a film to rate.</p>
+  <p class="legend"><span><i class="u"></i>Our average</span><span><i class="w"></i>Outside average (IMDb, Rotten Tomatoes, Metacritic, Letterboxd, out of 5)</span></p>
   ${[...S.movies].reverse().map(movieCard).join("") || "<p>No movies yet.</p>"}
   <details class="card"><summary><b>+ Add movie</b></summary><form id="add" class="body">
     <input name="title" placeholder="Title" required> <input name="year" type="number" placeholder="Year" required>
@@ -195,6 +199,7 @@ const vStats = () => {
 };
 
 function render() {
+  $("#sub").textContent = S.movies.length ? `${S.movies.length} films watched · next pick: ${nextPicker()[0]?.n || "tick who's here on Next up"}` : "";
   $("#me").innerHTML = `<option value="">Who are you?</option>` + members().map(n => `<option ${n === me ? "selected" : ""}>${esc(n)}</option>`).join("") + `<option value="__new">+ new person…</option>`;
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.tab === tab));
   const open = [...document.querySelectorAll("details[open]")].map(d => d.querySelector(".t")?.textContent);
