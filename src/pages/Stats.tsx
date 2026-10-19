@@ -72,7 +72,7 @@ export default function Stats() {
               { id: "attend", label: "Attend", get: p => p.attend, render: p => <span title={`${p.count} of ${rated.length} films`}>{Math.round(p.attend * 100)}%<span className="sr-only"> ({p.count} of {rated.length} films)</span></span> },
               { id: "avg", label: "Avg", get: p => p.avg, render: p => fmt(p.avg) },
               { id: "picks", label: "Picks", get: p => p.pickAvg, render: p => fmt(p.pickAvg) },
-              { id: "tilt", label: "vs all", get: p => p.tilt, render: p => (p.tilt == null ? "–" : `${p.tilt > 0 ? "+" : ""}${fmt(p.tilt, 1)}`) },
+              { id: "tilt", label: "Vs group", get: p => p.tilt, render: p => (p.tilt == null ? "–" : `${p.tilt > 0 ? "+" : ""}${fmt(p.tilt, 1)}`) },
             ]}
           />
         </Card>
