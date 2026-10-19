@@ -1,6 +1,5 @@
 import { ArrowLeft } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
-import { CinemaCard } from "@/components/CinemaCard"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
 import { PosterThumb } from "@/components/PosterThumb"
@@ -69,14 +68,17 @@ export default function MemberPage({ name }: { name: string }) {
             <Stat label="Compared with others" value={t == null ? "–" : Math.abs(t) < 0.05 ? "Even" : `${t > 0 ? "+" : "−"}${fmt(Math.abs(t), 1)}`} sub={t == null ? undefined : Math.abs(t) < 0.05 ? "rates like the group" : t > 0 ? "rates higher" : "rates lower"} tone={t == null ? undefined : t > 0.05 ? "pos" : t < -0.05 ? "us" : undefined} />
           </dl>
 
-          <CinemaCard title={`How ${name} rates`} caption="How many ratings sit at each star step">
+          <section>
+            <h3 className="mb-2 text-xl font-bold">How {name} rates</h3>
             <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} />
-          </CinemaCard>
+          </section>
 
           {dev.length > 0 && (
-            <CinemaCard title={`Where ${name} differs from the group`} caption="Rating minus everyone else's average on the same film. Green is higher, red is lower.">
+            <section>
+              <h3 className="text-xl font-bold">Where {name} differs from the group</h3>
+              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Green is higher, red is lower.</p>
               <DeviationChart rows={dev} name={name} />
-            </CinemaCard>
+            </section>
           )}
 
           <section className="grid gap-6 sm:grid-cols-2">

@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
-import { CinemaCard } from "@/components/CinemaCard"
 import { TrendChart } from "@/components/Charts"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Scale } from "@/components/Scale"
@@ -68,7 +67,8 @@ export default function Stats() {
         </div>
       </section>
 
-      <CinemaCard title="Top films">
+      <section>
+        <h3 className="mb-2 text-xl font-bold">Top films</h3>
         <ol className="flex flex-col gap-2.5">
           {top.map((m, i) => (
             <li key={m.id}>
@@ -85,11 +85,12 @@ export default function Stats() {
             </li>
           ))}
         </ol>
-      </CinemaCard>
+      </section>
 
-      <CinemaCard title="Group average over time" caption="Each film in the order the club watched it">
+      <section>
+        <h3 className="mb-2 text-xl font-bold">Group average over time</h3>
         <TrendChart points={trend(rated)} average={sum.average} />
-      </CinemaCard>
+      </section>
 
       <section>
         <h3 className="mb-2 text-xl font-bold">People</h3>
@@ -117,8 +118,9 @@ export default function Stats() {
         </Card>
       </section>
 
-      <CinemaCard title="Most divisive" caption="Each photo is one person's rating">
-        <ul className="mb-4 justify-center flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-label="Who each dot is">
+      <section>
+        <h3 className="mb-1 text-xl font-bold">Most divisive</h3>
+        <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-label="Who each dot is">
           {[...new Set(divisive.flatMap(m => Object.keys(m.ratings)))].sort().map(n => <li key={n} className="flex items-center gap-1.5"><Avatar name={n} size="xs" />{n}</li>)}
         </ul>
         <ul className="flex flex-col gap-3">
@@ -129,10 +131,11 @@ export default function Stats() {
             </li>
           ))}
         </ul>
-      </CinemaCard>
+      </section>
 
-      <CinemaCard title="Biggest gap with outside ratings">
-        <p className="mb-4 text-center text-sm text-muted-foreground"><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Us <i className="mr-1.5 ml-3 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside</p>
+      <section>
+        <h3 className="mb-1 text-xl font-bold">Biggest gap with outside ratings</h3>
+        <p className="mb-3 text-sm text-muted-foreground"><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Us <i className="mr-1.5 ml-3 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside</p>
         {gap.length ? (
           <ul className="flex flex-col gap-3">
             {gap.map(m => (
@@ -143,7 +146,7 @@ export default function Stats() {
             ))}
           </ul>
         ) : <p className="text-muted-foreground">Outside ratings are still loading.</p>}
-      </CinemaCard>
+      </section>
 
       <section>
         <h3 className="text-xl font-bold">Manage people</h3>
