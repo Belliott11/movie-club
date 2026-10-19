@@ -55,7 +55,7 @@ export default function Suggest() {
     ;(async () => {
       const seen = new Set(movies.map(m => key(m.title, m.year)))
       const out: Rec[] = []
-      const top = [...movies].filter(m => m.tmdb_id).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10)
+      const top = [...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10)
       for (const m of top) {
         const r = await tmdb<{ results?: any[] }>(`/movie/${m.tmdb_id}/recommendations`)
         let n = 0
@@ -97,7 +97,7 @@ export default function Suggest() {
         )}
       </section>
       <section>
-        <h3 className="mb-2 text-xl font-bold">Based on your highest-rated films</h3>
+        <h3 className="mb-2 text-xl font-bold">Because you liked them (group average 3.5 or higher)</h3>
         {!hasTmdb() ? (
           <p className="text-muted-foreground">Add a TMDB key to config.js to get recommendations here.</p>
         ) : recs === null ? (
