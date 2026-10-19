@@ -55,3 +55,10 @@ export async function omdbFill(m: Movie): Promise<Partial<Movie> | null> {
   for (const [k2, v] of Object.entries(all)) if (!isNaN(v) && m[k2 as "imdb"] == null) (f as any)[k2] = v
   return Object.keys(f).length ? f : null
 }
+
+/** Streaming, free and (a few) rental providers in the US, plus TMDB's link to the full list. */
+export async function whereToWatch(tmdbId: number): Promise<{ names: string[]; link: string | null }> {
+  const r = (await tmdb<any>(`/movie/${tmdbId}/watch/providers`))?.results?.US
+  const names = [...new Set([...(r?.flatrate || []), ...(r?.free || []), ...(r?.rent || []).slice(0, 3)].map((p: any) => p.provider_name as string))]
+  return { names, link: r?.link || null }
+}

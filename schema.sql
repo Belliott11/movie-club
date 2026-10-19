@@ -26,3 +26,11 @@ end $$;
 create table if not exists members (name text primary key);
 alter table members enable row level security;
 create policy "open" on members for all using (true) with check (true);
+
+-- One-line takes on a film, one per person per film.
+create table if not exists takes (
+  movie_id bigint references movies(id) on delete cascade,
+  member text, text text not null, primary key (movie_id, member)
+);
+alter table takes enable row level security;
+create policy "open" on takes for all using (true) with check (true);

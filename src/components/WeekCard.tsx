@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { filmDetail, hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
+import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
 import { fmt, groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { buttonVariants } from "@/components/ui/button"
@@ -11,7 +11,7 @@ export function WeekCard() {
   const { movies, mini, me, attending, setRating } = useStore()
   const m = [...movies].sort((a, b) => b.seq - a.seq)[0]
   const [d, setD] = useState<any>(null)
-  const [where, setWhere] = useState<any>(null)
+  const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
 
   // synopsis, director, trailer and where to watch (US) from TMDB
   useEffect(() => {
@@ -20,9 +20,9 @@ export function WeekCard() {
     ;(async () => {
       const id = m.tmdb_id || (await searchFilm(m.title, m.year))?.id
       if (!id) return
-      const [detail, prov] = await Promise.all([filmDetail(id), tmdb<any>(`/movie/${id}/watch/providers`)])
+      const [detail, prov] = await Promise.all([filmDetail(id), whereToWatch(id)])
       if (dead) return
-      setD(detail); setWhere(prov?.results?.US || null)
+      setD(detail); setWhere(prov)
     })()
     return () => { dead = true }
   }, [m?.id, m?.tmdb_id])
@@ -37,7 +37,7 @@ export function WeekCard() {
   const mine = me ? m.ratings[me] ?? null : null
   const director = ((d?.credits?.crew || []) as any[]).filter(c => c.job === "Director").map(c => c.name).join(", ")
   const trailer = ((d?.videos?.results || []) as any[]).find(v => v.site === "YouTube" && v.type === "Trailer")
-  const streaming: string[] = [...new Set([...(where?.flatrate || []), ...(where?.free || []), ...(where?.rent || []).slice(0, 3)].map((p: any) => p.provider_name as string))]
+  const streaming = where?.names ?? []
 
   return (
     <Card className="rise gap-3 px-4">

@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
-import { filmDetail, hasTmdb, IMG, searchFilm } from "@/lib/api"
-import { fmt, groupAvg, outsideAvg } from "@/lib/stats"
+import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
+import { fmt, groupAvg, outsideAvg, recapLines } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { movies, patchMovie } = useStore()
+  const { movies, patchMovie, takes, setTake, me } = useStore()
+  const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
+  const [recapCopied, setRecapCopied] = useState(false)
   const m = movies.find(x => String(x.id) === id)
   const [d, setD] = useState<any | undefined>(undefined) // undefined = loading, null = no match
   const [copied, setCopied] = useState(false)
@@ -21,7 +25,8 @@ export default function FilmPage({ id }: { id: string }) {
         if (tid) patchMovie(m, { tmdb_id: tid })
       }
       const detail = tid ? await filmDetail(tid) : null
-      if (!dead) setD(detail)
+      const w = tid ? await whereToWatch(tid) : null
+      if (!dead) { setD(detail); setWhere(w) }
     })()
     return () => { dead = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,6 +74,9 @@ export default function FilmPage({ id }: { id: string }) {
               ))}
             </dl>
           )}
+          {where && where.names.length > 0 && (
+            <p className="max-w-[62ch]"><span className="text-sm text-muted-foreground">Where to watch (US): </span>{where.names.slice(0, 8).join(", ")}{where.names.length > 8 && <span className="text-muted-foreground"> +{where.names.length - 8} more</span>}{where.link && <> · <a className="underline" href={where.link} target="_blank" rel="noopener">all options</a></>}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="h-10 px-4" onClick={share}>{copied ? "Copied" : "Copy for group chat"}</Button>
             {trailer && <a className={buttonVariants({ className: "h-10 px-4" })} href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noopener">Watch trailer</a>}
@@ -76,11 +84,38 @@ export default function FilmPage({ id }: { id: string }) {
         </div>
       </div>
       <section>
+        <h3 className="mb-2 text-xl font-bold">Recap</h3>
+        <Card className="gap-2 px-4">
+          {recapLines(m, movies).map(l => <p key={l}>{l}</p>)}
+          <Button variant="outline" className="h-10 w-fit px-4" onClick={async () => {
+            const txt = `${m.title} (${m.year})
+${recapLines(m, movies).join(" ")}`
+            try { await navigator.clipboard.writeText(txt); setRecapCopied(true) } catch { prompt("Copy this:", txt) }
+          }}>{recapCopied ? "Copied" : "Copy recap"}</Button>
+        </Card>
+      </section>
+      <section>
         <h3 className="mb-1 text-xl font-bold">Our ratings</h3>
         <p className="font-display text-3xl font-extrabold">{fmt(groupAvg(m))} <small className="font-sans text-sm font-normal text-muted-foreground">average from {Object.keys(m.ratings).length} people · {m.pick}'s pick</small></p>
         <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
           {Object.entries(m.ratings).sort((a, b) => b[1] - a[1]).map(([n, v]) => <li key={n}>{n} <b>{v}</b></li>)}
         </ul>
+      </section>
+      <section>
+        <h3 className="mb-2 text-xl font-bold">Takes</h3>
+        <ul className="flex flex-col gap-2">
+          {Object.entries(takes).filter(([k]) => k.startsWith(`${m.id}|`)).map(([k, text]) => {
+            const n = k.slice(String(m.id).length + 1)
+            return <li key={n} className="max-w-[62ch]"><b>{n}</b> <span className="text-muted-foreground">{m.ratings[n] != null ? m.ratings[n] : ""}</span><br />{text}</li>
+          })}
+        </ul>
+        {!Object.keys(takes).some(k => k.startsWith(`${m.id}|`)) && <p className="text-muted-foreground">No takes yet. Add the first one below.</p>}
+        {me ? (
+          <form className="mt-3 flex max-w-xl gap-2" onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget); setTake(m, me, String(f.get("take") || "")) }}>
+            <Input key={`${m.id}|${me}|${takes[`${m.id}|${me}`] ?? ""}`} name="take" maxLength={200} defaultValue={takes[`${m.id}|${me}`] ?? ""} placeholder={`Your take on ${m.title}, in one line`} aria-label="Your take" className="h-10 flex-1" />
+            <Button type="submit" variant="outline" className="h-10 px-4">Save</Button>
+          </form>
+        ) : <p className="mt-2 text-sm text-muted-foreground">Pick your name at the top to add a take.</p>}
       </section>
       {cast.length > 0 && (
         <section>

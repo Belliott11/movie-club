@@ -1,1 +1,16 @@
-{"name":"Movie Club","short_name":"Movie Club","start_url":".","display":"standalone","background_color":"#E8ECF3","theme_color":"#161D36","icons":[{"src":"favicon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Movie Club",
+  "short_name": "Movie Club",
+  "description": "Ratings, picks and stats for the movie club",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E8ECF3",
+  "theme_color": "#161D36",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

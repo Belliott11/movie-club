@@ -1,29 +1,51 @@
 import { createClient } from "@supabase/supabase-js"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
+import { isUnused, mergeMovies, mergeSuggestions, mergeWatch } from "./people"
 import { SEED } from "./seed"
 import { key, membersOf } from "./stats"
 import type { Id, Mini, Movie, Suggestion, WatchItem } from "./types"
 
-const sb = CONFIG.SUPABASE_URL ? createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY) : null
+// Optional edit lock: when schema-lock.sql is applied, writes need the club code sent as a header.
+const CODE_KEY = "club-code"
+export const getClubCode = () => localStorage.getItem(CODE_KEY) || ""
+export const setClubCode = (c: string) => { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); location.reload() }
+const sb = CONFIG.SUPABASE_URL
+  ? createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY, { global: { headers: getClubCode() ? { "x-club-code": getClubCode() } : {} } })
+  : null
+
 const LS = "movieclub-v1"
+const SNAP = "snapshot-v1"
 const lsGet = <T,>(k: string, d: T): T => {
   try { return JSON.parse(localStorage.getItem(k) || "") ?? d } catch { return d }
 }
 const lsSet = (k: string, v: unknown) => {
   try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* ignore */ }
 }
-const fail = (e: { message: string } | null) => { if (e) alert(e.message) }
+const fail = (e: { message: string; code?: string } | null) => {
+  if (!e) return
+  if (e.code === "42501" || /row-level security/i.test(e.message)) alert("Editing is locked. Enter the club code at the bottom of the page, then try again.")
+  else alert(e.message)
+}
+
+export type Toast = { id: number; msg: string; undo?: () => void }
+export type Takes = Record<string, string> // "movieId|member" -> one-line take
 
 type Store = {
-  ready: boolean; error: string; movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]
+  ready: boolean; error: string; offline: boolean
+  movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]; takes: Takes
   mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
+  toast: Toast | null; dismissToast: () => void
   refresh: () => Promise<void>
   setMe: (n: string) => void; toggleAttend: (n: string) => void
   /** Adds a person (or finds the existing one, ignoring case) and returns their name. */
   addMember: (name: string) => Promise<string>
+  /** Renames a person, or merges them into an existing one. Ratings, picks, watchlists and votes all move. */
+  renameMember: (from: string, to: string) => Promise<void>
+  removeMember: (name: string) => Promise<void>
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
+  setTake: (m: Movie, member: string, text: string) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
   deleteMovie: (m: Movie) => Promise<void>
   seed: () => Promise<void>
@@ -38,23 +60,34 @@ export const useStore = () => useContext(Ctx)
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false)
   const [error, setError] = useState("")
+  const [offline, setOffline] = useState(false)
   const [movies, setMovies] = useState<Movie[]>([])
   const [watchlist, setWatchlist] = useState<WatchItem[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
   const [me, setMeState] = useState(() => localStorage.getItem("me") || "")
   const [attending, setAttending] = useState<string[]>(() => lsGet("attending", []))
   const [extra, setExtra] = useState<string[]>(() => lsGet("extra-members", []))
+  const [toast, setToast] = useState<Toast | null>(null)
   const movRef = useRef(movies)
   movRef.current = movies
+  const toastTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const notify = useCallback((msg: string, undo?: () => void) => {
+    clearTimeout(toastTimer.current)
+    setToast({ id: Date.now(), msg, undo })
+    toastTimer.current = setTimeout(() => setToast(null), 7000)
+  }, [])
+  const dismissToast = useCallback(() => { clearTimeout(toastTimer.current); setToast(null) }, [])
 
   const load = useCallback(async () => {
-    {
-      if (!sb) {
-        const d = lsGet(LS, { movies: [], watchlist: [], suggestions: [] })
-        setMovies(d.movies); setWatchlist(d.watchlist); setSuggestions(d.suggestions)
-        return
-      }
+    if (!sb) {
+      const d = lsGet(LS, { movies: [], watchlist: [], suggestions: [] })
+      setMovies(d.movies); setWatchlist(d.watchlist); setSuggestions(d.suggestions)
+      return
+    }
+    try {
       const [m, r, w, s] = await Promise.all(["movies", "ratings", "watchlist", "suggestions"].map(t => sb.from(t).select("*")))
       const bad = [m, r, w, s].find(x => x.error)
       if (bad) throw bad.error
@@ -65,8 +98,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (mv) mv.ratings[x.member] = +x.value
       }
       setMovies(ms); setWatchlist(w.data as WatchItem[]); setSuggestions(s.data as Suggestion[])
-      const mem = await sb.from("members").select("name") // table is optional: older setups do not have it
+      // members and takes tables are optional: older setups do not have them
+      const mem = await sb.from("members").select("name")
       if (!mem.error) setExtra(e => [...new Set([...e, ...(mem.data as { name: string }[]).map(x => x.name)])])
+      const tk = await sb.from("takes").select("*")
+      if (!tk.error) setTakes(t => ({ ...t, ...Object.fromEntries((tk.data as any[]).map(x => [`${x.movie_id}|${x.member}`, x.text as string])) }))
+      setOffline(false)
+      lsSet(SNAP, { movies: ms, watchlist: w.data, suggestions: s.data })
+    } catch (e) {
+      const snap = lsGet<any>(SNAP, null)
+      if (!snap) throw e
+      // no connection: show the last data this phone saw
+      setMovies(snap.movies); setWatchlist(snap.watchlist); setSuggestions(snap.suggestions); setOffline(true)
     }
   }, [])
   useEffect(() => { load().then(() => setReady(true), e => setError(e.message)) }, [load])
@@ -87,7 +130,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   // once data is in: poster + TMDB id first, then blank outside ratings
   useEffect(() => {
-    if (!ready || !CONFIG.TMDB_KEY) return
+    if (!ready || offline || !CONFIG.TMDB_KEY) return
     let dead = false
     ;(async () => {
       const cache = loadMini()
@@ -110,27 +153,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     })()
     return () => { dead = true }
-  }, [ready, patchMovie])
+  }, [ready, offline, patchMovie])
 
-  const deleteMovie = useCallback(async (m: Movie) => {
-    setMovies(ms => ms.filter(x => x.id !== m.id))
-    if (sb) fail((await sb.from("movies").delete().eq("id", m.id)).error) // ratings go with it (on delete cascade)
-  }, [])
-
-  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
-    const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
+  /** Inserts a whole film (used by add, and by undoing a delete). */
+  const insertMovie = useCallback(async (m: Omit<Movie, "id">): Promise<Movie | null> => {
     let id: Id = Date.now() + Math.random()
     if (sb) {
-      const { data, error } = await sb.from("movies").insert({ seq, title, year, pick, tmdb_id: tmdbId }).select().single()
-      if (error) return alert(error.message)
+      const { ratings, ...row } = m
+      const { data, error } = await sb.from("movies").insert(row).select().single()
+      if (error) { fail(error); return null }
       id = data.id
       const rows = Object.entries(ratings).map(([member, value]) => ({ movie_id: id, member, value }))
       if (rows.length) fail((await sb.from("ratings").insert(rows)).error)
     }
-    setMovies(ms => [...ms, { id, seq, title, year, pick, ratings, tmdb_id: tmdbId }])
+    const full = { ...m, id }
+    setMovies(ms => [...ms, full].sort((a, b) => a.seq - b.seq))
+    return full
   }, [])
 
-  const setRating: Store["setRating"] = useCallback(async (m, member, v) => {
+  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
+    const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
+    await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId })
+  }, [insertMovie])
+
+  const deleteMovie = useCallback(async (m: Movie) => {
+    setMovies(ms => ms.filter(x => x.id !== m.id))
+    if (sb) fail((await sb.from("movies").delete().eq("id", m.id)).error) // ratings go with it (on delete cascade)
+    const { id: _gone, ...rest } = m
+    notify(`Deleted ${m.title}`, () => { insertMovie(rest) })
+  }, [insertMovie, notify])
+
+  const writeRating = useCallback(async (m: Movie, member: string, v: number | null) => {
     setMovies(ms => ms.map(x => {
       if (x.id !== m.id) return x
       const r = { ...x.ratings }
@@ -140,6 +193,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
     if (!sb) return
     fail((v == null ? await sb.from("ratings").delete().match({ movie_id: m.id, member }) : await sb.from("ratings").upsert({ movie_id: m.id, member, value: v })).error)
+  }, [])
+
+  const setRating: Store["setRating"] = useCallback(async (m, member, v) => {
+    const prev = movRef.current.find(x => x.id === m.id)?.ratings[member] ?? null
+    await writeRating(m, member, v)
+    notify(`${member}: ${v == null ? "rating cleared" : `${v} stars`} for ${m.title}`, () => { writeRating(m, member, prev) })
+  }, [writeRating, notify])
+
+  const setTake: Store["setTake"] = useCallback(async (m, member, text) => {
+    const k = `${m.id}|${member}`, t = text.trim()
+    setTakes(all => {
+      const next = { ...all }
+      if (t) next[k] = t
+      else delete next[k]
+      lsSet("takes-local", next)
+      return next
+    })
+    if (!sb) return
+    const { error } = t ? await sb.from("takes").upsert({ movie_id: m.id, member, text: t }) : await sb.from("takes").delete().match({ movie_id: m.id, member })
+    if (error) alert("Saved on this device only. To share takes with everyone, run the takes table SQL from schema.sql in Supabase.")
   }, [])
 
   const seed = useCallback(async () => {
@@ -160,7 +233,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const s: Suggestion = { id: Date.now() + Math.random(), title, year, by: me, votes: [me] }
     if (sb) {
       const { data, error } = await sb.from("suggestions").insert({ title, year, by: me, votes: [me] }).select().single()
-      if (error) return alert(error.message)
+      if (error) return fail(error)
       s.id = data.id
     }
     setSuggestions(x => [...x, s])
@@ -191,6 +264,66 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return name
   }, [extra])
 
+  const renameMember = useCallback(async (fromRaw: string, toRaw: string) => {
+    const from = fromRaw, to = toRaw.trim().replace(/\s+/g, " ")
+    if (!to || to === from) return
+    const existing = membersOf(movRef.current, watchlist, extra).find(x => x.toLowerCase() === to.toLowerCase() && x !== from)
+    const target = existing || to
+    const before = movRef.current
+    if (sb) {
+      // ratings: move or, when the target already rated that film, drop the old one
+      for (const m of before) {
+        if (m.ratings[from] == null) continue
+        fail((m.ratings[target] != null
+          ? await sb.from("ratings").delete().match({ movie_id: m.id, member: from })
+          : await sb.from("ratings").update({ member: target }).match({ movie_id: m.id, member: from })).error)
+      }
+      fail((await sb.from("movies").update({ pick: target }).eq("pick", from)).error)
+      const dupes = watchlist.filter(w => w.member === from && watchlist.some(x => x.member === target && x.title === w.title && x.year === w.year))
+      for (const w of dupes) await sb.from("watchlist").delete().match({ member: from, title: w.title, year: w.year })
+      fail((await sb.from("watchlist").update({ member: target }).eq("member", from)).error)
+      for (const s of suggestions) {
+        if (s.by !== from && !(s.votes || []).includes(from)) continue
+        const merged = mergeSuggestions([s], from, target)[0]
+        fail((await sb.from("suggestions").update({ by: merged.by, votes: merged.votes }).eq("id", s.id)).error)
+      }
+      await sb.from("members").delete().eq("name", from)
+      await sb.from("members").insert({ name: target })
+      for (const [k, text] of Object.entries(takes)) {
+        const [mid, who] = k.split("|")
+        if (who !== from) continue
+        if (takes[`${mid}|${target}`]) await sb.from("takes").delete().match({ movie_id: mid, member: from })
+        else await sb.from("takes").update({ member: target }).match({ movie_id: mid, member: from })
+        void text
+      }
+    }
+    setMovies(ms => mergeMovies(ms, from, target))
+    setWatchlist(w => mergeWatch(w, from, target))
+    setSuggestions(s => mergeSuggestions(s, from, target))
+    setTakes(t => {
+      const next: Takes = {}
+      for (const [k, v] of Object.entries(t)) {
+        const [mid, who] = k.split("|")
+        const nk = who === from ? `${mid}|${target}` : k
+        if (!(nk in next) || who !== from) next[nk] = v
+      }
+      lsSet("takes-local", next)
+      return next
+    })
+    setExtra(e => { const b = [...new Set(e.filter(x => x !== from).concat(target))]; lsSet("extra-members", b); return b })
+    setAttending(a => { const b = [...new Set(a.map(x => (x === from ? target : x)))]; lsSet("attending", b); return b })
+    if (me === from) { setMeState(target); localStorage.setItem("me", target) }
+    notify(existing ? `Merged ${from} into ${target}` : `Renamed ${from} to ${target}`)
+  }, [watchlist, suggestions, takes, extra, me, notify])
+
+  const removeMember = useCallback(async (name: string) => {
+    if (!isUnused(name, movRef.current, watchlist, suggestions)) return alert(`${name} has ratings, picks or a watchlist. Merge them into someone else instead.`)
+    setExtra(e => { const b = e.filter(x => x !== name); lsSet("extra-members", b); return b })
+    setAttending(a => { const b = a.filter(x => x !== name); lsSet("attending", b); return b })
+    if (sb) await sb.from("members").delete().eq("name", name)
+    if (me === name) { setMeState(""); localStorage.removeItem("me") }
+  }, [watchlist, suggestions, me])
+
   const setMe = (n: string) => { setMeState(n); localStorage.setItem("me", n) }
   const toggleAttend = (n: string) =>
     setAttending(a => {
@@ -200,6 +333,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
-  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, refresh, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, deleteMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
+  const value: Store = {
+    ready, error, offline, movies, watchlist, suggestions, takes, mini, me, attending, members, shared: !!sb, toast, dismissToast,
+    refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, patchMovie, deleteMovie, seed,
+    importWatchlist, suggest, vote, removeSuggestion,
+  }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
