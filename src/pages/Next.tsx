@@ -1,3 +1,4 @@
+import { AddPerson } from "@/components/AddPerson"
 import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { key, pickOrder } from "@/lib/stats"
@@ -27,6 +28,9 @@ export default function Next() {
               {n}
             </label>
           ))}
+        </div>
+        <div className="mt-3">
+          <AddPerson label="Add and switch on" onAdded={n => { if (!attending.includes(n)) toggleAttend(n) }} />
         </div>
       </section>
       <section>

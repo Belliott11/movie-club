@@ -2,7 +2,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
 import { pickOrder } from "@/lib/stats"
+import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
+import { useState } from "react"
 import Films from "@/pages/Films"
 import FilmPage from "@/pages/FilmPage"
 import Next from "@/pages/Next"
@@ -14,6 +16,7 @@ const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"
 
 function Shell() {
   const { ready, error, movies, members, me, setMe, attending } = useStore()
+  const [adding, setAdding] = useState(false)
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
 
@@ -26,13 +29,19 @@ function Shell() {
         </div>
         <label className="flex flex-col gap-0.5 text-xs text-muted-foreground">
           You are
-          <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") { const n = prompt("Your name?")?.trim(); if (n) setMe(n) } else setMe(e.target.value) }}>
+          <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
             <option value="">Who are you?</option>
             {members.map(n => <option key={n}>{n}</option>)}
             <option value="__new">+ New person…</option>
           </select>
         </label>
       </header>
+      {adding && (
+        <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3">
+          <span className="text-sm text-muted-foreground">Who's joining?</span>
+          <AddPerson autoFocus label="Add and sign in as them" onAdded={n => { setMe(n); setAdding(false) }} />
+        </div>
+      )}
 
       <Tabs value={TABS.some(t => t[0] === tab) ? tab : "films"} onValueChange={v => go(v as string)}>
         <TabsList className="fixed inset-x-2 bottom-2 z-20 mb-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:static md:mb-5 md:bg-muted md:shadow-none md:ring-0">

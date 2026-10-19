@@ -21,3 +21,8 @@ do $$ declare t text; begin
     execute format('create policy "open" on %I for all using (true) with check (true)', t);
   end loop;
 end $$;
+
+-- People who haven't rated anything yet (so they can be added to a meetup right away).
+create table if not exists members (name text primary key);
+alter table members enable row level security;
+create policy "open" on members for all using (true) with check (true);

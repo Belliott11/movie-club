@@ -19,6 +19,8 @@ type Store = {
   ready: boolean; error: string; movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]
   mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
   setMe: (n: string) => void; toggleAttend: (n: string) => void
+  /** Adds a person (or finds the existing one, ignoring case) and returns their name. */
+  addMember: (name: string) => Promise<string>
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
@@ -40,6 +42,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
   const [me, setMeState] = useState(() => localStorage.getItem("me") || "")
   const [attending, setAttending] = useState<string[]>(() => lsGet("attending", []))
+  const [extra, setExtra] = useState<string[]>(() => lsGet("extra-members", []))
   const movRef = useRef(movies)
   movRef.current = movies
 
@@ -60,6 +63,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (mv) mv.ratings[x.member] = +x.value
       }
       setMovies(ms); setWatchlist(w.data as WatchItem[]); setSuggestions(s.data as Suggestion[])
+      const mem = await sb.from("members").select("name") // table is optional: older setups do not have it
+      if (!mem.error) setExtra(e => [...new Set([...e, ...(mem.data as { name: string }[]).map(x => x.name)])])
     })().then(() => setReady(true), e => setError(e.message))
   }, [])
 
@@ -161,6 +166,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (sb) fail((await sb.from("suggestions").delete().eq("id", s.id)).error)
   }, [])
 
+  const addMember = useCallback(async (raw: string) => {
+    const name = raw.trim().replace(/\s+/g, " ")
+    if (!name) return ""
+    const known = membersOf(movRef.current, [], extra).find(x => x.toLowerCase() === name.toLowerCase())
+    if (known) return known
+    setExtra(e => { const b = [...e, name]; lsSet("extra-members", b); return b })
+    if (sb) {
+      const { error } = await sb.from("members").insert({ name })
+      if (error) alert(`Added ${name} on this device only. To share new people with everyone, run the members table SQL from schema.sql in Supabase.`)
+    }
+    return name
+  }, [extra])
+
   const setMe = (n: string) => { setMeState(n); localStorage.setItem("me", n) }
   const toggleAttend = (n: string) =>
     setAttending(a => {
@@ -168,8 +186,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       lsSet("attending", b)
       return b
     })
-  const members = useMemo(() => membersOf(movies, watchlist, me ? [me] : []), [movies, watchlist, me])
+  const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
-  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, setMe, toggleAttend, addMovie, setRating, patchMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
+  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

@@ -4,6 +4,7 @@ import { fmt, groupAvg, key, outsideAvg } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 import { buttonVariants } from "@/components/ui/button"
+import { AddPerson } from "./AddPerson"
 import { Card } from "@/components/ui/card"
 import { fieldCls } from "./field"
 import { Scale } from "./Scale"
@@ -58,6 +59,10 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
                 </select>
               </label>
             ))}
+            <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+              Someone new?
+              <AddPerson label="Add" />
+            </div>
           </div>
           <div className="flex flex-wrap items-end gap-2.5">
             {([["imdb", "IMDb /10"], ["rt", "Rotten Tomatoes /100"], ["mc", "Metacritic /100"], ["lb", "Letterboxd /5"]] as const).map(([k, l]) => (
