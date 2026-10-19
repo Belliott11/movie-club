@@ -40,7 +40,7 @@ export function WeekCard() {
   const streaming = where?.names ?? []
 
   return (
-    <Card className="rise gap-3 px-4">
+    <Card className="stub rise gap-3 px-4" style={{ "--cut": "calc(100% - 4.5rem)" } as React.CSSProperties}>
       <div className="flex gap-4">
         {info?.p ? <img src={`${IMG}w154${info.p}`} alt="" className="aspect-[2/3] w-20 shrink-0 self-start rounded-md object-cover" /> : <span className="aspect-[2/3] w-20 shrink-0 self-start rounded-md bg-muted" />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -68,13 +68,13 @@ export function WeekCard() {
         </div>
       )}
       {me ? (
-        <div className="flex flex-wrap items-center gap-x-3">
+        <div className="-mx-4 flex min-h-14 flex-wrap items-center gap-x-3 border-t-2 border-dashed border-border px-4 pt-3">
           <span className="text-sm text-muted-foreground">Your rating</span>
           <StarRating label={`Your rating for ${m.title}`} value={mine} onChange={v => setRating(m, me, v)} />
           <span className="font-display text-xl font-bold" aria-live="polite">{mine == null ? "" : mine}</span>
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">Pick your name at the top to rate this film.</p>
+        <p className="-mx-4 min-h-14 border-t-2 border-dashed border-border px-4 pt-3 text-sm text-muted-foreground">Pick your name at the top to rate this film.</p>
       )}
     </Card>
   )

@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { Credits } from "@/components/Credits"
 import { TrendChart } from "@/components/Charts"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Scale } from "@/components/Scale"
@@ -166,6 +167,7 @@ export default function Stats() {
         </div>
         <p className="mt-2 text-sm text-muted-foreground">To use the Letterboxd list: Letterboxd, then Lists, New list, Import.</p>
       </section>
+      <Credits movies={movies} people={people} />
     </div>
   )
 }

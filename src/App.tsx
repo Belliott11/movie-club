@@ -1,10 +1,13 @@
+import { Hero } from "@/components/Hero"
+import { Leader } from "@/components/Leader"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getClubCode, setClubCode, StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
 import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
 import { RefreshCw } from "lucide-react"
-import { pickOrder } from "@/lib/stats"
+import { pickHeroFilm } from "@/lib/hero"
+import { key, pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
 import { useState } from "react"
@@ -33,11 +36,14 @@ function ClubCode() {
 }
 
 function Shell() {
-  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast } = useStore()
+  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini } = useStore()
   const { pull, busy, ready: willRefresh } = usePull(refresh)
   const [adding, setAdding] = useState(false)
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
+  const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
+  const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [tab, sub ?? ""].filter(Boolean))
+  const heroStill = heroFilm && stillOf(heroFilm)
   const active = tab === "people" ? "stats" : tab // member pages live under Stats
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(
@@ -62,12 +68,8 @@ function Shell() {
         </div>
       )}
     <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
-      <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-5xl leading-[0.95] font-extrabold tracking-tight sm:text-6xl">Movie Club</h1>
-          {movies.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
-        </div>
-        <label className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+      <Hero film={heroFilm} still={heroStill}>
+        <label className="ml-auto flex flex-col gap-0.5 text-xs text-white/80">
           You are
           <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
             <option value="">Who are you?</option>
@@ -75,7 +77,11 @@ function Shell() {
             <option value="__new">+ New person…</option>
           </select>
         </label>
-      </header>
+        <header>
+          <h1 className="text-5xl leading-[0.95] font-extrabold tracking-tight drop-shadow sm:text-6xl">Movie Club</h1>
+          {movies.length > 0 && <p className="mt-2 text-sm text-white/80">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
+        </header>
+      </Hero>
       {offline && <p role="status" className="mb-3 rounded-lg bg-card px-3 py-2 text-sm">No connection. Showing the last data saved on this device; edits won't save until you're back online.</p>}
       {adding && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3">
@@ -91,11 +97,12 @@ function Shell() {
       </Tabs>
 
       <main className="rise" key={tab + (sub ?? "")}>
-        {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <p role="status" className="text-muted-foreground">Loading the club…</p> : (
+        {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
       </main>
-      <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
+      <footer className="mt-10 flex flex-col gap-3 text-xs text-muted-foreground">
+        <div aria-hidden className="sprockets" />
         <ClubCode />
         <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
       </footer>

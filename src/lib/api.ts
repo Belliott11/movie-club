@@ -22,7 +22,7 @@ export async function filmDetail(tmdbId: number) {
 }
 
 // ---- poster + TMDB score cache (per browser) ----
-const MINI_KEY = "mini-v1"
+const MINI_KEY = "mini-v2"
 export const loadMini = (): Record<string, Mini> => {
   try { return JSON.parse(localStorage.getItem(MINI_KEY) || "{}") } catch { return {} }
 }

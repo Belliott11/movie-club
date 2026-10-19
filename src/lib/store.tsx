@@ -153,7 +153,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (cache[k] && m.tmdb_id) continue
         const r = await searchFilm(m.title, m.year)
         if (dead) return
-        cache[k] = r ? { p: r.poster_path, v: r.vote_average } : { p: null, v: null }
+        cache[k] = r ? { p: r.poster_path, v: r.vote_average, b: r.backdrop_path } : { p: null, v: null, b: null }
         if (r && !m.tmdb_id) { m.tmdb_id = r.id; patchMovie(m, { tmdb_id: r.id }) }
         changed = true
         setMini({ ...cache })
