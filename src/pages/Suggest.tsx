@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
+import { findEntry, seenBy } from "@/lib/letterboxd"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Suggestion } from "@/lib/types"
@@ -46,7 +47,8 @@ function SuggestionCard({ s }: { s: Suggestion }) {
 type Rec = { id: number; title: string; year: number; because: string; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
-  const { movies, suggestions, suggest, flags, me, setFlag } = useStore()
+  const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb } = useStore()
+  useEffect(() => { loadLb() }, [loadLb])
   const [recs, setRecs] = useState<Rec[] | null>(null)
   const sorted = [...suggestions].sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0))
 
@@ -76,8 +78,9 @@ export default function Suggest() {
   // up to 6 candidates per film are loaded; each person sees the first 2 they haven't marked seen or not interested
   const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind
   const sources = [...new Set((recs ?? []).map(r => r.because))]
-  const visible = sources.flatMap(src => (recs ?? []).filter(r => r.because === src && !myFlag(r.id)).slice(0, 2))
-  const hidden = (recs ?? []).filter(r => myFlag(r.id))
+  const onLb = (r: Rec) => !!(me && findEntry(lb[me], r.title, r.year)) // already watched on Letterboxd
+  const visible = sources.flatMap(src => (recs ?? []).filter(r => r.because === src && !myFlag(r.id) && !onLb(r)).slice(0, 2))
+  const hidden = (recs ?? []).filter(r => myFlag(r.id) || onLb(r))
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -112,7 +115,7 @@ export default function Suggest() {
         ) : (
           <ul className="grid grid-cols-2 gap-3">
             {visible.map(r => {
-              const seenBy = flags.filter(f => f.tmdb_id === r.id && f.kind === "seen" && f.member !== me).map(f => f.member)
+              const seenByNames = [...new Set([...flags.filter(f => f.tmdb_id === r.id && f.kind === "seen").map(f => f.member), ...seenBy(lb, r.title, r.year)])].filter(n => n !== me)
               const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
               return (
                 <li key={r.id}>
@@ -122,7 +125,7 @@ export default function Suggest() {
                       <h4 className="font-display text-lg leading-tight font-bold">{r.title} <small className="font-sans text-sm font-medium text-muted-foreground">{r.year || ""}</small></h4>
                       <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}because you liked {r.because}</p>
                       <p className="line-clamp-5 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
-                      {seenBy.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenBy.join(", ")}</p>}
+                      {seenByNames.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenByNames.join(", ")}</p>}
                       <div className="mt-auto flex flex-col gap-1.5 pt-1">
                         <Button variant={done ? "ghost" : "outline"} disabled={done} className="h-10 w-full px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
                         <div className="flex flex-col gap-1.5 min-[440px]:flex-row">
@@ -143,8 +146,8 @@ export default function Suggest() {
             <ul className="flex flex-col gap-1">
               {hidden.map(r => (
                 <li key={r.id} className="flex items-center gap-2">
-                  <span className="min-w-0 flex-1 truncate">{r.title} <small className="text-muted-foreground">{r.year || ""} · {myFlag(r.id) === "seen" ? "seen" : "not interested"}</small></span>
-                  <Button variant="ghost" className="h-10 px-3" onClick={() => setFlag(r.id, r.title, null)}>Bring back</Button>
+                  <span className="min-w-0 flex-1 truncate">{r.title} <small className="text-muted-foreground">{r.year || ""} · {myFlag(r.id) === "skip" ? "not interested" : "seen"}{!myFlag(r.id) && " on Letterboxd"}</small></span>
+                  {myFlag(r.id) && <Button variant="ghost" className="h-10 px-3" onClick={() => setFlag(r.id, r.title, null)}>Bring back</Button>}
                 </li>
               ))}
             </ul>

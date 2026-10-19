@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
+import { findEntry } from "@/lib/letterboxd"
 import { fmt, groupAvg, outsideAvg, recapLines } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -8,7 +9,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { movies, patchMovie, takes, setTake, me } = useStore()
+  const { movies, patchMovie, takes, setTake, me, lb, loadLb, setRating } = useStore()
+  useEffect(() => { loadLb() }, [loadLb])
   const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
   const [recapCopied, setRecapCopied] = useState(false)
   const m = movies.find(x => String(x.id) === id)
@@ -96,6 +98,12 @@ ${recapLines(m, movies).join(" ")}`
       </section>
       <section>
         <h3 className="mb-1 text-xl font-bold">Our ratings</h3>
+        {me && m.ratings[me] == null && findEntry(lb[me], m.title, m.year)?.[2] != null && (
+          <p className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+            You rated this {findEntry(lb[me], m.title, m.year)![2]} on Letterboxd.
+            <Button variant="outline" className="h-10 px-3" onClick={() => setRating(m, me, findEntry(lb[me], m.title, m.year)![2])}>Use that rating</Button>
+          </p>
+        )}
         <p className="font-display text-3xl font-extrabold">{fmt(groupAvg(m))} <small className="font-sans text-sm font-normal text-muted-foreground">average from {Object.keys(m.ratings).length} people · {m.pick}'s pick</small></p>
         <ul className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
           {Object.entries(m.ratings).sort((a, b) => b[1] - a[1]).map(([n, v]) => <li key={n}>{n} <b>{v}</b></li>)}

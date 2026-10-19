@@ -1,6 +1,6 @@
 import type { WatchItem } from "./types"
 
-function parseCsv(t: string) {
+export function parseCsv(t: string) {
   const rows: string[][] = []
   let row: string[] = [], f = "", q = false
   for (let i = 0; i < t.length; i++) {

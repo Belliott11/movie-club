@@ -1,11 +1,14 @@
 import { AddPerson } from "@/components/AddPerson"
 import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { useEffect } from "react"
+import { seenBy } from "@/lib/letterboxd"
 import { key, pickOrder } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 
 export default function Next() {
-  const { movies, members, attending, toggleAttend, watchlist } = useStore()
+  const { movies, members, attending, toggleAttend, watchlist, lb, loadLb } = useStore()
+  useEffect(() => { loadLb() }, [loadLb])
   const order = pickOrder(movies, attending)
   const watched = new Set(movies.map(m => key(m.title, m.year)))
   const hits = new Map<string, { t: string; y: number; who: string[] }>()
@@ -15,7 +18,9 @@ export default function Next() {
     h.who.push(w.member)
     hits.set(key(w.title, w.year), h)
   }
-  const top = [...hits.values()].sort((a, b) => b.who.length - a.who.length).slice(0, 12)
+  const seenAmong = (h: { t: string; y: number }) => seenBy(lb, h.t, h.y).filter(n => attending.includes(n))
+  // most wanted first; among ties, films fewer of tonight's group have already seen
+  const top = [...hits.values()].sort((a, b) => b.who.length - a.who.length || seenAmong(a).length - seenAmong(b).length).slice(0, 12)
 
   return (
     <div className="flex flex-col gap-6">
@@ -53,7 +58,7 @@ export default function Next() {
         {top.length ? (
           <ul className="flex flex-col gap-1.5">
             {top.map(h => (
-              <li key={h.t + h.y}>{h.t} <small className="text-muted-foreground">{h.y || ""}</small> · {h.who.length} of {attending.length}: {h.who.join(", ")}</li>
+              <li key={h.t + h.y}>{h.t} <small className="text-muted-foreground">{h.y || ""}</small> · {h.who.length} of {attending.length}: {h.who.join(", ")}{seenAmong(h).length > 0 && <span className="text-muted-foreground"> · already seen by {seenAmong(h).join(", ")}</span>}</li>
             ))}
           </ul>
         ) : (

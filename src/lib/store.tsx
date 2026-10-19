@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
+import { findEntry, type LbEntry, type LbHistory } from "./letterboxd"
 import { isUnused, mergeMovies, mergeSuggestions, mergeWatch } from "./people"
 import { SEED } from "./seed"
 import { key, membersOf } from "./stats"
@@ -46,6 +47,11 @@ type Store = {
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   setTake: (m: Movie, member: string, text: string) => Promise<void>
+  /** Everyone's imported Letterboxd history. Loaded the first time a page asks for it, since it is the biggest data in the club. */
+  lb: LbHistory; loadLb: () => void
+  importLb: (entries: LbEntry[]) => Promise<void>
+  /** Copies the signed-in person's Letterboxd ratings onto club films they haven't rated here. Returns how many. */
+  fillFromLb: () => Promise<number>
   /** Marks a recommendation as seen or not interesting for the signed-in person; null clears it. */
   setFlag: (tmdbId: number, title: string, kind: RecFlag["kind"] | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
@@ -66,6 +72,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [movies, setMovies] = useState<Movie[]>([])
   const [watchlist, setWatchlist] = useState<WatchItem[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [lb, setLb] = useState<LbHistory>(() => lsGet("lb-local", {}))
+  const lbRequested = useRef(false)
   const [flags, setFlags] = useState<RecFlag[]>(() => lsGet("rec-flags-local", []))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
@@ -238,6 +246,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (kind) notify(kind === "seen" ? `Marked ${title} as seen` : `Hiding ${title}`, () => { write(prev) })
   }, [me, flags, notify])
 
+  const loadLb = useCallback(() => {
+    if (lbRequested.current || !sb) return
+    lbRequested.current = true
+    sb.from("lb_history").select("member,data").then(({ data, error }) => {
+      if (error || !data) return // table is optional
+      setLb(local => ({ ...local, ...Object.fromEntries((data as { member: string; data: LbEntry[] }[]).map(r => [r.member, r.data])) }))
+    })
+  }, [])
+
+  const importLb = useCallback(async (entries: LbEntry[]) => {
+    if (!me) return alert("Pick your name first.")
+    setLb(all => {
+      const next = { ...all, [me]: entries }
+      lsSet("lb-local", next)
+      return next
+    })
+    if (!sb) return
+    const { error } = await sb.from("lb_history").upsert({ member: me, data: entries, updated_at: new Date().toISOString() })
+    if (error) alert("Saved on this device only. To share Letterboxd history with the club, run the lb_history table SQL from schema.sql in Supabase.")
+  }, [me])
+
+  const fillFromLb = useCallback(async () => {
+    if (!me) { alert("Pick your name first."); return 0 }
+    const todo = movRef.current
+      .filter(m => m.ratings[me] == null)
+      .map(m => ({ m, r: findEntry(lb[me], m.title, m.year)?.[2] ?? null }))
+      .filter((x): x is { m: Movie; r: number } => x.r != null)
+    for (const { m, r } of todo) await writeRating(m, me, r)
+    if (todo.length) notify(`Added ${todo.length} ${todo.length === 1 ? "rating" : "ratings"} from Letterboxd`, () => { todo.forEach(({ m }) => writeRating(m, me, null)) })
+    return todo.length
+  }, [me, lb, writeRating, notify])
+
   const seed = useCallback(async () => {
     const have = new Set(movRef.current.map(m => key(m.title, m.year)))
     for (const [t, y, p, r] of SEED) if (!have.has(key(t, y))) await addMovie(t, y, p, r)
@@ -357,7 +397,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, flags, mini, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, lb, loadLb, importLb, fillFromLb, flags, mini, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
