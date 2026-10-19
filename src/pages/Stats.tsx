@@ -89,7 +89,7 @@ export default function Stats() {
 
       <section>
         <h3 className="mb-2 text-xl font-bold">Group average over time</h3>
-        <TrendChart points={trend(rated)} />
+        <TrendChart points={trend(rated)} average={sum.average} />
       </section>
 
       <section>

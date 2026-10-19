@@ -37,8 +37,8 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
   )
 }
 
-/** The group's average for each film in the order watched. A dashed line marks 3.5, the "we liked it" bar. */
-export function TrendChart({ points }: { points: { id: string | number; title: string; avg: number }[] }) {
+/** The group's average for each film in the order watched. The dashed green line is the club's overall average. */
+export function TrendChart({ points, average }: { points: { id: string | number; title: string; avg: number }[]; average?: number | null }) {
   const gid = useId()
   if (points.length < 2) return null
   const W = 420, H = 210, P = { l: 24, r: 10, t: 24, b: 16 }
@@ -46,6 +46,7 @@ export function TrendChart({ points }: { points: { id: string | number; title: s
   const y = (v: number) => P.t + (1 - v / 5) * (H - P.t - P.b)
   const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.avg).toFixed(1)}`).join(" ")
   const area = `${line} L${x(points.length - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`
+  const mean = average ?? points.reduce((t, p) => t + p.avg, 0) / points.length
   const hi = points.reduce((a, b) => (b.avg > a.avg ? b : a)), lo = points.reduce((a, b) => (b.avg < a.avg ? b : a))
   const label = (p: typeof hi, dy: number, cls: string) => {
     const i = points.indexOf(p), anchor = i < 2 ? "start" : i > points.length - 3 ? "end" : "middle"
@@ -53,7 +54,7 @@ export function TrendChart({ points }: { points: { id: string | number; title: s
   }
   return (
     <figure data-no-swipe>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Group average per film, oldest to newest. Highest ${hi.title} ${fmt(hi.avg)}, lowest ${lo.title} ${fmt(lo.avg)}.`} className="h-auto w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Group average per film, oldest to newest. Highest ${hi.title} ${fmt(hi.avg)}, lowest ${lo.title} ${fmt(lo.avg)}. Club average ${fmt(mean)}.`} className="h-auto w-full">
         <defs>
           <linearGradient id={gid} x1="0" x2="0" y1="0" y2="1">
             <stop offset="0%" style={{ stopColor: "var(--us)", stopOpacity: 0.32 }} />
@@ -66,14 +67,14 @@ export function TrendChart({ points }: { points: { id: string | number; title: s
             <text x={P.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted-foreground" fontSize={11}>{v}</text>
           </g>
         ))}
-        <line x1={P.l} x2={W - P.r} y1={y(3.5)} y2={y(3.5)} className="stroke-pos" strokeWidth={1.5} strokeDasharray="5 5" />
+        <line x1={P.l} x2={W - P.r} y1={y(mean)} y2={y(mean)} className="stroke-pos" strokeWidth={1.5} strokeDasharray="5 5" />
         <path d={area} fill={`url(#${gid})`} />
         <path d={line} fill="none" className="stroke-us" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => <circle key={p.id} cx={x(i)} cy={y(p.avg)} r={p === hi ? 6 : p === lo ? 5 : 3.5} className={p === hi ? "fill-gold" : p === lo ? "fill-world" : "fill-us"} />)}
         {label(hi, -10, "fill-foreground")}
         {lo !== hi && label(lo, 17, "fill-muted-foreground")}
       </svg>
-      <p className="mt-1 text-xs text-muted-foreground"><span className="mr-1 inline-block h-0 w-5 border-t-2 border-dashed border-pos align-middle" />3.5 and up counts as liked</p>
+      <p className="mt-1 text-xs text-muted-foreground"><span className="mr-1 inline-block h-0 w-5 border-t-2 border-dashed border-pos align-middle" />Club average {fmt(mean)}</p>
       <details className="text-sm text-muted-foreground">
         <summary className="min-h-11 cursor-pointer py-2">Show the numbers</summary>
         <ol className="list-decimal pl-5">{points.map(p => <li key={p.id}>{p.title} {fmt(p.avg)}</li>)}</ol>
