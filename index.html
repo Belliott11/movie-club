@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Movie Club</title>
+<style>
+:root{--bg:#fff;--fg:#1b1b1f;--mut:#6b6b76;--card:#f4f4f7;--acc:#c0392b;--line:#dcdce3}
+@media(prefers-color-scheme:dark){:root{--bg:#141418;--fg:#ececf1;--mut:#9a9aa8;--card:#1e1e25;--acc:#ff6b5b;--line:#33333d}}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:760px;padding:16px;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h1{margin:0;font-size:1.4rem}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin:12px 0;border-bottom:1px solid var(--line)}
+nav button{background:none;border:0;padding:8px 10px;color:var(--mut);cursor:pointer;font:inherit;border-bottom:2px solid transparent}
+nav button.on{color:var(--fg);border-color:var(--acc)}
+select,input,button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+button,.btn{cursor:pointer}
+.btn{display:inline-block;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--card)}
+.card{background:var(--card);border-radius:8px;margin:8px 0}
+.card summary{list-style:none;display:flex;gap:10px;align-items:center;padding:10px 12px;cursor:pointer;flex-wrap:wrap}
+.t{flex:1;min-width:150px;font-weight:600}
+small,.meta,.hint{color:var(--mut)}
+.avg{font-weight:700;min-width:3ch;text-align:right}.avg.o{color:var(--mut);font-weight:500}
+.diff{min-width:4ch;font-size:.85rem}.up{color:#2e9e5b}.down{color:var(--acc)}
+.body{padding:4px 12px 12px;display:flex;flex-direction:column;gap:10px}
+.rates,.out,.chips{display:flex;flex-wrap:wrap;gap:8px}
+.rates label,.out label{display:flex;flex-direction:column;font-size:.8rem;color:var(--mut)}
+.out input{width:7rem}
+.chip{display:flex;gap:4px;align-items:center;background:var(--card);padding:4px 10px;border-radius:99px}
+form{display:flex;gap:6px;flex-wrap:wrap}
+table{border-collapse:collapse;width:100%}td,th{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line)}
+button.on{background:var(--acc);color:#fff}.x{padding:0 6px;color:var(--mut)}
+</style>
+</head>
+<body>
+<header><h1>🎬 Movie Club</h1><select id="me"></select></header>
+<nav>
+  <button data-tab="movies">Movies</button><button data-tab="next">Next up</button>
+  <button data-tab="suggest">Suggestions</button><button data-tab="watch">Watchlists</button><button data-tab="stats">Stats</button>
+</nav>
+<main id="view">Loading…</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="seed.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
