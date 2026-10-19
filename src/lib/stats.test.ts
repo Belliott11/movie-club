@@ -71,3 +71,32 @@ test("sortRows handles numbers, text and keeps blanks last both ways", () => {
   expect(sortRows(r, x => x.v, "desc").map(x => x.n)).toEqual(["c", "b", "A"])
   expect(sortRows(r, x => x.n, "asc").map(x => x.n)).toEqual(["A", "b", "c"])
 })
+
+import { agreementMatrix, deviations, median, overview } from "./stats"
+test("median, overview and deviations", () => {
+  expect(median([3, 1, 2])).toBe(2)
+  expect(median([1, 2, 3, 4])).toBe(2.5)
+  expect(median([])).toBeNull()
+  const ms = [mk(1, "A", { A: 5, B: 3 }), mk(2, "A", { A: 2, B: 3, C: 4 }), mk(3, "A", {})]
+  expect(overview(ms)).toMatchObject({ films: 2, ratings: 5, average: 17 / 5 })
+  const d = deviations(ms, "A")
+  expect(d.map(x => x.diff)).toEqual([2, -1.5]) // biggest difference first
+})
+test("agreement matrix is symmetric and drops people without enough shared films", () => {
+  const ms = [1, 2, 3, 4, 5].map(i => mk(i, "A", { A: 4, B: 3, C: 1 })).concat([mk(6, "A", { D: 5 })])
+  const m = agreementMatrix(ms, ["A", "B", "C", "D"])
+  expect(m.people).toEqual(["A", "B", "C"])
+  expect(m.get("A", "B")).toEqual(m.get("B", "A"))
+  expect(m.get("A", "B")?.diff).toBe(1)
+  expect(m.get("A", "D")).toBeUndefined()
+})
+
+import { awardWinners } from "./stats"
+test("award winners: harshest, most generous, contrarian need enough films; best pick needs a rated pick", () => {
+  const ms = [1, 2, 3, 4, 5].map(i => mk(i, i === 1 ? "B" : "A", { A: 2, B: 4, C: 5 }))
+  const w = awardWinners(ms, ["A", "B", "C"])
+  expect(w.harsh?.n).toBe("A")
+  expect(w.kind?.n).toBe("C")
+  expect(w.picker?.n).toBeDefined()
+  expect(awardWinners(ms.slice(0, 2), ["A", "B", "C"]).harsh).toBeUndefined()
+})

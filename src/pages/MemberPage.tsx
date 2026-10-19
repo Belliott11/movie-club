@@ -1,72 +1,164 @@
 import { ArrowLeft } from "lucide-react"
+import { Avatar } from "@/components/Avatar"
 import { Histogram } from "@/components/Charts"
+import { DeviationChart } from "@/components/DeviationChart"
+import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { avg, fmt, groupAvg, histogram, tasteOverlap, tilt } from "@/lib/stats"
+import { avg, awardWinners, deviations, fmt, groupAvg, histogram, median, memberStats, tasteOverlap, tilt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
+import type { Movie } from "@/lib/types"
+
+const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
+const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function MemberPage({ name }: { name: string }) {
   const { movies, members } = useStore()
   const back = (
     <a href="#/stats" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}><ArrowLeft /> Stats</a>
   )
-  const mine = movies.filter(m => m.ratings[name] != null)
-  const picks = movies.filter(m => m.pick === name)
   if (!members.includes(name)) return <>{back}<p className="mt-3 text-muted-foreground">Nobody called {name} is in the club.</p></>
 
+  const rated = movies.filter(m => Object.keys(m.ratings).length)
+  const mine = movies.filter(m => m.ratings[name] != null)
+  const picks = movies.filter(m => m.pick === name)
   const sorted = [...mine].sort((a, b) => b.ratings[name] - a.ratings[name] || a.title.localeCompare(b.title))
+  const values = mine.map(m => m.ratings[name])
   const pickAvg = avg(picks.map(groupAvg).filter((x): x is number => x != null))
   const t = tilt(movies, name)
+  const attend = rated.length ? mine.length / rated.length : 0
   const partners = tasteOverlap(movies, members).filter(o => o.a === name || o.b === name)
   const other = (o: { a: string; b: string }) => (o.a === name ? o.b : o.a)
+  const dev = deviations(movies, name).slice(0, 8)
+  const me = memberStats(movies, members).find(p => p.n === name)
+  const w = awardWinners(movies, members)
+
+  const tags = [
+    w.picker?.n === name && "Best pick",
+    w.harsh?.n === name && "Harshest critic",
+    w.kind?.n === name && "Most generous",
+    w.odd?.n === name && "Most contrarian",
+    attend === 1 && rated.length > 3 && "Never missed a film",
+    t != null && mine.length >= 5 && Math.abs(t) >= 0.3 && `Rates ${fmt(Math.abs(t), 1)} ${t > 0 ? "higher" : "lower"} than everyone else`,
+  ].filter(Boolean) as string[]
 
   return (
-    <div className="rise flex flex-col gap-5">
+    <div className="rise flex flex-col gap-8">
       {back}
-      <h2 className="font-display text-4xl leading-none font-extrabold tracking-tight">{name}</h2>
+      <header className="flex items-center gap-4">
+        <Avatar name={name} size="lg" />
+        <div className="min-w-0">
+          <h2 className="font-display text-4xl leading-none font-extrabold tracking-tight">{name}</h2>
+          <p className="mt-1.5 text-sm text-muted-foreground">{mine.length} {mine.length === 1 ? "film" : "films"} rated{picks.length > 0 && ` · ${picks.length} ${picks.length === 1 ? "pick" : "picks"}`}</p>
+        </div>
+      </header>
+      {tags.length > 0 && (
+        <ul className="-mt-4 flex flex-wrap gap-2">
+          {tags.map((tag, i) => <li key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${i === 0 && tags[0] === "Best pick" ? "bg-gold text-background" : "bg-card ring-1 ring-foreground/10"}`}>{tag}</li>)}
+        </ul>
+      )}
+
       {mine.length === 0 ? (
         <p className="text-muted-foreground">{name} hasn't rated a film yet.</p>
       ) : (
         <>
           <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ["Films rated", String(mine.length)],
-              ["Average given", fmt(avg(mine.map(m => m.ratings[name])))],
-              ["Their picks average", fmt(pickAvg)],
-              ["Compared with others", t == null ? "–" : Math.abs(t) < 0.05 ? "About even" : `${fmt(Math.abs(t), 1)} ${t > 0 ? "higher" : "lower"}`],
-            ].map(([l, v]) => (
-              <Card key={l} className="gap-0.5 px-4"><dt className="text-xs text-muted-foreground">{l}</dt><dd className="font-display text-2xl font-bold">{v}</dd></Card>
-            ))}
+            <Stat label="Average given" value={fmt(avg(values))} />
+            <Stat label="Attendance" value={`${Math.round(attend * 100)}%`} sub={`${mine.length} of ${rated.length} films`} bar={attend} />
+            <Stat label="Their picks average" value={fmt(pickAvg)} sub={picks.length ? `${picks.length} ${picks.length === 1 ? "pick" : "picks"}` : "no picks yet"} />
+            <Stat label="Compared with others" value={t == null ? "–" : Math.abs(t) < 0.05 ? "Even" : `${t > 0 ? "+" : "−"}${fmt(Math.abs(t), 1)}`} sub={t == null ? undefined : Math.abs(t) < 0.05 ? "rates like the group" : t > 0 ? "rates higher" : "rates lower"} tone={t == null ? undefined : t > 0.05 ? "pos" : t < -0.05 ? "us" : undefined} />
           </dl>
+
           <section>
             <h3 className="mb-2 text-xl font-bold">How {name} rates</h3>
-            <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} />
+            <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} />
           </section>
-          <section className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <h3 className="mb-1 text-xl font-bold">Favorites</h3>
-              <ol className="list-decimal pl-5">{sorted.slice(0, 3).map(m => <li key={m.id}><a className="underline" href={`#/films/${encodeURIComponent(String(m.id))}`}>{m.title}</a> <b>{m.ratings[name]}</b></li>)}</ol>
-            </div>
-            <div>
-              <h3 className="mb-1 text-xl font-bold">Least favorite</h3>
-              <ol className="list-decimal pl-5">{[...sorted].reverse().slice(0, 3).map(m => <li key={m.id}><a className="underline" href={`#/films/${encodeURIComponent(String(m.id))}`}>{m.title}</a> <b>{m.ratings[name]}</b></li>)}</ol>
-            </div>
+
+          {dev.length > 0 && (
+            <section>
+              <h3 className="text-xl font-bold">Where {name} differs from the group</h3>
+              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Green is higher, red is lower.</p>
+              <DeviationChart rows={dev} name={name} />
+            </section>
+          )}
+
+          <section className="grid gap-6 sm:grid-cols-2">
+            <Strip title="Favorites" films={sorted.slice(0, 3)} rating={m => m.ratings[name]} />
+            <Strip title="Least favorite" films={[...sorted].reverse().slice(0, 3)} rating={m => m.ratings[name]} />
           </section>
         </>
       )}
+
       {picks.length > 0 && (
         <section>
           <h3 className="mb-1 text-xl font-bold">Their picks</h3>
-          <ul>{picks.map(m => <li key={m.id}><a className="underline" href={`#/films/${encodeURIComponent(String(m.id))}`}>{m.title}</a> <small className="text-muted-foreground">{m.year}</small> · club average <b>{fmt(groupAvg(m))}</b></li>)}</ul>
+          <p className="mb-3 text-sm text-muted-foreground">The number on each poster is the club's average rating.</p>
+          <ul className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-4">
+            {[...picks].sort((a, b) => (groupAvg(b) ?? -1) - (groupAvg(a) ?? -1)).map((m, i) => (
+              <li key={m.id} className="min-w-0">
+                <a href={filmHref(m)} className="flex flex-col gap-1.5">
+                  <PosterThumb title={m.title} year={m.year} className="w-full" badge={groupAvg(m) == null ? "–" : fmt(groupAvg(m), 1)} gold={i === 0 && groupAvg(m) != null} />
+                  <span className="truncate text-sm leading-tight font-medium">{m.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {me?.pickAvg != null && mine.length > 0 && values.length > 0 && <p className="mt-3 text-sm text-muted-foreground">Their picks average {fmt(me.pickAvg)}; the club's overall average is {fmt(avg(rated.map(groupAvg).filter((x): x is number => x != null)))}.</p>}
         </section>
       )}
+
       {partners.length > 0 && (
         <section>
-          <h3 className="mb-1 text-xl font-bold">Taste</h3>
-          <p>Closest to <a className="underline" href={`#/people/${encodeURIComponent(other(partners[0]))}`}>{other(partners[0])}</a> ({fmt(partners[0].diff)} stars apart).</p>
-          {partners.length > 1 && <p>Furthest from <a className="underline" href={`#/people/${encodeURIComponent(other(partners.at(-1)!))}`}>{other(partners.at(-1)!)}</a> ({fmt(partners.at(-1)!.diff)} stars apart).</p>}
+          <h3 className="mb-3 text-xl font-bold">Taste</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Partner label="Closest taste" o={partners[0]} name={name} other={other(partners[0])} />
+            {partners.length > 1 && <Partner label="Furthest apart" o={partners.at(-1)!} name={name} other={other(partners.at(-1)!)} />}
+          </div>
         </section>
       )}
     </div>
+  )
+}
+
+function Stat({ label, value, sub, bar, tone }: { label: string; value: string; sub?: string; bar?: number; tone?: "pos" | "us" }) {
+  return (
+    <div className="flex flex-col gap-0.5 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className={`font-display text-3xl leading-none font-extrabold tracking-tight ${tone === "pos" ? "text-pos" : tone === "us" ? "text-us" : ""}`}>{value}</dd>
+      {bar != null && <span className="mt-1 block h-1.5 rounded-full bg-muted"><span className="grow block h-1.5 rounded-full bg-world" style={{ width: `${bar * 100}%` }} /></span>}
+      {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
+    </div>
+  )
+}
+
+function Strip({ title, films, rating }: { title: string; films: Movie[]; rating: (m: Movie) => number }) {
+  return (
+    <div>
+      <h3 className="mb-3 text-xl font-bold">{title}</h3>
+      <ol className="flex gap-4">
+        {films.map(m => (
+          <li key={m.id} className="w-20 min-w-0">
+            <a href={filmHref(m)} className="flex flex-col gap-1.5">
+              <PosterThumb title={m.title} year={m.year} className="w-full" badge={rating(m)} gold={title === "Favorites" && rating(m) >= 4.5} />
+              <span className="line-clamp-2 text-xs leading-tight font-medium">{m.title}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function Partner({ label, o, name, other }: { label: string; o: { diff: number; n: number }; name: string; other: string }) {
+  const closeness = Math.max(0, 1 - o.diff / 1.5)
+  return (
+    <a href={personHref(other)} className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 hover:bg-muted">
+      <span className="flex -space-x-2"><Avatar name={name} className="ring-2 ring-card" /><Avatar name={other} className="ring-2 ring-card" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-xs text-muted-foreground">{label}</span>
+        <span className="block font-medium">{other}</span>
+        <span className="mt-1 block h-1.5 rounded-full bg-muted"><span className="block h-1.5 rounded-full bg-world" style={{ width: `${closeness * 100}%` }} /></span>
+        <span className="text-xs text-muted-foreground">{fmt(o.diff)} stars apart over {o.n} films</span>
+      </span>
+    </a>
   )
 }

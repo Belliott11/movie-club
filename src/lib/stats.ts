@@ -112,3 +112,51 @@ export const histogram = (ms: Movie[], name: string) =>
 /** Group average per film, oldest first. */
 export const trend = (ms: Movie[]) =>
   [...ms].sort((a, b) => a.seq - b.seq).map(m => ({ id: m.id, title: m.title, avg: groupAvg(m) })).filter((x): x is { id: Movie["id"]; title: string; avg: number } => x.avg != null)
+
+export const median = (v: number[]) => {
+  if (!v.length) return null
+  const s = [...v].sort((a, b) => a - b), m = Math.floor(s.length / 2)
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2
+}
+
+/** The numbers for the Stats scoreboard. */
+export function overview(ms: Movie[]) {
+  const rated = ms.filter(m => Object.keys(m.ratings).length)
+  const all = rated.flatMap(m => Object.values(m.ratings))
+  return { films: rated.length, ratings: all.length, average: avg(all), best: bestFilm(rated) }
+}
+
+/** Average star distance for every pair with at least `min` shared films, both directions, for a heatmap. */
+export function agreementMatrix(ms: Movie[], members: string[], min = 5) {
+  const cell = new Map<string, { diff: number; n: number }>()
+  for (const o of tasteOverlap(ms, members, min)) {
+    cell.set(`${o.a}|${o.b}`, { diff: o.diff, n: o.n })
+    cell.set(`${o.b}|${o.a}`, { diff: o.diff, n: o.n })
+  }
+  const people = members.filter(a => members.some(b => b !== a && cell.has(`${a}|${b}`)))
+  return { people, get: (a: string, b: string) => cell.get(`${a}|${b}`) }
+}
+
+/** For each film this person rated with someone else: their rating minus the others' average, biggest differences first. */
+export function deviations(ms: Movie[], name: string) {
+  return ms
+    .filter(m => m.ratings[name] != null && Object.keys(m.ratings).length > 1)
+    .map(m => {
+      const others = Object.entries(m.ratings).filter(([n]) => n !== name).map(([, v]) => v)
+      return { movie: m, mine: m.ratings[name], others: avg(others)!, diff: m.ratings[name] - avg(others)! }
+    })
+    .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
+}
+
+/** Award winners from memberStats. Critic awards need `minFilms` rated; "best pick" needs at least one pick that was rated. */
+export function awardWinners(ms: Movie[], members: string[], minFilms = 5) {
+  const stats = memberStats(ms, members).filter(p => p.count)
+  const regulars = stats.filter(p => p.count >= minFilms)
+  const top = <T,>(arr: T[], f: (p: T) => number) => [...arr].sort((a, b) => f(b) - f(a))[0] as T | undefined
+  return {
+    picker: top(stats.filter(p => p.pickAvg != null), p => p.pickAvg!),
+    harsh: top(regulars, p => -p.avg!),
+    kind: top(regulars, p => p.avg!),
+    odd: top(regulars, p => p.offGroup!),
+  }
+}

@@ -97,7 +97,7 @@ function Shell() {
       </main>
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
         <ClubCode />
-        Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.
+        <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
       </footer>
     </div>
     </>
