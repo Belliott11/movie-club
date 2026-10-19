@@ -1,0 +1,98 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Every color is a token. Light and dark are two sets of the same names. */
+:root {
+  --radius: 0.75rem;
+  --background: #e8ecf3;
+  --foreground: #161d36;
+  --card: #ffffff;
+  --card-foreground: #161d36;
+  --primary: #161d36;
+  --primary-foreground: #ffffff;
+  --secondary: #dbe0ec;
+  --secondary-foreground: #161d36;
+  --muted: #dbe0ec;
+  --muted-foreground: #565f7e;
+  --accent: #dbe0ec;
+  --accent-foreground: #161d36;
+  --destructive: #c62d1a;
+  --border: #cdd3e2;
+  --input: #cdd3e2;
+  --ring: #6a5ae0;
+  /* meaning colors stay fixed */
+  --us: #ff4b2b;
+  --world: #6a5ae0;
+  --pos: #1e9d63;
+  --gold: #a87a00;
+}
+.dark {
+  --background: #0f1426;
+  --foreground: #edf0f8;
+  --card: #1a2140;
+  --card-foreground: #edf0f8;
+  --primary: #edf0f8;
+  --primary-foreground: #0f1426;
+  --secondary: #252d52;
+  --secondary-foreground: #edf0f8;
+  --muted: #252d52;
+  --muted-foreground: #9aa3c4;
+  --accent: #252d52;
+  --accent-foreground: #edf0f8;
+  --destructive: #ff7a66;
+  --border: #2d3660;
+  --input: #2d3660;
+  --ring: #8f82ff;
+  --us: #ff6a4d;
+  --world: #8f82ff;
+  --pos: #3cc688;
+  --gold: #f2c230;
+}
+
+@theme inline {
+  --font-sans: "Public Sans", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", "Public Sans", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-us: var(--us);
+  --color-world: var(--world);
+  --color-pos: var(--pos);
+  --color-gold: var(--gold);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  html { background: var(--background); }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+  h1, h2, h3 { font-family: var(--font-display); }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+}
+
+/* press feedback and the one rise-in when a screen opens */
+button:not(:disabled):active { transform: scale(0.97); }
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise 0.35s ease-out both; }
+  .grow { transform-origin: left; animation: grow 0.6s 0.1s ease-out both; }
+}
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes grow { from { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

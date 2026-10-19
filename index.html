@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Movie Club</title>
 <meta name="theme-color" content="#161D36">
 <link rel="manifest" href="manifest.webmanifest">
@@ -10,143 +10,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{
-  --fog:#E8ECF3;--paper:#fff;--ink:#161D36;--mut:#5B6482;--line:#CDD3E2;
-  --us:#FF4B2B;--world:#6A5AE0;--good:#1E9D63;--gold:#B8860B;
-  --r:10px;
-}
-@media(prefers-color-scheme:dark){:root{
-  --fog:#0F1426;--paper:#1A2140;--ink:#EDF0F8;--mut:#9AA3C4;--line:#2D3660;
-  --us:#FF6A4D;--world:#8F82FF;--good:#3CC688;--gold:#F2C230;
-}}
-*{box-sizing:border-box}
-html{background:var(--fog)}
-body{margin:0 auto;max-width:820px;padding:20px 16px 64px;color:var(--ink);background:var(--fog);
-  font:400 16px/1.5 "Public Sans",system-ui,sans-serif}
-h1,h2,h3,.t,.num{font-family:"Bricolage Grotesque","Public Sans",sans-serif}
-
-/* masthead */
-header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 0 18px}
-h1{margin:0;font-size:clamp(2.4rem,9vw,4rem);line-height:.95;font-weight:800;letter-spacing:-.03em}
-#sub{margin:6px 0 0;color:var(--mut);font-size:.95rem}
-.who-sel{display:flex;flex-direction:column;gap:2px;font-size:.8rem;color:var(--mut)}
-
-/* controls */
-select,input[type=text],input[type=number],input:not([type]),input[type=search]{
-  font:inherit;color:var(--ink);background:var(--paper);border:2px solid var(--line);border-radius:8px;padding:6px 10px}
-select:focus-visible,input:focus-visible,button:focus-visible,summary:focus-visible,.btn:focus-within{outline:3px solid var(--world);outline-offset:2px}
-button,.btn{font:600 .95rem "Public Sans",sans-serif;color:var(--paper);background:var(--ink);border:0;border-radius:8px;
-  padding:8px 14px;cursor:pointer;box-shadow:0 4px 0 var(--us);transform:translateY(0);transition:transform .08s,box-shadow .08s}
-button:hover,.btn:hover{transform:translateY(1px);box-shadow:0 3px 0 var(--us)}
-button:active,.btn:active{transform:translateY(4px);box-shadow:0 0 0 var(--us)}
-.btn{display:inline-block}
-
-/* tabs */
-nav{display:flex;gap:4px;padding:4px;background:var(--paper);border-radius:12px;overflow-x:auto;margin-bottom:22px}
-nav button{flex:1;white-space:nowrap;background:none;color:var(--mut);box-shadow:none;transform:none;padding:8px 12px;border-radius:9px}
-nav button:hover{color:var(--ink);transform:none;box-shadow:none}
-nav button.on{background:var(--ink);color:var(--paper)}
-
-/* legend */
-.legend{display:flex;gap:18px;flex-wrap:wrap;color:var(--mut);font-size:.88rem;margin:0 0 14px}
-.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-.legend .u{background:var(--us)}.legend .w{background:var(--world)}
-
-/* film rows */
-.card{background:var(--paper);border-radius:var(--r);margin:0 0 10px}
-.card summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:52px 1fr auto;gap:2px 16px;padding:14px 16px 12px}
-.card summary::-webkit-details-marker{display:none}
-.t{font-size:1.2rem;font-weight:700;letter-spacing:-.01em;line-height:1.2}
-.t small{font:500 .9rem "Public Sans";color:var(--mut);margin-left:4px}
-.pt{grid-column:1;grid-row:1/6;margin-right:2px}.pt img,.pt .noimg{width:52px;aspect-ratio:2/3;border-radius:6px}
-.outs{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:2px 14px;font-size:.86rem;color:var(--mut);margin-top:2px}.outs b{color:var(--ink);font-weight:600}
-.t,.meta{grid-column:2}
-.meta{color:var(--mut);font-size:.88rem}
-.num{grid-column:3;grid-row:1/3;align-self:center;font-size:2.2rem;font-weight:800;line-height:1;letter-spacing:-.03em}
-.scale{grid-column:2/-1;position:relative;height:26px;margin-top:10px}
-.scale::before{content:"";position:absolute;left:0;right:0;top:12px;height:2px;background:var(--line)}
-.scale .tick{position:absolute;top:8px;width:2px;height:10px;background:var(--line)}
-.scale .gap{position:absolute;top:10px;height:6px;border-radius:3px;background:linear-gradient(90deg,var(--us),var(--world));opacity:.35}
-.scale .dot{position:absolute;top:3px;width:20px;height:20px;margin-left:-10px;border-radius:50%;border:3px solid var(--paper)}
-.scale .dot.u{background:var(--us);z-index:2}.scale .dot.w{background:var(--world);width:16px;height:16px;top:5px;margin-left:-8px;z-index:1}
-.diff{grid-column:2/-1;font-size:.82rem;color:var(--mut)}
-.diff b{color:var(--ink)}
-.card[open] summary{padding-bottom:6px}
-.body{padding:6px 16px 16px;display:flex;flex-direction:column;gap:14px}
-.rates,.out{display:flex;flex-wrap:wrap;gap:10px}
-.rates label,.out label{display:flex;flex-direction:column;gap:2px;font-size:.8rem;color:var(--mut)}
-.out>b{align-self:center;color:var(--ink);font-weight:600}
-.out input{width:7.5rem}
-details>summary b{font-weight:600}
-details.card:not(:has(.t))>summary{display:block;font-weight:600}
-
-/* attendance switches */
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:flex;align-items:center;gap:8px;background:var(--paper);padding:6px 12px 6px 8px;border-radius:99px;cursor:pointer}
-.chip input{appearance:none;margin:0;width:34px;height:20px;border-radius:99px;background:var(--line);position:relative;cursor:pointer;transition:background .15s}
-.chip input::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:var(--paper);transition:transform .15s}
-.chip input:checked{background:var(--us)}
-.chip input:checked::after{transform:translateX(14px)}
-.chip input:focus-visible{outline:3px solid var(--world);outline-offset:2px}
-
-/* content */
-h3{font-size:1.15rem;font-weight:700;margin:26px 0 8px;letter-spacing:-.01em}
-.hint{color:var(--mut)}
-ol,ul{padding-left:1.2rem;max-width:70ch}li{margin:4px 0}
-li small{color:var(--mut)}
-form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-table{border-collapse:collapse;width:100%;background:var(--paper);border-radius:var(--r);overflow:hidden}
-td,th{text-align:left;padding:8px 12px}th{font-weight:600;color:var(--mut);font-size:.85rem}
-tr+tr td{border-top:1px solid var(--line)}
-button.on{background:var(--us);color:#fff}
-.x{background:none;color:var(--mut);box-shadow:none;padding:0 6px}
-.x:hover{box-shadow:none;color:var(--ink)}
-code{background:var(--paper);padding:1px 6px;border-radius:4px}
-/* film detail */
-.back{color:var(--mut);text-decoration:none;font-weight:600}.back:hover{color:var(--ink)}
-.dt{font-size:clamp(1.8rem,6vw,2.8rem);line-height:1.05;font-weight:800;letter-spacing:-.025em;margin:0 0 6px}
-.dt small{font:500 1rem "Public Sans";color:var(--mut)}
-.detail{display:grid;grid-template-columns:minmax(150px,230px) 1fr;gap:24px;align-items:start;margin-top:8px}
-.poster{width:100%;border-radius:var(--r);display:block;background:var(--paper)}
-.tag{font-family:"Bricolage Grotesque",sans-serif;font-size:1.15rem;font-weight:500;margin:10px 0}
-.syn{max-width:62ch;line-height:1.6}
-.crew{margin:14px 0}.crew div{display:grid;grid-template-columns:8.5rem 1fr;gap:8px;padding:5px 0}
-.crew dt{color:var(--mut);font-size:.9rem}.crew dd{margin:0}
-.big{font:800 2rem "Bricolage Grotesque",sans-serif;margin:0 0 6px}.big small{font:400 .9rem "Public Sans";color:var(--mut)}
-.plain{list-style:none;padding:0;display:flex;flex-wrap:wrap;gap:6px 16px}
-.cast{list-style:none;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:14px;max-width:none}
-.cast li{display:flex;flex-direction:column;gap:2px;margin:0}.cast b{font-weight:600;font-size:.9rem;line-height:1.25}.cast small{line-height:1.25}
-.cast img,.noimg{width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:8px;background:var(--paper);display:block}
-footer{margin-top:40px;color:var(--mut);font-size:.8rem}footer a{color:inherit}
-a.btn{text-decoration:none}
-@media(max-width:600px){.detail{grid-template-columns:1fr}.poster{max-width:220px}}
-.num.gold{color:var(--gold)}
-button,.btn,select,summary{min-height:44px}
-button,.btn{display:inline-flex;align-items:center;justify-content:center}
-.chip{min-height:44px}.chip input{min-height:0}
-@media(max-width:700px){
-  nav{position:fixed;left:0;right:0;bottom:0;z-index:10;margin:0;border-radius:16px 16px 0 0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgb(0 0 0/.14)}
-  body{padding-bottom:96px}
-}
-@media(max-width:520px){.num{font-size:1.8rem}.card summary{padding:12px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style>
+<script>
+  // follow the device's light/dark setting
+  const m = matchMedia("(prefers-color-scheme: dark)");
+  const apply = () => document.documentElement.classList.toggle("dark", m.matches);
+  apply(); m.addEventListener("change", apply);
+</script>
+<script src="config.js"></script>
 </head>
 <body>
-<header>
-  <div><h1>Movie Club</h1><p id="sub"></p></div>
-  <label class="who-sel">You are<select id="me"></select></label>
-</header>
-<nav>
-  <button data-tab="movies">Movies</button><button data-tab="next">Next up</button>
-  <button data-tab="suggest">Suggestions</button><button data-tab="watch">Watchlists</button><button data-tab="stats">Stats</button>
-</nav>
-<main id="view">Loading…</main>
-<footer>Film data and images from <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</footer>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
-<script src="config.js"></script>
-<script src="seed.js"></script>
-<script src="app.js"></script>
+<div id="root"></div>
+<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
