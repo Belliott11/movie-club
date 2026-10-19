@@ -5,6 +5,7 @@ import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Suggestion } from "@/lib/types"
 import { Button } from "@/components/ui/button"
+import { FilmSearch } from "@/components/FilmSearch"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
@@ -72,18 +73,19 @@ export default function Suggest() {
     return () => { dead = true }
   }, [movies])
 
+  const [title, setTitle] = useState("")
+  const [year, setYear] = useState("")
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    const form = e.currentTarget, f = new FormData(form)
-    await suggest(String(f.get("title")).trim(), +String(f.get("year")) || null)
-    form.reset()
+    await suggest(title.trim(), +year || null)
+    setTitle(""); setYear("")
   }
 
   return (
     <div className="flex flex-col gap-6">
       <form onSubmit={submit} className="flex flex-wrap gap-2">
-        <Input name="title" placeholder="Suggest a film" required className="h-10 min-w-48 flex-1" />
-        <Input name="year" type="number" placeholder="Year" className="h-10 w-24" />
+        <FilmSearch name="title" placeholder="Start typing a film to suggest" required value={title} onChange={setTitle} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : "") }} />
+        <Input name="year" type="number" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
         <Button type="submit" className="h-10 px-4">Suggest</Button>
       </form>
       <section>
