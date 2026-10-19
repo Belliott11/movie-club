@@ -118,6 +118,26 @@ async function importWatchlist(file) {
 }
 
 // ---------- views ----------
+// ---------- poster + TMDB score for the list (cached per browser) ----------
+const MINI = (() => { try { return JSON.parse(localStorage.getItem("mini-v1") || "{}"); } catch { return {}; } })();
+async function loadMinis() {
+  if (!CONFIG.TMDB_KEY) return;
+  let n = 0;
+  for (const m of S.movies) {
+    const k = key(m.title, m.year);
+    if (MINI[k]) continue;
+    const r = (await tmdb("/search/movie", `&query=${encodeURIComponent(m.title)}&year=${m.year}`))?.results?.[0];
+    MINI[k] = r ? { p: r.poster_path, v: r.vote_average } : { p: null, v: null };
+    if (++n % 6 === 0) render();
+  }
+  if (n) { try { localStorage.setItem("mini-v1", JSON.stringify(MINI)); } catch {} render(); }
+}
+function outsideChips(m) {
+  const mini = MINI[key(m.title, m.year)];
+  const c = [["IMDb", m.imdb, "/10"], ["Rotten Tomatoes", m.rt, "%"], ["Metacritic", m.mc, "/100"], ["Letterboxd", m.lb, "/5"], ["TMDB", mini?.v || null, "/10"]]
+    .filter(([, v]) => v != null && v !== 0);
+  return c.length ? c.map(([l, v, u]) => `<span><b>${l}</b> ${fmt(+v, 1)}${u}</span>`).join("") : `<span class="hint">Looking up outside ratings…</span>`;
+}
 function movieCard(m) {
   const g = groupAvg(m), o = outsideAvg(m), d = g != null && o != null ? g - o : null;
   const mem = [...new Set([...members(), ...Object.keys(m.ratings)])];
@@ -125,12 +145,13 @@ function movieCard(m) {
   const scale = `<div class="scale" aria-hidden="true">${[1, 2, 3, 4].map(i => `<span class="tick" style="${pos(i)}"></span>`).join("")}
     ${g != null && o != null ? `<span class="gap" style="left:${Math.min(g, o) / 5 * 100}%;width:${Math.abs(g - o) / 5 * 100}%"></span>` : ""}
     ${o != null ? `<span class="dot w" style="${pos(o)}"></span>` : ""}${g != null ? `<span class="dot u" style="${pos(g)}"></span>` : ""}</div>`;
-  const note = d == null ? (o == null ? "No outside rating yet" : "") : Math.abs(d) < 0.05 ? "Matches the outside average" : `<b>${fmt(Math.abs(d))}</b> ${d > 0 ? "above" : "below"} the outside average (${fmt(o)})`;
+  const note = d == null ? "" : Math.abs(d) < 0.05 ? "Matches the outside average" : `<b>${fmt(Math.abs(d))}</b> ${d > 0 ? "above" : "below"} the outside average (${fmt(o)})`;
   return `<details class="card"><summary>
+    <span class="pt">${MINI[key(m.title, m.year)]?.p ? `<img src="${IMG}w154${MINI[key(m.title, m.year)].p}" alt="" loading="lazy">` : `<span class="noimg"></span>`}</span>
     <span class="t">${esc(m.title)} <small>${m.year || ""}</small></span>
     <span class="meta">${esc(m.pick)}'s pick · ${Object.keys(m.ratings).length} ratings</span>
     <span class="num" title="Group average">${fmt(g)}</span>
-    ${scale}<span class="diff">${note}</span>
+    ${scale}<span class="outs">${outsideChips(m)}</span><span class="diff">${note}</span>
   </summary><div class="body">
     <div class="rates">${mem.map(n => `<label>${esc(n)}<select data-m="${m.id}" data-r="${esc(n)}"><option value="">–</option>${[...Array(10)].map((_, i) => (i + 1) / 2).map(v => `<option ${m.ratings[n] === v ? "selected" : ""}>${v}</option>`).join("")}</select></label>`).join("")}</div>
     <p><a class="btn" href="#/m/${m.id}">Cast, crew &amp; synopsis</a></p>
@@ -300,4 +321,4 @@ document.addEventListener("submit", async e => {
 });
 
 window.addEventListener("hashchange", () => { render(); scrollTo(0, 0); });
-load().then(() => { render(); fillAll(); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);
+load().then(() => { render(); fillAll(); loadMinis(); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);
