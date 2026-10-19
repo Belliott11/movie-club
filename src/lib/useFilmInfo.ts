@@ -9,7 +9,7 @@ export function useFilmInfo(title: string, year: number | null) {
   const k = key(title, year)
   const [info, setInfo] = useState<any>(cache.get(k))
   useEffect(() => {
-    if (!hasTmdb() || cache.has(k)) return
+    if (!title || !hasTmdb() || cache.has(k)) return
     let dead = false
     searchFilm(title, year).then(r => {
       cache.set(k, r || null)

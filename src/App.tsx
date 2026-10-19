@@ -8,10 +8,13 @@ import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
 import { RefreshCw } from "lucide-react"
 import { pickHeroFilm } from "@/lib/hero"
+import { favoritesOf } from "@/lib/lbstats"
+import { useStills } from "@/lib/useStills"
+import { useFilmInfo } from "@/lib/useFilmInfo"
 import { key, pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Films from "@/pages/Films"
 import MemberPage from "@/pages/MemberPage"
 import FilmPage from "@/pages/FilmPage"
@@ -37,7 +40,7 @@ function ClubCode() {
 }
 
 function Shell() {
-  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini } = useStore()
+  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini, lb, loadLb } = useStore()
   const { pull, busy, ready: willRefresh } = usePull(refresh)
   const [adding, setAdding] = useState(false)
   // easter egg: five quick taps on the title bring up a clapperboard
@@ -53,7 +56,14 @@ function Shell() {
   const up = pickOrder(movies, attending)[0]?.n
   const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [tab, sub ?? ""].filter(Boolean))
-  const heroStill = heroFilm && stillOf(heroFilm)
+  // a person's page opens on their own favorite from Letterboxd when they have imported, otherwise on their favorite club film
+  useEffect(() => { if (tab === "people") loadLb() }, [tab, loadLb])
+  const lbFav = tab === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined
+  const favInfo = useFilmInfo(lbFav?.title ?? "", lbFav?.year ?? null)
+  const subject = lbFav
+    ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: `${sub}'s favorite on Letterboxd` }
+    : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
+  const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject)
   const active = tab === "people" ? "stats" : tab // member pages live under Stats
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(
@@ -91,8 +101,10 @@ function Shell() {
       )}
     <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
       <Hero
-        film={heroFilm}
+        film={subject}
         still={heroStill}
+        onNext={nextStill}
+        canShuffle={stillCount > 1}
         title={
           <header>
             <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>

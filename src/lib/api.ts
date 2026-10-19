@@ -62,3 +62,18 @@ export async function whereToWatch(tmdbId: number): Promise<{ names: string[]; l
   const names = [...new Set([...(r?.flatrate || []), ...(r?.free || []), ...(r?.rent || []).slice(0, 3)].map((p: any) => p.provider_name as string))]
   return { names, link: r?.link || null }
 }
+
+// ---- several stills and posters per film (TMDB /images) ----
+export type FilmImages = { backdrops: string[]; posters: string[] }
+const imageCache = new Map<number, Promise<FilmImages>>()
+
+/** The best-rated stills and posters TMDB has for a film (textless stills and English posters), cached for the session. */
+export function filmImages(tmdbId: number): Promise<FilmImages> {
+  if (!imageCache.has(tmdbId)) {
+    imageCache.set(tmdbId, tmdb<{ backdrops?: any[]; posters?: any[] }>(`/movie/${tmdbId}/images`, "&include_image_language=en,null").then(r => ({
+      backdrops: (r?.backdrops || []).filter(b => b.width >= 1000).sort((a, b) => b.vote_average - a.vote_average).slice(0, 12).map(b => b.file_path as string),
+      posters: (r?.posters || []).sort((a, b) => b.vote_average - a.vote_average).slice(0, 12).map(p => p.file_path as string),
+    })))
+  }
+  return imageCache.get(tmdbId)!
+}
