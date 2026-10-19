@@ -1,14 +1,18 @@
 import { AddPerson } from "@/components/AddPerson"
+import { ImportNudge } from "@/components/ImportNudge"
+import { PickCard } from "@/components/PickCard"
 import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { useEffect } from "react"
 import { seenBy } from "@/lib/letterboxd"
+import { rankForGroup } from "@/lib/picks"
 import { key, pickOrder } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 
 export default function Next() {
-  const { movies, members, attending, toggleAttend, watchlist, lb, loadLb } = useStore()
+  const { movies, members, attending, toggleAttend, watchlist, lb, loadLb, suggestions, suggest } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
+  const ranked = rankForGroup(attending, lb, watchlist, movies, 6)
   const order = pickOrder(movies, attending)
   const watched = new Set(movies.map(m => key(m.title, m.year)))
   const hits = new Map<string, { t: string; y: number; who: string[] }>()
@@ -24,6 +28,7 @@ export default function Next() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ImportNudge />
       <section>
         <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>
         <div className="flex flex-wrap gap-2">
@@ -37,6 +42,29 @@ export default function Next() {
         <div className="mt-3">
           <AddPerson label="Add and switch on" onAdded={n => { if (!attending.includes(n)) toggleAttend(n) }} />
         </div>
+      </section>
+      <section>
+        <h3 className="mb-1 text-xl font-bold">Best picks for tonight</h3>
+        <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films the room has seen are dropped.</p>
+        {!attending.length ? (
+          <p className="text-muted-foreground">Switch on whoever is coming and the best picks show up here.</p>
+        ) : ranked.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {ranked.map(r => (
+              <li key={r.title + r.year}>
+                <PickCard
+                  title={r.title}
+                  year={r.year}
+                  lines={r.reasons}
+                  done={suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))}
+                  onSuggest={() => suggest(r.title, r.year)}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">No clear pick yet. Ask the room to add watchlists or import Letterboxd and this fills in.</p>
+        )}
       </section>
       <section>
         <h3 className="mb-2 text-xl font-bold">Pick order</h3>

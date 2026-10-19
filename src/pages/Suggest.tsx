@@ -1,35 +1,22 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
-import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
+import { hasTmdb, IMG, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
+import { crowdPicks } from "@/lib/picks"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
+import { useFilmInfo } from "@/lib/useFilmInfo"
 import type { Suggestion } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { FilmSearch } from "@/components/FilmSearch"
+import { ImportNudge } from "@/components/ImportNudge"
+import { PickCard } from "@/components/PickCard"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-const infoCache = new Map<string, any>()
-/** Poster, synopsis and score for a suggested title, looked up once per browser session. */
-function useInfo(title: string, year: number | null) {
-  const k = key(title, year)
-  const [info, setInfo] = useState<any>(infoCache.get(k))
-  useEffect(() => {
-    if (!hasTmdb() || infoCache.has(k)) return
-    let dead = false
-    searchFilm(title, year).then(r => {
-      infoCache.set(k, r || null)
-      if (!dead) setInfo(r || null)
-    })
-    return () => { dead = true }
-  }, [k, title, year])
-  return info
-}
-
 function SuggestionCard({ s }: { s: Suggestion }) {
   const { me, vote, removeSuggestion } = useStore()
-  const info = useInfo(s.title, s.year)
+  const info = useFilmInfo(s.title, s.year)
   return (
     <Card className="h-full gap-2 px-3">
       {info?.poster_path ? <img src={`${IMG}w154${info.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
@@ -81,6 +68,9 @@ export default function Suggest() {
   const onLb = (r: Rec) => !!(me && findEntry(lb[me], r.title, r.year)) // already watched on Letterboxd
   const visible = sources.flatMap(src => (recs ?? []).filter(r => r.because === src && !myFlag(r.id) && !onLb(r)).slice(0, 2))
   const hidden = (recs ?? []).filter(r => myFlag(r.id) || onLb(r))
+  const crowd = crowdPicks(lb, movies).slice(0, 8)
+  const importedCount = Object.values(lb).filter(h => h.length).length
+  const suggested = (t: string, y: number) => suggestions.some(x => key(x.title, x.year) === key(t, y))
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -91,6 +81,7 @@ export default function Suggest() {
 
   return (
     <div className="flex flex-col gap-6">
+      <ImportNudge />
       <form onSubmit={submit} className="flex flex-wrap gap-2">
         <FilmSearch name="title" placeholder="Start typing a film to suggest" required value={title} onChange={setTitle} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : "") }} />
         <Input name="year" type="number" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
@@ -104,6 +95,27 @@ export default function Suggest() {
           </ul>
         ) : (
           <p className="text-muted-foreground">No suggestions yet. The projector is warmed up: add a film above and everyone can vote on it.</p>
+        )}
+      </section>
+      <section>
+        <h3 className="mb-1 text-xl font-bold">Crowd picks</h3>
+        <p className="mb-3 text-sm text-muted-foreground">Films at least two of you rated 4 or higher on Letterboxd that the club hasn't watched.</p>
+        {crowd.length ? (
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {crowd.map(p => (
+              <li key={p.title + p.year}>
+                <PickCard
+                  title={p.title}
+                  year={p.year}
+                  done={suggested(p.title, p.year)}
+                  onSuggest={() => suggest(p.title, p.year)}
+                  lines={[p.ratings.filter(r => r.rating >= 4).map(r => `${r.name} ${r.rating}`).join(" · "), `${p.seenBy.length} of the club ${p.seenBy.length === 1 ? "has" : "have"} seen it`]}
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-muted-foreground">{importedCount < 2 ? "Crowd picks appear once two or more people have imported their Letterboxd history." : "No film has two 4-star fans that the club hasn't watched yet."}</p>
         )}
       </section>
       <section>
