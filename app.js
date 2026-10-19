@@ -218,7 +218,7 @@ document.addEventListener("change", async e => {
 document.addEventListener("click", async e => {
   const t = e.target;
   if (t.dataset.tab) { tab = t.dataset.tab; return render(); }
-  if (t.id === "seed") { for (const [ti, y, p, r] of SEED) await addMovie(ti, y, p, r); return render(); }
+  if (t.id === "seed") { t.disabled = true; const have = watchedKeys(); for (const [ti, y, p, r] of SEED) if (!have.has(key(ti, y))) await addMovie(ti, y, p, r); return render(); }
   const sg = id => S.suggestions.find(s => s.id == id);
   if (t.dataset.vote) {
     if (!me) return alert("Pick your name first.");
