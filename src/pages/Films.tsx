@@ -38,7 +38,7 @@ export default function Films() {
       )}
       {[...movies].reverse().map(m => <FilmRow key={m.id} m={m} best={m === best} />)}
       {adding ? (
-        <Card className="px-4">
+        <Card className="overflow-visible! px-4">
           <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
             <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
             <Input name="year" type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
