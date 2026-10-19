@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { X } from "lucide-react"
-import { hasTmdb, tmdb } from "@/lib/api"
+import { hasTmdb, IMG, tmdb } from "@/lib/api"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
-type Rec = { title: string; year: number; because: string }
+type Rec = { id: number; title: string; year: number; because: string; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
   const { movies, suggestions, me, suggest, vote, removeSuggestion } = useStore()
@@ -24,7 +25,7 @@ export default function Suggest() {
         const r = await tmdb<{ results?: any[] }>(`/movie/${m.tmdb_id}/recommendations`)
         for (const x of r?.results?.slice(0, 6) || []) {
           const year = +(x.release_date || "").slice(0, 4)
-          if (!seen.has(key(x.title, year)) && !out.some(q => q.title === x.title)) out.push({ title: x.title, year, because: m.title })
+          if (!seen.has(key(x.title, year)) && !out.some(q => q.id === x.id)) out.push({ id: x.id, title: x.title, year, because: m.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
         }
       }
       if (!dead) setRecs(out)
@@ -69,13 +70,23 @@ export default function Suggest() {
         ) : recs === null ? (
           <p className="text-muted-foreground">Loading…</p>
         ) : (
-          <ul className="flex flex-col gap-1.5">
-            {recs.slice(0, 20).map(r => (
-              <li key={r.title + r.year} className="flex flex-wrap items-center gap-2">
-                <span>{r.title} <small className="text-muted-foreground">{r.year} · because you liked {r.because}</small></span>
-                <Button variant="outline" size="sm" className="h-9 px-3" onClick={() => suggest(r.title, r.year)}>Suggest</Button>
-              </li>
-            ))}
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {recs.slice(0, 20).map(r => {
+              const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
+              return (
+                <li key={r.id}>
+                  <Card className="h-full flex-row gap-3 px-3">
+                    {r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-20 shrink-0 self-start rounded-md object-cover" /> : <span className="aspect-[2/3] w-20 shrink-0 self-start rounded-md bg-muted" />}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <h4 className="font-display text-lg leading-tight font-bold">{r.title} <small className="font-sans text-sm font-medium text-muted-foreground">{r.year || ""}</small></h4>
+                      <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}because you liked {r.because}</p>
+                      <p className="line-clamp-4 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
+                      <Button variant={done ? "ghost" : "outline"} disabled={done} className="mt-auto h-9 w-fit px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
+                    </div>
+                  </Card>
+                </li>
+              )
+            })}
           </ul>
         )}
       </section>
