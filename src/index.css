@@ -104,12 +104,6 @@ button:not(:disabled):active { transform: scale(0.97); }
   content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.14; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-/* the sprocket holes down the edge of a strip of film */
-.sprockets {
-  height: 14px; border-radius: 3px; background: var(--foreground); opacity: 0.9;
-  -webkit-mask: radial-gradient(circle at 7px 7px, transparent 3px, #000 3.5px) 0 0 / 18px 14px repeat-x;
-  mask: radial-gradient(circle at 7px 7px, transparent 3px, #000 3.5px) 0 0 / 18px 14px repeat-x;
-}
 /* ticket stub: notches cut into the sides at the perforation */
 .stub {
   --notch: 11px; --cut: 5.5rem;

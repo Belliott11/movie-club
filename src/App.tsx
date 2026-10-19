@@ -101,8 +101,7 @@ function Shell() {
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
       </main>
-      <footer className="mt-10 flex flex-col gap-3 text-xs text-muted-foreground">
-        <div aria-hidden className="sprockets" />
+      <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
         <ClubCode />
         <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
       </footer>
