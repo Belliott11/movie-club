@@ -48,9 +48,9 @@ export default function Stats() {
       </section>
       <section>
         <h3 className="mb-2 text-xl font-bold">People</h3>
-        <Card className="py-1">
+        <Card data-no-swipe className="py-1">
           <Table>
-            <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Average given</TableHead><TableHead>Films rated</TableHead><TableHead>Their picks</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Name</TableHead><TableHead>Avg given</TableHead><TableHead>Rated</TableHead><TableHead>Picks avg</TableHead></TableRow></TableHeader>
             <TableBody>
               {[...people].sort((a, b) => (b.pickAvg ?? 0) - (a.pickAvg ?? 0)).map(p => (
                 <TableRow key={p.n}><TableCell>{p.n}</TableCell><TableCell>{fmt(p.avg)}</TableCell><TableCell>{p.count}</TableCell><TableCell>{fmt(p.pickAvg)}</TableCell></TableRow>

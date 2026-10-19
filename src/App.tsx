@@ -1,6 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
+import { useSwipe } from "@/lib/useSwipe"
 import { pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
@@ -19,9 +20,14 @@ function Shell() {
   const [adding, setAdding] = useState(false)
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
+  const idx = Math.max(0, TABS.findIndex(t => t[0] === tab))
+  useSwipe(
+    () => { if (idx < TABS.length - 1) go(TABS[idx + 1][0]) },
+    () => { if (idx > 0) go(TABS[idx - 1][0]) },
+  )
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pt-5 pb-28 md:pb-12">
+    <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-5xl leading-[0.95] font-extrabold tracking-tight sm:text-6xl">Movie Club</h1>
@@ -44,7 +50,7 @@ function Shell() {
       )}
 
       <Tabs value={TABS.some(t => t[0] === tab) ? tab : "films"} onValueChange={v => go(v as string)}>
-        <TabsList className="fixed inset-x-2 bottom-2 z-20 mb-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:static md:mb-5 md:bg-muted md:shadow-none md:ring-0">
+        <TabsList className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mb-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:static md:mb-5 md:w-full md:bg-muted md:shadow-none md:ring-0">
           {TABS.map(([v, l]) => <TabsTrigger key={v} value={v} className="min-h-11 px-1 text-[13px] sm:text-sm">{l}</TabsTrigger>)}
         </TabsList>
       </Tabs>

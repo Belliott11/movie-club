@@ -81,7 +81,8 @@
 }
 
 @layer base {
-  html { background: var(--background); }
+  html { background: var(--background); overflow-x: clip; }
+  body { overflow-x: clip; overscroll-behavior-x: none; }
   body { @apply bg-background text-foreground font-sans antialiased; }
   h1, h2, h3 { font-family: var(--font-display); }
   :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
