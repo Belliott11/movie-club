@@ -2,7 +2,6 @@ import { useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Avatar, hueOf } from "@/components/Avatar"
 import { TrendChart } from "@/components/Charts"
-import { Heatmap } from "@/components/Heatmap"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Scale } from "@/components/Scale"
 import { SortTable } from "@/components/SortTable"
@@ -11,7 +10,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
 import { isUnused } from "@/lib/people"
-import { agreementMatrix, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, spread, tasteOverlap, tilt, trend } from "@/lib/stats"
+import { awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
@@ -32,8 +31,6 @@ export default function Stats() {
     kind && { icon: Heart, label: "Most generous", who: kind.n, detail: `${fmt(kind.avg)} on average` },
     odd && { icon: Shuffle, label: "Most contrarian", who: odd.n, detail: `${fmt(odd.offGroup)} stars from the group` },
   ].filter(Boolean) as typeof awards
-  const matrix = agreementMatrix(rated, members)
-  const overlap = tasteOverlap(rated, members)
   const top = [...rated].sort((a, b) => groupAvg(b)! - groupAvg(a)!).slice(0, 5)
   const divisive = [...rated].filter(m => Object.keys(m.ratings).length > 1).sort((a, b) => spread(b) - spread(a)).slice(0, 5)
   const gap = rated.filter(m => outsideAvg(m) != null).sort((a, b) => Math.abs(groupAvg(b)! - outsideAvg(b)!) - Math.abs(groupAvg(a)! - outsideAvg(a)!)).slice(0, 5)
@@ -94,19 +91,6 @@ export default function Stats() {
         <h3 className="mb-2 text-xl font-bold">Group average over time</h3>
         <TrendChart points={trend(rated)} />
       </section>
-
-      {matrix.people.length > 1 && (
-        <section>
-          <h3 className="text-xl font-bold">Who agrees</h3>
-          <p className="mb-3 text-sm text-muted-foreground">Average stars apart on films both people rated (at least 5). Darker means closer taste.</p>
-          <Card className="px-3"><Heatmap matrix={matrix} /></Card>
-          {overlap.length > 0 && (
-            <p className="mt-2 text-sm">
-              Closest: <b>{overlap[0].a}</b> and <b>{overlap[0].b}</b> ({fmt(overlap[0].diff)}). Furthest apart: <b>{overlap.at(-1)!.a}</b> and <b>{overlap.at(-1)!.b}</b> ({fmt(overlap.at(-1)!.diff)}).
-            </p>
-          )}
-        </section>
-      )}
 
       <section>
         <h3 className="mb-2 text-xl font-bold">People</h3>

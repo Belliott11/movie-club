@@ -126,17 +126,6 @@ export function overview(ms: Movie[]) {
   return { films: rated.length, ratings: all.length, average: avg(all), best: bestFilm(rated) }
 }
 
-/** Average star distance for every pair with at least `min` shared films, both directions, for a heatmap. */
-export function agreementMatrix(ms: Movie[], members: string[], min = 5) {
-  const cell = new Map<string, { diff: number; n: number }>()
-  for (const o of tasteOverlap(ms, members, min)) {
-    cell.set(`${o.a}|${o.b}`, { diff: o.diff, n: o.n })
-    cell.set(`${o.b}|${o.a}`, { diff: o.diff, n: o.n })
-  }
-  const people = members.filter(a => members.some(b => b !== a && cell.has(`${a}|${b}`)))
-  return { people, get: (a: string, b: string) => cell.get(`${a}|${b}`) }
-}
-
 /** For each film this person rated with someone else: their rating minus the others' average, biggest differences first. */
 export function deviations(ms: Movie[], name: string) {
   return ms
