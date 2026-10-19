@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Movie Club</title>
+<meta name="theme-color" content="#161D36">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,12 +13,12 @@
 <style>
 :root{
   --fog:#E8ECF3;--paper:#fff;--ink:#161D36;--mut:#5B6482;--line:#CDD3E2;
-  --us:#FF4B2B;--world:#6A5AE0;--good:#1E9D63;
+  --us:#FF4B2B;--world:#6A5AE0;--good:#1E9D63;--gold:#B8860B;
   --r:10px;
 }
 @media(prefers-color-scheme:dark){:root{
   --fog:#0F1426;--paper:#1A2140;--ink:#EDF0F8;--mut:#9AA3C4;--line:#2D3660;
-  --us:#FF6A4D;--world:#8F82FF;--good:#3CC688;
+  --us:#FF6A4D;--world:#8F82FF;--good:#3CC688;--gold:#F2C230;
 }}
 *{box-sizing:border-box}
 html{background:var(--fog)}
@@ -119,6 +121,14 @@ code{background:var(--paper);padding:1px 6px;border-radius:4px}
 footer{margin-top:40px;color:var(--mut);font-size:.8rem}footer a{color:inherit}
 a.btn{text-decoration:none}
 @media(max-width:600px){.detail{grid-template-columns:1fr}.poster{max-width:220px}}
+.num.gold{color:var(--gold)}
+button,.btn,select,summary{min-height:44px}
+button,.btn{display:inline-flex;align-items:center;justify-content:center}
+.chip{min-height:44px}.chip input{min-height:0}
+@media(max-width:700px){
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:10;margin:0;border-radius:16px 16px 0 0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -8px 24px rgb(0 0 0/.14)}
+  body{padding-bottom:96px}
+}
 @media(max-width:520px){.num{font-size:1.8rem}.card summary{padding:12px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>

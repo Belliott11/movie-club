@@ -38,18 +38,25 @@ async function setRating(m, member, v) {
   else { m.ratings[member] = +v; if (sb) await must(sb.from("ratings").upsert({ movie_id: m.id, member, value: +v })); }
   persist();
 }
-// Auto-fill IMDb / Rotten Tomatoes / Metacritic from OMDb (needs CONFIG.OMDB_KEY).
+// Auto-fill IMDb / Rotten Tomatoes / Metacritic from OMDb (needs CONFIG.OMDB_KEY). Only fills blanks; each film is retried at most weekly.
+const TRIED = (() => { try { return JSON.parse(localStorage.getItem("omdb-tried") || "{}"); } catch { return {}; } })();
 async function fillOutside(m) {
-  if (!CONFIG.OMDB_KEY || [m.imdb, m.rt, m.mc].some(x => x != null)) return false;
-  try {
-    const r = await (await fetch(`https://www.omdbapi.com/?apikey=${CONFIG.OMDB_KEY}&t=${encodeURIComponent(m.title)}&y=${m.year}`)).json();
-    if (r.Response !== "True") return false;
-    const rt = (r.Ratings || []).find(x => x.Source === "Rotten Tomatoes")?.Value;
-    const f = { imdb: parseFloat(r.imdbRating), rt: rt ? parseFloat(rt) : NaN, mc: parseFloat(r.Metascore) };
-    Object.keys(f).forEach(k => isNaN(f[k]) && delete f[k]);
-    if (!Object.keys(f).length) return false;
-    await setOutside(m, f); return true;
-  } catch { return false; }
+  if (!CONFIG.OMDB_KEY || [m.imdb, m.rt, m.mc].every(x => x != null)) return false;
+  const k = key(m.title, m.year);
+  if (Date.now() - (TRIED[k] || 0) < 7 * 864e5) return false;
+  TRIED[k] = Date.now(); try { localStorage.setItem("omdb-tried", JSON.stringify(TRIED)); } catch {}
+  const omdb = q => fetch(`https://www.omdbapi.com/?apikey=${CONFIG.OMDB_KEY}&${q}`).then(r => r.json()).catch(() => ({}));
+  let r = await omdb(`t=${encodeURIComponent(m.title)}&y=${m.year}`);
+  if (r.Response !== "True" && m.tmdb_id) {
+    const x = await tmdb(`/movie/${m.tmdb_id}/external_ids`);
+    if (x?.imdb_id) r = await omdb(`i=${x.imdb_id}`);
+  }
+  if (r.Response !== "True") return false;
+  const rt = (r.Ratings || []).find(x => x.Source === "Rotten Tomatoes")?.Value;
+  const all = { imdb: parseFloat(r.imdbRating), rt: rt ? parseFloat(rt) : NaN, mc: parseFloat(r.Metascore) };
+  const f = {}; for (const [k2, v] of Object.entries(all)) if (!isNaN(v) && m[k2] == null) f[k2] = v;
+  if (!Object.keys(f).length) return false;
+  await setOutside(m, f); return true;
 }
 async function fillAll() {
   let n = 0; for (const m of S.movies) n += await fillOutside(m) ? 1 : 0;
@@ -125,9 +132,10 @@ async function loadMinis() {
   let n = 0;
   for (const m of S.movies) {
     const k = key(m.title, m.year);
-    if (MINI[k]) continue;
+    if (MINI[k] && m.tmdb_id) continue;
     const r = (await tmdb("/search/movie", `&query=${encodeURIComponent(m.title)}&year=${m.year}`))?.results?.[0];
     MINI[k] = r ? { p: r.poster_path, v: r.vote_average } : { p: null, v: null };
+    if (r && !m.tmdb_id) { m.tmdb_id = r.id; persist(); if (sb) sb.from("movies").update({ tmdb_id: r.id }).eq("id", m.id).then(() => {}); }
     if (++n % 6 === 0) render();
   }
   if (n) { try { localStorage.setItem("mini-v1", JSON.stringify(MINI)); } catch {} render(); }
@@ -138,6 +146,7 @@ function outsideChips(m) {
     .filter(([, v]) => v != null && v !== 0);
   return c.length ? c.map(([l, v, u]) => `<span><b>${l}</b> ${fmt(+v, 1)}${u}</span>`).join("") : `<span class="hint">Looking up outside ratings…</span>`;
 }
+const bestFilm = () => S.movies.filter(m => Object.keys(m.ratings).length >= 3).sort((a, b) => groupAvg(b) - groupAvg(a))[0];
 function movieCard(m) {
   const g = groupAvg(m), o = outsideAvg(m), d = g != null && o != null ? g - o : null;
   const mem = [...new Set([...members(), ...Object.keys(m.ratings)])];
@@ -150,7 +159,7 @@ function movieCard(m) {
     <span class="pt">${MINI[key(m.title, m.year)]?.p ? `<img src="${IMG}w154${MINI[key(m.title, m.year)].p}" alt="" loading="lazy">` : `<span class="noimg"></span>`}</span>
     <span class="t">${esc(m.title)} <small>${m.year || ""}</small></span>
     <span class="meta">${esc(m.pick)}'s pick · ${Object.keys(m.ratings).length} ratings</span>
-    <span class="num" title="Group average">${fmt(g)}</span>
+    <span class="num${m === bestFilm() ? " gold" : ""}" title="Group average${m === bestFilm() ? " (highest rated)" : ""}">${fmt(g)}</span>
     ${scale}<span class="outs">${outsideChips(m)}</span><span class="diff">${note}</span>
   </summary><div class="body">
     <div class="rates">${mem.map(n => `<label>${esc(n)}<select data-m="${m.id}" data-r="${esc(n)}"><option value="">–</option>${[...Array(10)].map((_, i) => (i + 1) / 2).map(v => `<option ${m.ratings[n] === v ? "selected" : ""}>${v}</option>`).join("")}</select></label>`).join("")}</div>
@@ -213,7 +222,21 @@ const vStats = () => {
   const div = [...ms].sort((a, b) => sd(b) - sd(a)).slice(0, 5);
   const gap = ms.filter(m => outsideAvg(m) != null).sort((a, b) => Math.abs(groupAvg(b) - outsideAvg(b)) - Math.abs(groupAvg(a) - outsideAvg(a))).slice(0, 5);
   const top = [...ms].sort((a, b) => groupAvg(b) - groupAvg(a));
-  return `<h3>Top films</h3><ol>${top.slice(0, 5).map(m => `<li>${esc(m.title)} — ${fmt(groupAvg(m))}</li>`).join("")}</ol>
+  const crit = members().map(n => {
+    const rs = ms.filter(m => m.ratings[n] != null);
+    return { n, c: rs.length, avg: avg(rs.map(m => m.ratings[n])), off: avg(rs.map(m => Math.abs(m.ratings[n] - groupAvg(m)))) };
+  }).filter(x => x.c >= 5);
+  const best = arr => arr[0];
+  const awards = [
+    ["Best pick", per.filter(p => p.pa != null)[0] && `${per.filter(p => p.pa != null)[0].n} (their picks average ${fmt(per.filter(p => p.pa != null)[0].pa)})`],
+    ["Harshest critic", best([...crit].sort((a, b) => a.avg - b.avg)) && `${best([...crit].sort((a, b) => a.avg - b.avg)).n} (${fmt(best([...crit].sort((a, b) => a.avg - b.avg)).avg)} on average)`],
+    ["Most generous", best([...crit].sort((a, b) => b.avg - a.avg)) && `${best([...crit].sort((a, b) => b.avg - a.avg)).n} (${fmt(best([...crit].sort((a, b) => b.avg - a.avg)).avg)} on average)`],
+    ["Most contrarian", best([...crit].sort((a, b) => b.off - a.off)) && `${best([...crit].sort((a, b) => b.off - a.off)).n} (${fmt(best([...crit].sort((a, b) => b.off - a.off)).off)} away from the group, on average)`],
+  ].filter(a => a[1]);
+  const att = members().map(n => ({ n, c: ms.filter(m => m.ratings[n] != null).length })).filter(x => x.c).sort((a, b) => b.c - a.c);
+  return `<h3>Awards <small class="hint">people with at least 5 films rated</small></h3><dl class="crew">${awards.map(([l, v]) => `<div><dt>${l}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>
+  <h3>Attendance</h3><ul class="plain">${att.map(x => `<li>${esc(x.n)} <b>${Math.round(x.c / ms.length * 100)}%</b> <small>${x.c} of ${ms.length} films</small></li>`).join("")}</ul>
+  <h3>Top films</h3><ol>${top.slice(0, 5).map(m => `<li>${esc(m.title)} — ${fmt(groupAvg(m))}</li>`).join("")}</ol>
   <h3>People</h3><table><tr><th>Name</th><th>Avg rating given</th><th>Films rated</th><th>Their picks' avg</th></tr>
   ${per.map(p => `<tr><td>${esc(p.n)}</td><td>${fmt(p.avg)}</td><td>${p.c}</td><td>${fmt(p.pa)}</td></tr>`).join("")}</table>
   <h3>Most divisive</h3><ol>${div.map(m => `<li>${esc(m.title)} — spread ${fmt(sd(m))}</li>`).join("")}</ol>
@@ -256,6 +279,7 @@ const vDetail = m => {
       ${d.tagline ? `<p class="tag">${esc(d.tagline)}</p>` : ""}
       <p class="syn">${esc(d.overview || "No synopsis available.")}</p>
       <dl class="crew">${row("Director", crew(["Director"]))}${row("Writing", crew(["Screenplay", "Writer", "Story"]))}${row("Cinematography", crew(["Director of Photography"]))}${row("Music", crew(["Original Music Composer", "Music"]))}</dl>
+      <p><button type="button" data-share="${m.id}">Copy for group chat</button></p>
       ${trailer ? `<p><a class="btn" href="https://www.youtube.com/watch?v=${esc(trailer.key)}" target="_blank" rel="noopener">Watch trailer</a></p>` : ""}
     </div></div>
     ${mine}
@@ -288,6 +312,12 @@ document.addEventListener("change", async e => {
 });
 document.addEventListener("click", async e => {
   const t = e.target;
+  if (t.dataset.share) {
+    const m = S.movies.find(x => String(x.id) === t.dataset.share), o = outsideAvg(m);
+    const txt = `${m.title} (${m.year}): we gave it ${fmt(groupAvg(m))}/5` + (o != null ? `, everyone else ${fmt(o)}/5` : "") + `. ${m.pick}'s pick. ${location.href}`;
+    try { await navigator.clipboard.writeText(txt); t.textContent = "Copied"; } catch { prompt("Copy this:", txt); }
+    return;
+  }
   if (t.dataset.tab) { tab = t.dataset.tab; if (location.hash) history.replaceState(null, "", location.pathname); return render(); }
   if (t.id === "seed") { t.disabled = true; const have = watchedKeys(); for (const [ti, y, p, r] of SEED) if (!have.has(key(ti, y))) await addMovie(ti, y, p, r); return render(); }
   const sg = id => S.suggestions.find(s => s.id == id);
@@ -321,4 +351,4 @@ document.addEventListener("submit", async e => {
 });
 
 window.addEventListener("hashchange", () => { render(); scrollTo(0, 0); });
-load().then(() => { render(); fillAll(); loadMinis(); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);
+load().then(() => { render(); loadMinis().then(fillAll); }).catch(err => $("#view").textContent = "Could not load data: " + err.message);
