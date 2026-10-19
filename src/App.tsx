@@ -1,7 +1,9 @@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
+import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
+import { RefreshCw } from "lucide-react"
 import { pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
@@ -16,7 +18,8 @@ import Watch from "@/pages/Watch"
 const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"], ["watch", "Watchlists"], ["stats", "Stats"]] as const
 
 function Shell() {
-  const { ready, error, movies, members, me, setMe, attending } = useStore()
+  const { ready, error, movies, members, me, setMe, attending, refresh } = useStore()
+  const { pull, busy, ready: willRefresh } = usePull(refresh)
   const [adding, setAdding] = useState(false)
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
@@ -27,6 +30,15 @@ function Shell() {
   )
 
   return (
+    <>
+      {(pull > 4 || busy) && (
+        <div role="status" className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center" style={{ transform: `translateY(${Math.max(pull, 0) - 44}px)` }}>
+          <span className="flex size-10 items-center justify-center rounded-full bg-card shadow-lg ring-1 ring-border">
+            <RefreshCw className={`size-5 ${busy ? "animate-spin" : ""} ${willRefresh ? "text-us" : "text-muted-foreground"}`} style={busy ? undefined : { transform: `rotate(${pull * 3}deg)` }} />
+            <span className="sr-only">{busy ? "Refreshing" : willRefresh ? "Release to refresh" : "Pull to refresh"}</span>
+          </span>
+        </div>
+      )}
     <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
@@ -64,6 +76,7 @@ function Shell() {
         Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.
       </footer>
     </div>
+    </>
   )
 }
 

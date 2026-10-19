@@ -18,6 +18,7 @@ const fail = (e: { message: string } | null) => { if (e) alert(e.message) }
 type Store = {
   ready: boolean; error: string; movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]
   mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
+  refresh: () => Promise<void>
   setMe: (n: string) => void; toggleAttend: (n: string) => void
   /** Adds a person (or finds the existing one, ignoring case) and returns their name. */
   addMember: (name: string) => Promise<string>
@@ -46,8 +47,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const movRef = useRef(movies)
   movRef.current = movies
 
-  useEffect(() => {
-    ;(async () => {
+  const load = useCallback(async () => {
+    {
       if (!sb) {
         const d = lsGet(LS, { movies: [], watchlist: [], suggestions: [] })
         setMovies(d.movies); setWatchlist(d.watchlist); setSuggestions(d.suggestions)
@@ -65,8 +66,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setMovies(ms); setWatchlist(w.data as WatchItem[]); setSuggestions(s.data as Suggestion[])
       const mem = await sb.from("members").select("name") // table is optional: older setups do not have it
       if (!mem.error) setExtra(e => [...new Set([...e, ...(mem.data as { name: string }[]).map(x => x.name)])])
-    })().then(() => setReady(true), e => setError(e.message))
+    }
   }, [])
+  useEffect(() => { load().then(() => setReady(true), e => setError(e.message)) }, [load])
+  /** Re-reads the shared data (pull to refresh). Local-only mode already has everything in memory. */
+  const refresh = useCallback(async () => {
+    try { await load() } catch (e) { alert(`Couldn't refresh: ${(e as Error).message}`) }
+  }, [load])
 
   // local-only mode keeps everything in this browser
   useEffect(() => {
@@ -188,6 +194,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
-  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
+  const value: Store = { ready, error, movies, watchlist, suggestions, mini, me, attending, members, shared: !!sb, refresh, setMe, toggleAttend, addMember, addMovie, setRating, patchMovie, seed, importWatchlist, suggest, vote, removeSuggestion }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
