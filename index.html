@@ -12,12 +12,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script>
-  // the saved House lights choice wins; otherwise follow the device's light/dark setting
+  // follow the device's light/dark setting
   const m = matchMedia("(prefers-color-scheme: dark)");
-  const apply = () => {
-    let t = null; try { t = localStorage.getItem("theme"); } catch (e) {}
-    document.documentElement.classList.toggle("dark", t ? t === "dark" : m.matches);
-  };
+  const apply = () => document.documentElement.classList.toggle("dark", m.matches);
   apply(); m.addEventListener("change", apply);
 </script>
 <script src="config.js"></script>

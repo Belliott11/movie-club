@@ -1,6 +1,5 @@
 import { Clapperboard } from "@/components/Clapperboard"
 import { Hero } from "@/components/Hero"
-import { HouseLights } from "@/components/HouseLights"
 import { Leader } from "@/components/Leader"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getClubCode, setClubCode, StoreProvider, useStore } from "@/lib/store"
@@ -91,23 +90,28 @@ function Shell() {
         </div>
       )}
     <div className="mx-auto w-full max-w-3xl overflow-x-clip px-4 pt-5 pb-28 md:pb-12">
-      <Hero film={heroFilm} still={heroStill}>
-        <header>
-          <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
-          {movies.length > 0 && <p className="mt-2 text-sm text-muted-foreground">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
-        </header>
-        <div className="flex flex-wrap items-end gap-3">
-        <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
-          You are
-          <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
-            <option value="">Who are you?</option>
-            {members.map(n => <option key={n}>{n}</option>)}
-            <option value="__new">+ New person…</option>
-          </select>
-        </label>
-        <HouseLights />
-        </div>
-      </Hero>
+      <Hero
+        film={heroFilm}
+        still={heroStill}
+        title={
+          <header>
+            <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
+            {movies.length > 0 && <p className="mt-2 text-sm opacity-85">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
+          </header>
+        }
+        controls={
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
+              You are
+              <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
+                <option value="">Who are you?</option>
+                {members.map(n => <option key={n}>{n}</option>)}
+                <option value="__new">+ New person…</option>
+              </select>
+            </label>
+          </div>
+        }
+      />
       {offline && <p role="status" className="mb-3 rounded-lg bg-card px-3 py-2 text-sm">No connection. Showing the last data saved on this device; edits won't save until you're back online.</p>}
       {adding && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3">
