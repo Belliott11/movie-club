@@ -55,12 +55,16 @@ export default function Suggest() {
     ;(async () => {
       const seen = new Set(movies.map(m => key(m.title, m.year)))
       const out: Rec[] = []
-      const top = [...movies].filter(m => m.tmdb_id).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 4)
+      const top = [...movies].filter(m => m.tmdb_id).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10)
       for (const m of top) {
         const r = await tmdb<{ results?: any[] }>(`/movie/${m.tmdb_id}/recommendations`)
-        for (const x of r?.results?.slice(0, 6) || []) {
+        let n = 0
+        for (const x of r?.results || []) {
+          if (n === 2) break
           const year = +(x.release_date || "").slice(0, 4)
-          if (!seen.has(key(x.title, year)) && !out.some(q => q.id === x.id)) out.push({ id: x.id, title: x.title, year, because: m.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
+          if (seen.has(key(x.title, year)) || out.some(q => q.id === x.id)) continue
+          out.push({ id: x.id, title: x.title, year, because: m.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
+          n++
         }
       }
       if (!dead) setRecs(out)
@@ -100,7 +104,7 @@ export default function Suggest() {
           <p className="text-muted-foreground">Loading…</p>
         ) : (
           <ul className="grid grid-cols-2 gap-3">
-            {recs.slice(0, 20).map(r => {
+            {recs.map(r => {
               const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
               return (
                 <li key={r.id}>
