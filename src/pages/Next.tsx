@@ -27,7 +27,7 @@ export default function Next() {
   const top = [...hits.values()].sort((a, b) => b.who.length - a.who.length || seenAmong(a).length - seenAmong(b).length).slice(0, 12)
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger flex flex-col gap-6">
       <ImportNudge />
       <section>
         <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>

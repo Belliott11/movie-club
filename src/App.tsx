@@ -14,7 +14,7 @@ import { useFilmInfo } from "@/lib/useFilmInfo"
 import { key, pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Films from "@/pages/Films"
 import MemberPage from "@/pages/MemberPage"
 import FilmPage from "@/pages/FilmPage"
@@ -65,6 +65,18 @@ function Shell() {
     : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
   const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject)
   const active = tab === "people" ? "stats" : tab // member pages live under Stats
+  // the pill behind the active tab slides to it
+  const barRef = useRef<HTMLDivElement>(null)
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
+  useLayoutEffect(() => {
+    const place = () => {
+      const el = barRef.current?.querySelector<HTMLElement>("[data-active]")
+      if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth })
+    }
+    place()
+    window.addEventListener("resize", place)
+    return () => window.removeEventListener("resize", place)
+  }, [active, ready])
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(
     () => { if (idx < TABS.length - 1) go(TABS[idx + 1][0]) },
@@ -94,7 +106,7 @@ function Shell() {
         />
       )}
       {toast && (
-        <div role="status" className="fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background shadow-xl md:bottom-6">
+        <div role="status" key={toast.id} className="spring-in fixed inset-x-3 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background shadow-xl md:bottom-6">
           <span className="min-w-0 flex-1">{toast.msg}</span>
           {toast.undo && <button type="button" className="min-h-11 rounded-md px-3 font-semibold underline" onClick={() => { toast.undo?.(); dismissToast() }}>Undo</button>}
         </div>
@@ -133,12 +145,13 @@ function Shell() {
       )}
 
       <Tabs value={TABS.some(t => t[0] === active) ? active : "films"} onValueChange={v => go(v as string)}>
-        <TabsList className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mb-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:static md:mb-5 md:w-full md:bg-muted md:shadow-none md:ring-0">
+        <TabsList ref={barRef} className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] z-40 mb-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:relative md:mb-5 md:w-full md:bg-muted md:shadow-none md:ring-0">
+          {pill && <span aria-hidden className="absolute top-1 bottom-1 rounded-xl bg-primary transition-[left,width] duration-300 ease-out" style={{ left: pill.left, width: pill.width }} />}
           {TABS.map(([v, l]) => <TabsTrigger key={v} value={v} className="min-h-11 px-1 text-[13px] sm:text-sm">{l}</TabsTrigger>)}
         </TabsList>
       </Tabs>
 
-      <main className="rise" key={tab + (sub ?? "")}>
+      <main key={tab + (sub ?? "")}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}

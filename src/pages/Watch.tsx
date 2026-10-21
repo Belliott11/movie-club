@@ -66,7 +66,7 @@ export default function Watch() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger flex flex-col gap-6">
       <Card className="gap-3 px-5">
         <h3 className="text-xl font-bold">Import from Letterboxd</h3>
         <ol className="list-decimal pl-5 text-sm leading-relaxed">

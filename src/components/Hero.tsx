@@ -29,7 +29,7 @@ export function Hero({ film, still, onNext, canShuffle, title, controls }: {
             sizes="(min-width: 768px) 768px, 100vw"
             alt={`A still from ${film.title}`}
             fetchPriority="high"
-            className="rise absolute inset-0 size-full object-cover"
+            className="push-in absolute inset-0 size-full object-cover"
           />
           <div aria-hidden className="absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-black/30" />
           <div className="absolute inset-x-0 top-0 flex justify-end p-3 text-white [&_label]:text-white/85">{controls}</div>

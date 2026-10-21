@@ -16,7 +16,7 @@ export function DeviationChart({ rows, name }: { rows: ReturnType<typeof deviati
               <span className="absolute inset-x-0 top-1/2 h-px bg-border" />
               <span className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-muted-foreground/60" />
               <span
-                className={`grow absolute inset-y-1 rounded-full ${up ? "left-1/2 bg-pos" : "right-1/2 bg-us"}`}
+                className={`grow absolute inset-y-1 rounded-full ${up ? "left-1/2 bg-world" : "right-1/2 bg-us"}`}
                 style={{ width: `${(Math.abs(r.diff) / max) * 50}%`, transformOrigin: up ? "left" : "right" }}
               />
             </div>

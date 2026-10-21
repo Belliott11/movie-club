@@ -14,8 +14,8 @@ export function Scale({ us, world }: { us: number | null; world: number | null }
           style={{ left: pos(Math.min(us, world)), width: `${(Math.abs(us - world) / 5) * 100}%` }}
         />
       )}
-      {world != null && <span className="absolute top-1 -ml-2 size-4 rounded-full border-[3px] border-card bg-world" style={{ left: pos(world) }} />}
-      {us != null && <span className="absolute top-0.5 z-10 -ml-2.5 size-5 rounded-full border-[3px] border-card bg-us" style={{ left: pos(us) }} />}
+      {world != null && <span className="pop absolute top-1 -ml-2 size-4 rounded-full border-[3px] border-card bg-world" style={{ left: pos(world), "--d": "350ms" } as React.CSSProperties} />}
+      {us != null && <span className="pop absolute top-0.5 z-10 -ml-2.5 size-5 rounded-full border-[3px] border-card bg-us" style={{ left: pos(us), "--d": "200ms" } as React.CSSProperties} />}
     </div>
   )
 }

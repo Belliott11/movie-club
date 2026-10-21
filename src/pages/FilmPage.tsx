@@ -60,7 +60,7 @@ export default function FilmPage({ id }: { id: string }) {
   }
 
   return (
-    <div className="rise flex flex-col gap-5">
+    <div className="stagger flex flex-col gap-5">
       {back}
       <div className="grid gap-6 sm:grid-cols-[minmax(150px,230px)_1fr]">
         {(myPoster || d?.poster_path) && <img src={`${IMG}w500${myPoster || d.poster_path}`} alt={`Poster for ${m.title}`} className="w-full max-w-56 rounded-xl bg-card sm:max-w-none" />}

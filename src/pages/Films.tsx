@@ -30,7 +30,7 @@ export default function Films() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="stagger flex flex-col gap-3">
       {!filtering && <WeekCard />}
       <p className="flex flex-wrap gap-x-5 text-sm text-muted-foreground">
         <span><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Our average</span>

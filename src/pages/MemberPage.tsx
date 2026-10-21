@@ -48,7 +48,7 @@ export default function MemberPage({ name }: { name: string }) {
   ].filter(Boolean) as string[]
 
   return (
-    <div className="rise flex flex-col gap-8">
+    <div className="stagger flex flex-col gap-8">
       {back}
       <header className="flex items-center gap-4">
         <Avatar name={name} size="lg" />
@@ -59,7 +59,7 @@ export default function MemberPage({ name }: { name: string }) {
       </header>
       {tags.length > 0 && (
         <ul className="-mt-4 flex flex-wrap gap-2">
-          {tags.map((tag, i) => <li key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${i === 0 && tags[0] === "Best pick" ? "bg-gold text-background" : "bg-card ring-1 ring-foreground/10"}`}>{tag}</li>)}
+          {tags.map((tag, i) => <li key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${i === 0 && tags[0] === "Best pick" ? "bg-sun text-[#0d1530]" : "bg-card ring-1 ring-foreground/10"}`}>{tag}</li>)}
         </ul>
       )}
 
@@ -82,7 +82,7 @@ export default function MemberPage({ name }: { name: string }) {
           {dev.length > 0 && (
             <section>
               <h3 className="text-xl font-bold">Where {name} differs from the group</h3>
-              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Green is higher, red is lower.</p>
+              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Cyan is higher, magenta is lower.</p>
               <DeviationChart rows={dev} name={name} />
             </section>
           )}
@@ -155,7 +155,7 @@ function Stat({ label, value, sub, bar, tone }: { label: string; value: string; 
   return (
     <div className="flex flex-col gap-0.5 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className={`font-display text-3xl leading-none font-extrabold tracking-tight ${tone === "pos" ? "text-pos" : tone === "us" ? "text-us" : ""}`}>{value}</dd>
+      <dd className={`font-display text-3xl leading-none font-extrabold tracking-tight ${tone === "pos" ? "text-world" : tone === "us" ? "text-us" : ""}`}>{value}</dd>
       {bar != null && <span className="mt-1 block h-1.5 rounded-full bg-muted"><span className="grow block h-1.5 rounded-full bg-world" style={{ width: `${bar * 100}%` }} /></span>}
       {sub && <span className="text-xs text-muted-foreground">{sub}</span>}
     </div>

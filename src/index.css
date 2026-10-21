@@ -3,52 +3,55 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Every color is a token. Light and dark are two sets of the same names. */
+/* Every color is a token. Light and dark are two sets of the same names.
+   Data colors come from three-strip Technicolor: magenta is the club, cyan is everyone else, yellow is the standout. */
 :root {
   --radius: 0.75rem;
-  --background: #e8ecf3;
-  --foreground: #161d36;
+  --background: #f1f0f8;
+  --foreground: #0d1530;
   --card: #ffffff;
-  --card-foreground: #161d36;
-  --primary: #161d36;
+  --card-foreground: #0d1530;
+  --primary: #0d1530;
   --primary-foreground: #ffffff;
-  --secondary: #dbe0ec;
-  --secondary-foreground: #161d36;
-  --muted: #dbe0ec;
-  --muted-foreground: #565f7e;
-  --accent: #dbe0ec;
-  --accent-foreground: #161d36;
-  --destructive: #c62d1a;
-  --border: #cdd3e2;
-  --input: #cdd3e2;
-  --ring: #6a5ae0;
+  --secondary: #e4e2f1;
+  --secondary-foreground: #0d1530;
+  --muted: #e4e2f1;
+  --muted-foreground: #596084;
+  --accent: #e4e2f1;
+  --accent-foreground: #0d1530;
+  --destructive: #c4124f;
+  --border: #d6d4e6;
+  --input: #d6d4e6;
+  --ring: #0092b8;
   /* meaning colors stay fixed */
-  --us: #ff4b2b;
-  --world: #6a5ae0;
-  --pos: #1e9d63;
-  --gold: #a87a00;
+  --us: #e0157a;
+  --world: #0092b8;
+  --pos: #12935a;
+  --gold: #8a6100; /* yellow for text */
+  --sun: #ffc21a; /* yellow for fills */
 }
 .dark {
-  --background: #0f1426;
-  --foreground: #edf0f8;
-  --card: #1a2140;
-  --card-foreground: #edf0f8;
-  --primary: #edf0f8;
-  --primary-foreground: #0f1426;
-  --secondary: #252d52;
-  --secondary-foreground: #edf0f8;
-  --muted: #252d52;
-  --muted-foreground: #9aa3c4;
-  --accent: #252d52;
-  --accent-foreground: #edf0f8;
-  --destructive: #ff7a66;
-  --border: #2d3660;
-  --input: #2d3660;
-  --ring: #8f82ff;
-  --us: #ff6a4d;
-  --world: #8f82ff;
-  --pos: #3cc688;
-  --gold: #f2c230;
+  --background: #070b19;
+  --foreground: #eceffb;
+  --card: #111936;
+  --card-foreground: #eceffb;
+  --primary: #eceffb;
+  --primary-foreground: #070b19;
+  --secondary: #1b2547;
+  --secondary-foreground: #eceffb;
+  --muted: #1b2547;
+  --muted-foreground: #9aa4c9;
+  --accent: #1b2547;
+  --accent-foreground: #eceffb;
+  --destructive: #ff6b9a;
+  --border: #243059;
+  --input: #243059;
+  --ring: #36d3f2;
+  --us: #ff4da0;
+  --world: #36d3f2;
+  --pos: #3ccf8e;
+  --gold: #ffd23f;
+  --sun: #ffd23f;
 }
 
 @theme inline {
@@ -74,6 +77,7 @@
   --color-world: var(--world);
   --color-pos: var(--pos);
   --color-gold: var(--gold);
+  --color-sun: var(--sun);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -88,14 +92,36 @@
   :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 }
 
-/* press feedback and the one rise-in when a screen opens */
+/* ---- motion ----
+   One staggered reveal when a page opens, data that draws itself in, and small answers to taps. All of it is off under reduced motion. */
 button:not(:disabled):active { transform: scale(0.97); }
+.num { font-variant-numeric: tabular-nums; }
+table { font-variant-numeric: tabular-nums; }
+
 @media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise 0.35s ease-out both; }
-  .grow { transform-origin: left; animation: grow 0.6s 0.1s ease-out both; }
+  .rise { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+  /* children of .stagger reveal one after another, up to the first twelve */
+  .stagger > * { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+  .stagger > :nth-child(1) { --d: 0ms } .stagger > :nth-child(2) { --d: 60ms } .stagger > :nth-child(3) { --d: 120ms }
+  .stagger > :nth-child(4) { --d: 180ms } .stagger > :nth-child(5) { --d: 240ms } .stagger > :nth-child(6) { --d: 300ms }
+  .stagger > :nth-child(7) { --d: 360ms } .stagger > :nth-child(8) { --d: 420ms } .stagger > :nth-child(9) { --d: 480ms }
+  .stagger > :nth-child(10) { --d: 540ms } .stagger > :nth-child(11) { --d: 600ms } .stagger > :nth-child(12) { --d: 660ms }
+  .grow { transform-origin: left; animation: growX 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.15s); }
+  .grow-y { transform-origin: bottom; animation: growY 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.1s); }
+  .draw { stroke-dasharray: 1; animation: draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) both; animation-delay: var(--d, 0.1s); }
+  .fade-in { animation: fadeIn 0.8s ease-out both; animation-delay: var(--d, 0.5s); }
+  .pop { animation: pop 0.45s cubic-bezier(0.3, 1.6, 0.5, 1) both; animation-delay: var(--d, 0ms); }
+  .push-in { animation: pushIn 16s ease-out both; }
+  .spring-in { animation: springIn 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 }
-@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
-@keyframes grow { from { transform: scaleX(0); } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes growX { from { transform: scaleX(0); } }
+@keyframes growY { from { transform: scaleY(0); } }
+@keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(0.4); } 60% { transform: scale(1.18); } }
+@keyframes pushIn { from { transform: scale(1); } to { transform: scale(1.09); } }
+@keyframes springIn { from { opacity: 0; transform: translateY(16px) scale(0.96); } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 
 /* ---- movie theming ---- */

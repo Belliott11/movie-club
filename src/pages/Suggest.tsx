@@ -88,7 +88,7 @@ export default function Suggest() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="stagger flex flex-col gap-6">
       <ImportNudge />
       <form onSubmit={submit} className="flex flex-wrap gap-2">
         <FilmSearch name="title" placeholder="Start typing a film to suggest" required value={title} onChange={setTitle} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : "") }} />

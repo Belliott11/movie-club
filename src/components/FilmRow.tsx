@@ -57,7 +57,7 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
         {note && <span className="col-span-2 text-sm text-muted-foreground">{note}</span>}
       </button>
       {open && (
-        <div className="flex flex-col gap-4 px-4 pb-4">
+        <div className="animate-in fade-in-0 slide-in-from-top-2 flex flex-col gap-4 px-4 pb-4 duration-300">
           <div className="flex flex-wrap gap-2.5">
             {who.map(n => (
               <label key={n} className="flex flex-col gap-0.5 text-xs text-muted-foreground">

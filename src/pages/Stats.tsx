@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { CountUp } from "@/components/CountUp"
+import { HeatChip } from "@/components/HeatChip"
 import { LbFilmRow } from "@/components/LbFilmRow"
 import { TrendChart } from "@/components/Charts"
 import { PosterThumb } from "@/components/PosterThumb"
@@ -44,19 +46,21 @@ export default function Stats() {
   const gap = rated.filter(m => outsideAvg(m) != null).sort((a, b) => Math.abs(groupAvg(b)! - outsideAvg(b)!) - Math.abs(groupAvg(a)! - outsideAvg(a)!)).slice(0, 5)
 
   return (
-    <div className="flex flex-col gap-8">
-      <section aria-label="Summary" className="grid grid-cols-3 gap-2 sm:gap-3">
-        <Tile label="Films" value={String(sum.films)} />
-        <Tile label="Ratings" value={String(sum.ratings)} />
-        <Tile label="Average" value={fmt(sum.average)} suffix="/5" />
+    <div className="stagger flex flex-col gap-8">
+      <section aria-label="Summary" className="flex flex-col gap-4">
+        <div className="grid grid-cols-3 divide-x divide-border border-y-2 border-foreground py-4">
+          <Stat label="Films" n={sum.films} />
+          <Stat label="Ratings" n={sum.ratings} />
+          <Stat label="Average" n={sum.average ?? 0} format={v => fmt(v)} suffix="/5" />
+        </div>
         {sum.best && (
-          <a href={filmHref(sum.best)} className="rise col-span-3 flex items-center gap-4 rounded-xl bg-card p-3 ring-1 ring-foreground/10 hover:bg-muted">
+          <a href={filmHref(sum.best)} className="flex items-center gap-4 rounded-xl py-1 hover:bg-muted/60">
             <PosterThumb title={sum.best.title} year={sum.best.year} className="w-14" />
             <span className="min-w-0 flex-1">
               <span className="block text-xs text-muted-foreground">Highest rated</span>
               <span className="block truncate font-display text-xl leading-tight font-bold">{sum.best.title} <small className="font-sans text-sm font-medium text-muted-foreground">{sum.best.year}</small></span>
             </span>
-            <span className="font-display text-4xl font-extrabold text-gold">{fmt(groupAvg(sum.best))}</span>
+            <span className="font-display text-4xl font-extrabold text-gold"><CountUp value={groupAvg(sum.best) ?? 0} format={v => fmt(v)} /></span>
           </a>
         )}
       </section>
@@ -85,7 +89,7 @@ export default function Stats() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-medium">{m.title} <small className="font-normal text-muted-foreground">{m.year}</small></span>
                   <span className="mt-1 block h-2 rounded-full bg-muted">
-                    <span className={`grow block h-2 rounded-full ${i === 0 ? "bg-gold" : "bg-us"}`} style={{ width: `${(groupAvg(m)! / 5) * 100}%` }} />
+                    <span className={`grow block h-2 rounded-full ${i === 0 ? "bg-sun" : "bg-us"}`} style={{ width: `${(groupAvg(m)! / 5) * 100}%`, "--d": `${200 + i * 90}ms` } as React.CSSProperties} />
                   </span>
                 </span>
                 <span className={`w-12 text-right font-display text-xl font-bold ${i === 0 ? "text-gold" : ""}`}>{fmt(groupAvg(m))}</span>
@@ -102,7 +106,7 @@ export default function Stats() {
 
       <section>
         <h3 className="mb-2 text-xl font-bold">People</h3>
-        <Card data-no-swipe className="py-1">
+        <div data-no-swipe>
           <SortTable
             rows={people}
             rowKey={p => p.n}
@@ -118,12 +122,12 @@ export default function Stats() {
                   </span>
                 ),
               },
-              { id: "avg", label: "Avg", get: p => p.avg, render: p => fmt(p.avg) },
-              { id: "picks", label: "Picks", get: p => p.pickAvg, render: p => fmt(p.pickAvg) },
-              { id: "tilt", label: "Vs group", get: p => p.tilt, render: p => (p.tilt == null ? "–" : <span className={p.tilt > 0.05 ? "text-pos" : p.tilt < -0.05 ? "text-us" : ""}>{p.tilt > 0 ? "+" : ""}{fmt(p.tilt, 1)}</span>) },
+              { id: "avg", label: "Avg", align: "right", get: p => p.avg, render: p => <HeatChip v={p.avg} lo={1.5} hi={4.5}>{fmt(p.avg)}</HeatChip> },
+              { id: "picks", label: "Picks", align: "right", get: p => p.pickAvg, render: p => <HeatChip v={p.pickAvg} lo={2} hi={4}>{fmt(p.pickAvg)}</HeatChip> },
+              { id: "tilt", label: "Vs group", align: "right", get: p => p.tilt, render: p => <HeatChip v={p.tilt} lo={-1.5} hi={1.5}>{p.tilt != null && p.tilt > 0 ? "+" : ""}{fmt(p.tilt, 1)}</HeatChip> },
             ]}
           />
-        </Card>
+        </div>
       </section>
 
       <section>
@@ -227,11 +231,14 @@ export default function Stats() {
   )
 }
 
-function Tile({ label, value, suffix }: { label: string; value: string; suffix?: string }) {
+function Stat({ label, n, format, suffix }: { label: string; n: number; format?: (n: number) => string; suffix?: string }) {
   return (
-    <div className="rise flex flex-col justify-center gap-0.5 rounded-xl bg-card p-3 ring-1 ring-foreground/10 sm:p-4">
+    <div className="flex flex-col items-center gap-0.5 px-2">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="font-display text-3xl leading-none font-extrabold tracking-tight sm:text-4xl">{value}{suffix && <small className="ml-1 font-sans text-sm font-medium text-muted-foreground">{suffix}</small>}</span>
+      <span className="font-display text-5xl leading-none font-extrabold tracking-tight">
+        <CountUp value={n} format={format} />
+        {suffix && <small className="ml-1 font-sans text-sm font-medium text-muted-foreground">{suffix}</small>}
+      </span>
     </div>
   )
 }
