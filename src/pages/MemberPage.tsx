@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { Compare } from "@/components/Compare"
 import { Flower } from "@/components/Flower"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
@@ -126,6 +127,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
       )}
 
       {signedIn === name && <MyPlan name={name} history={lb[name]} />}
+
+      <Compare name={name} lb={lb} />
 
       {(lb[name]?.length ?? 0) > 0 && <PersonAtlas name={name} history={lb[name]} />}
 
