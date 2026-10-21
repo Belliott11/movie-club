@@ -69,6 +69,9 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
+  /** A person's watching plan as stored: already locked with their passphrase, so what is in the database is unreadable to everyone else. */
+  planCipher: (member: string) => Promise<string | null>
+  savePlanCipher: (member: string, cipher: string | null) => Promise<void>
   setCountry: (m: Movie, country: string) => Promise<void>
   /** Makes this device the host: creates the key pair, shares the public half, and returns the private half to back up. */
   sealSetup: (pin: string) => Promise<void>
@@ -375,6 +378,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const planCipher = useCallback(async (member: string) => {
+    if (sb) {
+      const r = await sb.from("club_settings").select("value").eq("key", `plan:${member}`)
+      if (!r.error) return (r.data?.[0]?.value as string | undefined) ?? null
+    }
+    return localStorage.getItem(`plan-local:${member}`)
+  }, [])
+  const savePlanCipher = useCallback(async (member: string, cipher: string | null) => {
+    if (sb) {
+      const r = cipher == null ? await sb.from("club_settings").delete().eq("key", `plan:${member}`) : await sb.from("club_settings").upsert({ key: `plan:${member}`, value: cipher })
+      if (!r.error) return
+    }
+    if (cipher == null) localStorage.removeItem(`plan-local:${member}`)
+    else localStorage.setItem(`plan-local:${member}`, cipher)
+  }, [])
+
   const setCountry = useCallback(async (m: Movie, country: string) => {
     const c = country.trim(), k = String(m.id)
     setCountries(all => {
@@ -588,7 +607,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

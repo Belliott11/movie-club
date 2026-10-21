@@ -5,6 +5,7 @@ import { Flower } from "@/components/Flower"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
+import { MyPlan } from "@/components/MyPlan"
 import { PersonAtlas } from "@/components/PersonAtlas"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
@@ -17,7 +18,7 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function MemberPage({ name }: { name: string }) {
-  const { movies, members, lb, loadLb } = useStore()
+  const { movies, members, lb, loadLb, me: signedIn } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   const back = (
     <a href="#/stats" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}><ArrowLeft /> Stats</a>
@@ -123,6 +124,8 @@ export default function MemberPage({ name }: { name: string }) {
           )}
         </section>
       )}
+
+      {signedIn === name && <MyPlan name={name} history={lb[name]} />}
 
       {(lb[name]?.length ?? 0) > 0 && <PersonAtlas name={name} history={lb[name]} />}
 

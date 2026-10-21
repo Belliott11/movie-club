@@ -1,4 +1,5 @@
 import { AddPerson } from "@/components/AddPerson"
+import { ClubShortlist } from "@/components/ClubShortlist"
 import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
 import { Card } from "@/components/ui/card"
@@ -29,6 +30,7 @@ export default function Next() {
   return (
     <div className="stagger flex flex-col gap-6">
       <ImportNudge />
+      <ClubShortlist />
       <section>
         <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>
         <div className="flex flex-wrap gap-2">
