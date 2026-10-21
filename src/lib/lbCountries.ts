@@ -10,12 +10,18 @@ export const loadCountryCache = (): CountryCache => {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") } catch { return {} }
 }
 
+const VOTES = "lb-votes-v1"
+export const loadVoteCache = (): Record<string, number> => {
+  try { return JSON.parse(localStorage.getItem(VOTES) ?? "{}") } catch { return {} }
+}
+
 const GENRES = "lb-genres-v1"
 /** Film (title and year) to its TMDB genres, filled by the same lookups as the countries. */
 export type GenreCache = Record<string, string[]>
 export const loadGenreCache = (): GenreCache => {
   try { return JSON.parse(localStorage.getItem(GENRES) ?? "{}") } catch { return {} }
 }
+const saveVotes = (v: Record<string, number>) => { try { localStorage.setItem(VOTES, JSON.stringify(v)) } catch { /* fine */ } }
 const saveGenres = (g: GenreCache) => { try { localStorage.setItem(GENRES, JSON.stringify(g)) } catch { /* storage full: it will look up again */ } }
 const save = (c: CountryCache) => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch { /* storage full: it will just look up again next time */ } }
 
@@ -24,7 +30,7 @@ const save = (c: CountryCache) => { try { localStorage.setItem(KEY, JSON.stringi
  * six at a time. `onStep` gets the updated cache as it fills, and `stopped()` ends the run early. Results are kept between visits.
  */
 export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCache, g: GenreCache) => void, stopped: () => boolean) {
-  const cache = loadCountryCache(), genres = loadGenreCache()
+  const cache = loadCountryCache(), genres = loadGenreCache(), votes = loadVoteCache()
   const todo = history.filter(e => cache[entryKey(e)] === undefined || genres[entryKey(e)] === undefined)
   let next = 0, done = 0
   const worker = async () => {
@@ -35,11 +41,12 @@ export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCa
       const d = hit?.id ? await tmdb<any>(`/movie/${hit.id}`) : null
       cache[entryKey(e)] = d?.origin_country?.[0] ?? d?.production_countries?.[0]?.iso_3166_1 ?? ""
       genres[entryKey(e)] = (d?.genres ?? []).map((g: any) => g.name as string)
-      if (++done % 20 === 0) { save(cache); saveGenres(genres); onStep({ ...cache }, { ...genres }) }
+      if (hit?.vote_average) votes[entryKey(e)] = hit.vote_average
+      if (++done % 20 === 0) { save(cache); saveGenres(genres); saveVotes(votes); onStep({ ...cache }, { ...genres }) }
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker))
-  save(cache); saveGenres(genres)
+  save(cache); saveGenres(genres); saveVotes(votes)
   onStep({ ...cache }, { ...genres })
 }
 

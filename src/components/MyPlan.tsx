@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react"
 import { Lock } from "lucide-react"
+import { PlanList } from "@/components/PlanList"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { LbEntry } from "@/lib/letterboxd"
-import { filmKey, groupProgress, seenMatcher, upNext } from "@/lib/plan"
+import { seenMatcher } from "@/lib/plan"
 import { useStore } from "@/lib/store"
 import { usePlan } from "@/lib/usePlan"
 
@@ -15,11 +16,7 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
   const [pass, setPass] = useState("")
   const [bad, setBad] = useState("")
   const [replacing, setReplacing] = useState(false)
-  const [openGroup, setOpenGroup] = useState<number | null>(null)
   const seen = useMemo(() => seenMatcher(history, plan?.overrides), [history, plan?.overrides])
-  const all = plan?.groups.flatMap(g => g.films) ?? []
-  const done = all.filter(seen).length
-  const next = plan ? upNext(plan, seen) : null
 
   if (status === "loading") return null
   const form = (
@@ -53,50 +50,7 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
 
       {status === "open" && plan && (
         <>
-          <p><b className="font-display text-2xl">{done}</b> <span className="text-muted-foreground">of {all.length} films seen, going by your Letterboxd history</span></p>
-          {next && (
-            <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10">
-              <p className="text-sm text-muted-foreground">Up next: group {next.group.n}, {next.group.title.toLowerCase()}</p>
-              <ul className="mt-1 flex flex-col gap-1">
-                {next.films.map(f => <li key={f.title} className="flex items-center justify-between gap-2"><span className="min-w-0 truncate font-medium">{f.title}{f.year ? ` (${f.year})` : ""}</span>{plan.long.includes(f.title) && <span className="shrink-0 text-xs text-muted-foreground">long, save for a weekend</span>}</li>)}
-              </ul>
-            </div>
-          )}
-          <ul className="flex flex-col divide-y divide-border border-y border-border">
-            {plan.groups.map(g => {
-              const p = groupProgress(g, seen), isOpen = openGroup === g.n
-              return (
-                <li key={g.n}>
-                  <button type="button" aria-expanded={isOpen} onClick={() => setOpenGroup(isOpen ? null : g.n)} className="flex min-h-11 w-full items-center gap-3 py-2 text-left">
-                    <span className="min-w-0 flex-1">
-                      <span className={`block truncate font-medium ${p.complete ? "text-muted-foreground line-through" : ""}`}>{g.n}. {g.title.charAt(0) + g.title.slice(1).toLowerCase()}</span>
-                      <span className="mt-1 block h-1.5 rounded-full bg-muted"><span className="block h-full rounded-full bg-world" style={{ width: `${(p.done / Math.max(1, p.total)) * 100}%` }} /></span>
-                    </span>
-                    <span className="shrink-0 text-sm text-muted-foreground">{p.done} / {p.total}</span>
-                  </button>
-                  {isOpen && (
-                    <div className="pb-3">
-                      {g.blurb && <p className="mb-2 text-sm text-muted-foreground">{g.blurb}</p>}
-                      <ul className="flex flex-col">
-                        {g.films.map(f => {
-                          const s = seen(f)
-                          return (
-                            <li key={f.title + f.year} className="flex items-center gap-2 py-1 text-sm">
-                              <button type="button" role="checkbox" aria-checked={s} aria-label={`${f.title}: seen`} onClick={() => setSeen(f, !s)} className="-m-2 flex size-11 shrink-0 items-center justify-center">
-                                <span className={`block size-5 rounded-full border-2 ${s ? "border-world bg-world" : "border-border"}`} />
-                              </button>
-                              <span className={`min-w-0 flex-1 ${s ? "text-muted-foreground line-through" : ""}`}>{f.title}{f.year ? ` (${f.year})` : ""}{plan.overrides?.[filmKey(f)] != null && <button type="button" className="ml-1.5 text-xs underline" onClick={() => setSeen(f, null)}>set by you, undo</button>}</span>
-                              {!s && <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => suggest(f.title, f.year ?? null)}>Suggest to club</Button>}
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <PlanList plan={plan} seen={seen} overrides={plan.overrides} onSeen={setSeen} onSuggest={f => suggest(f.title, f.year ?? null)} />
           {replacing ? form : (
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" className="h-11 px-4" onClick={() => setReplacing(true)}>Replace plan</Button>

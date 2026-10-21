@@ -6,6 +6,7 @@ import { GenreTaste } from "@/components/GenreTaste"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
+import { AutoPlan } from "@/components/AutoPlan"
 import { MyPlan } from "@/components/MyPlan"
 import { PersonAtlas } from "@/components/PersonAtlas"
 import { PosterThumb } from "@/components/PosterThumb"
@@ -127,6 +128,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
       )}
 
       {signedIn === name && <MyPlan name={name} history={lb[name]} />}
+
+      {signedIn === name && <AutoPlan name={name} history={lb[name]} />}
 
       <Compare name={name} lb={lb} />
 
