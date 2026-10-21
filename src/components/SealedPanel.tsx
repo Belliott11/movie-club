@@ -12,7 +12,7 @@ import type { Movie } from "@/lib/types"
  * and the host reveals them all at once. Until then the scores can't be read by anyone else, even from the database.
  */
 export function SealedPanel({ m }: { m: Movie }) {
-  const { me, seal, isHost, loadSeal, sealSetup, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, members, attending } = useStore()
+  const { me, seal, isHost, loadSeal, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, members, attending } = useStore()
   const [pick, setPick] = useState<number | null>(null)
   const [setupPin, setSetupPin] = useState("")
   const [keyText, setKeyText] = useState("")
@@ -56,6 +56,13 @@ export function SealedPanel({ m }: { m: Movie }) {
   } else if (!open) {
     body = isHost ? (
       <>
+        {!seal.lockedKey && (
+          <form className="flex flex-wrap items-center gap-2" onSubmit={async e => { e.preventDefault(); await sealLock(setupPin) }}>
+            <Input value={setupPin} onChange={e => setSetupPin(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="off" placeholder="Choose a PIN (4 to 8 digits)" aria-label="Host PIN" className="h-11 w-56" />
+            <Button type="submit" variant="outline" className="h-11 px-4" disabled={setupPin.length < 4}>Set the PIN</Button>
+            <p className="w-full text-xs text-muted-foreground">Needed to host from another device. It can't be reset.</p>
+          </form>
+        )}
         <p className="text-sm text-muted-foreground">Everyone seals a score for {m.title}, and you open them all together.</p>
         <Button className="h-11 w-fit px-4" onClick={() => sealOpen(m)}>Start sealed ratings for {m.title}</Button>
         {offline}

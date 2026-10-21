@@ -69,6 +69,8 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Makes this device the host: creates the key pair, shares the public half, and returns the private half to back up. */
   sealSetup: (pin: string) => Promise<void>
+  /** Puts a PIN on the key this device already holds (hosts who set up before PINs existed). */
+  sealLock: (pin: string) => Promise<void>
   sealUseKey: (pin: string) => Promise<boolean>
   sealOpen: (m: Movie) => Promise<void>
   sealMine: (m: Movie, v: number) => Promise<void>
@@ -373,6 +375,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSeal(s => ({ ...s, publicKey, lockedKey }))
   }, [])
 
+  const sealLock = useCallback(async (pin: string) => {
+    const priv = localStorage.getItem("seal-private-key")
+    if (!priv) return
+    const lockedKey = await lockKey(priv, pin)
+    await putSetting("seal_locked_key", lockedKey)
+    setSeal(s => ({ ...s, lockedKey }))
+  }, [])
+
   /** Unlock the host key on this device with the PIN. */
   const sealUseKey = useCallback(async (pin: string) => {
     const pub = sealRef.current.publicKey, locked = sealRef.current.lockedKey
@@ -556,7 +566,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, sealSetup, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
