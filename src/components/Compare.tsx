@@ -59,8 +59,8 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
           <p className="text-sm text-muted-foreground">{h.watchedBoth} films watched by both, {h.ratedBoth} rated by both{h.gap != null && <>, off by {f1(h.gap)} stars on average</>}.</p>
         </div>
       </div>
-      <Films title="You both loved" rows={h.bothLoved.map(x => ({ film: x.film, text: `${f1(x.a)} and ${f1(x.b)}` }))} />
-      <Films title="Where you split" rows={h.splits.map(x => ({ film: x.film, text: `${name} ${f1(x.a)}, ${who} ${f1(x.b)}` }))} />
+      <Films title="Both loved" rows={h.bothLoved.map(x => ({ film: x.film, text: `${f1(x.a)} and ${f1(x.b)}` }))} />
+      <Films title="Where they split" rows={h.splits.map(x => ({ film: x.film, text: `${name} ${f1(x.a)}, ${who} ${f1(x.b)}` }))} />
       <Films title={`${name} loves, ${who} hasn't seen`} rows={h.aLoves.map(x => ({ film: x.film, text: `${name} gave ${f1(x.rating)}`, ask: true }))} />
       <Films title={`${who} loves, ${name} hasn't seen`} rows={h.bLoves.map(x => ({ film: x.film, text: `${who} gave ${f1(x.rating)}`, ask: true }))} />
     </section>
