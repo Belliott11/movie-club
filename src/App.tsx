@@ -16,7 +16,7 @@ import { useFilmInfo } from "@/lib/useFilmInfo"
 import { key, pickOrder } from "@/lib/stats"
 import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import Films from "@/pages/Films"
 
 // every page but the first one loads when it is opened, so the site starts with a much smaller download
@@ -92,7 +92,7 @@ function Shell() {
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)
   // a person's page opens on their own favorite from Letterboxd when they have imported, otherwise on their favorite club film
   useEffect(() => { if (page === "people") loadLb() }, [page, loadLb])
-  const lbFav = page === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined
+  const lbFav = useMemo(() => (page === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined), [page, sub, lb])
   const favInfo = useFilmInfo(lbFav?.title ?? "", lbFav?.year ?? null)
   const subject = lbFav
     ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: `${sub}'s favorite on Letterboxd` }

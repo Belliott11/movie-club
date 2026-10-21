@@ -81,8 +81,14 @@ export const deepCuts = (lb: LbHistory, movies: Movie[]) =>
  * (so the list is films people recognise, not alphabetical luck).
  */
 export function favoritesOf(lb: LbHistory, name: string, n = 4): { title: string; year: number; rating: number }[] {
-  const films = allFilms(lb)
-  const seen = (title: string, year: number) => films.find(f => norm(f.title) === norm(title) && Math.abs(f.year - year) <= 1)?.seenBy.length ?? 1
+  const byTitle = new Map<string, Film[]>()
+  for (const f of allFilms(lb)) byTitle.set(norm(f.title), [...(byTitle.get(norm(f.title)) ?? []), f])
+  const counts = new Map<string, number>() // only looked up for films that tie on rating
+  const seen = (title: string, year: number) => {
+    const k = `${title}|${year}`
+    if (!counts.has(k)) counts.set(k, byTitle.get(norm(title))?.find(f => Math.abs(f.year - year) <= 1)?.seenBy.length ?? 1)
+    return counts.get(k)!
+  }
   return (lb[name] ?? [])
     .filter((e): e is [string, number, number] => e[2] != null)
     .map(([title, year, rating]) => ({ title, year, rating }))
