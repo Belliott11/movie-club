@@ -1,7 +1,8 @@
+import { fold } from "./stats"
 import { findEntry, type LbHistory } from "./letterboxd"
 import type { Movie, WatchItem } from "./types"
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+const norm = (s: string) => fold(s).replace(/[^a-z0-9]/g, "")
 
 export type Pick = {
   title: string

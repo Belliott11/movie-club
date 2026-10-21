@@ -22,7 +22,7 @@ export function rankPairRecs(batches: Batch[], seen: (title: string, year: numbe
   const m = new Map<number, PairRec & { score: number; who: Set<string> }>()
   for (const b of batches) {
     for (const r of b.results) {
-      if (r.votes < 7 || !r.year || r.tv || (r.ratings != null && r.ratings < 200) || compilation(r.title) || seen(r.title, r.year)) continue
+      if (r.votes < 7 || !r.year || r.tv || (r.ratings != null && r.ratings < 500) || compilation(r.title) || seen(r.title, r.year)) continue
       const cur = m.get(r.id) ?? { id: r.id, title: r.title, year: r.year, poster: r.poster, because: [], votes: r.votes, score: 0, who: new Set<string>() }
       if (!cur.because.includes(b.because)) { cur.because.push(b.because); cur.score += b.who === "both" ? 2 : 1 }
       cur.who.add(b.who)

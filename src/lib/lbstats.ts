@@ -1,7 +1,8 @@
+import { fold } from "./stats"
 import { findEntry, type LbHistory } from "./letterboxd"
 import type { Movie } from "./types"
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+const norm = (s: string) => fold(s).replace(/[^a-z0-9]/g, "")
 const avg = (v: number[]) => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : null)
 
 export type Film = { title: string; year: number; ratings: { name: string; rating: number }[]; seenBy: string[] }

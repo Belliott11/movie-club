@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { groupAvg, outsideAvg, pickOrder, ratingRange } from "./stats"
+import { groupAvg, key, outsideAvg, pickOrder, ratingRange } from "./stats"
 import type { Movie } from "./types"
 
 const mk = (seq: number, pick: string, ratings: Record<string, number>): Movie => ({ id: seq, seq, title: "t" + seq, year: 2000, pick, ratings })
@@ -99,4 +99,9 @@ test("a rating range needs two ratings and narrows as ratings pile up", () => {
   expect(many.hi - many.lo).toBeLessThan(few.hi - few.lo)
   expect(few.lo).toBeGreaterThanOrEqual(0.5)
   expect(few.hi).toBeLessThanOrEqual(5)
+})
+
+test("titles match with or without accents", () => {
+  expect(key("Cléo from 5 to 7", 1962)).toBe(key("Cleo from 5 to 7", 1962))
+  expect(key("Amélie", 2001)).toBe("amelie|2001")
 })

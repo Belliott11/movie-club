@@ -2,7 +2,9 @@ import type { Movie, WatchItem } from "./types"
 
 export const avg = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null)
 export const fmt = (n: number | null | undefined, d = 2) => (n == null ? "–" : String(+n.toFixed(d)))
-export const key = (t: string, y: number | null) => `${t}|${y}`.toLowerCase().replace(/[^a-z0-9|]/g, "")
+/** Lower case with accents taken off, so "Cléo" and "Cleo" are the same title. */
+export const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+export const key = (t: string, y: number | null) => `${fold(t)}|${y}`.replace(/[^a-z0-9|]/g, "")
 
 export const groupAvg = (m: Movie) => avg(Object.values(m.ratings))
 /** IMDb/10, RT/100, Metacritic/100 and Letterboxd/5, all normalized to 5. */
@@ -46,7 +48,7 @@ export type FilmSort = "newest" | "oldest" | "highest" | "lowest" | "gap" | "div
 export type FilmFilter = { q: string; sort: FilmSort; picker: string; decade: string }
 export const defaultFilter: FilmFilter = { q: "", sort: "newest", picker: "", decade: "" }
 
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "")
+const norm = (s: string) => fold(s).replace(/[^a-z0-9]/g, "")
 
 /** Search by title (case and punctuation ignored), filter by picker and decade, then sort. Films with no data sort last. */
 export function filterFilms(ms: Movie[], f: FilmFilter) {
