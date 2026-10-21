@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
-import { hasTmdb, IMG, tmdb } from "@/lib/api"
+import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
+import { favoritesOf } from "@/lib/lbstats"
 import { crowdPicks } from "@/lib/picks"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -45,22 +46,29 @@ export default function Suggest() {
     ;(async () => {
       const seen = new Set(movies.map(m => key(m.title, m.year)))
       const out: Rec[] = []
-      const top = [...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10)
-      for (const m of top) {
-        const r = await tmdb<{ results?: any[] }>(`/movie/${m.tmdb_id}/recommendations`)
+      // seeds: your own Letterboxd favorites first (films the club hasn't watched), then the club's highest-rated films
+      const mine = me ? favoritesOf(lb, me, 5).filter(f => !seen.has(key(f.title, f.year))) : []
+      const seeds: { id: number; title: string }[] = []
+      for (const f of mine) {
+        const id = (await searchFilm(f.title, f.year))?.id
+        if (id) seeds.push({ id, title: f.title })
+      }
+      seeds.push(...[...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10).map(m => ({ id: m.tmdb_id!, title: m.title })))
+      for (const seed of seeds) {
+        const r = await tmdb<{ results?: any[] }>(`/movie/${seed.id}/recommendations`)
         let n = 0
         for (const x of r?.results || []) {
           if (n === 6) break
           const year = +(x.release_date || "").slice(0, 4)
           if (seen.has(key(x.title, year)) || out.some(q => q.id === x.id)) continue
-          out.push({ id: x.id, title: x.title, year, because: m.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
+          out.push({ id: x.id, title: x.title, year, because: seed.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
           n++
         }
       }
       if (!dead) setRecs(out)
     })()
     return () => { dead = true }
-  }, [movies])
+  }, [movies, me, lb[me]?.length])
 
   // up to 6 candidates per film are loaded; each person sees the first 2 they haven't marked seen or not interested
   const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind
@@ -119,7 +127,8 @@ export default function Suggest() {
         )}
       </section>
       <section>
-        <h3 className="mb-2 text-xl font-bold">Because you liked them (group average 3.5 or higher)</h3>
+        <h3 className="mb-1 text-xl font-bold">Because you liked them</h3>
+        <p className="mb-3 text-sm text-muted-foreground">Starts with your own Letterboxd favorites, then the films the club rated 3.5 or higher.</p>
         {!hasTmdb() ? (
           <p className="text-muted-foreground">Add a TMDB key to config.js to get recommendations here.</p>
         ) : recs === null ? (

@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { LbFilmRow } from "@/components/LbFilmRow"
 import { TrendChart } from "@/components/Charts"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Scale } from "@/components/Scale"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
+import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
 import { isUnused } from "@/lib/people"
 import { awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -18,7 +20,8 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function Stats() {
-  const { movies, members, watchlist, suggestions, renameMember, removeMember } = useStore()
+  const { movies, members, watchlist, suggestions, renameMember, removeMember, lb, loadLb } = useStore()
+  useEffect(() => { loadLb() }, [loadLb])
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   if (!rated.length) return <p className="text-muted-foreground">Stats appear after the first screening: rate a film and the credits start rolling.</p>
 
@@ -31,6 +34,11 @@ export default function Stats() {
     kind && { icon: Heart, label: "Most generous", who: kind.n, detail: `${fmt(kind.avg)} on average` },
     odd && { icon: Shuffle, label: "Most contrarian", who: odd.n, detail: `${fmt(odd.offGroup)} stars from the group` },
   ].filter(Boolean) as typeof awards
+  const imported = Object.keys(lb).filter(n => lb[n]?.length)
+  const twins = tasteTwins(lb)
+  const favs = groupFavorites(lb, movies)
+  const argue = divisiveOnLb(lb)
+  const cuts = deepCuts(lb, movies).slice(0, 6)
   const top = [...rated].sort((a, b) => groupAvg(b)! - groupAvg(a)!).slice(0, 5)
   const divisive = [...rated].filter(m => Object.keys(m.ratings).length > 1).sort((a, b) => spread(b) - spread(a)).slice(0, 5)
   const gap = rated.filter(m => outsideAvg(m) != null).sort((a, b) => Math.abs(groupAvg(b)! - outsideAvg(b)!) - Math.abs(groupAvg(a)! - outsideAvg(a)!)).slice(0, 5)
@@ -146,6 +154,55 @@ export default function Stats() {
             ))}
           </ul>
         ) : <p className="text-muted-foreground">Outside ratings are still loading.</p>}
+      </section>
+
+      <section>
+        <h3 className="text-xl font-bold">From Letterboxd</h3>
+        <p className="mb-4 text-sm text-muted-foreground">Built from everyone's imported history, so it gets sharper with every export. {imported.length} {imported.length === 1 ? "person has" : "people have"} imported so far.</p>
+        {imported.length < 2 ? (
+          <Card className="px-4"><p className="text-sm">These need at least two people to import. <a className="underline" href="#/watch">Import your Letterboxd history</a>.</p></Card>
+        ) : (
+          <div className="flex flex-col gap-7">
+            <div>
+              <h4 className="mb-2 font-display text-lg font-bold">Taste twins</h4>
+              {twins.length ? (
+                <Card className="gap-0 py-2">
+                  {(twins.length > 3 ? [...twins.slice(0, 3), twins[twins.length - 1]] : twins).map((t, i, shown) => [i === 0 ? "Closest" : t === twins[twins.length - 1] ? "Furthest apart" : "Next closest", t, shown] as const).map(([label, t]) => (
+                    <div key={label + t.a + t.b} className="flex items-center gap-3 px-4 py-2">
+                      <span className="flex -space-x-2"><Avatar name={t.a} className="ring-2 ring-card" /><Avatar name={t.b} className="ring-2 ring-card" /></span>
+                      <span className="min-w-0 flex-1"><b>{t.a}</b> and <b>{t.b}</b><br /><span className="text-sm text-muted-foreground">{label}: {fmt(t.gap)} stars apart over {t.shared} films</span></span>
+                    </div>
+                  ))}
+                </Card>
+              ) : <p className="text-sm text-muted-foreground">Needs two people who rated at least 15 of the same films.</p>}
+            </div>
+            {favs.length > 0 && (
+              <div>
+                <h4 className="mb-2 font-display text-lg font-bold">Group favorites the club hasn't watched</h4>
+                <ul className="flex flex-col gap-3">
+                  {favs.map(f => <li key={f.title + f.year}><LbFilmRow title={f.title} year={f.year}>{f.ratings.map(r => `${r.name} ${r.rating}`).join(" · ")}</LbFilmRow></li>)}
+                </ul>
+              </div>
+            )}
+            {argue.length > 0 && (
+              <div>
+                <h4 className="mb-2 font-display text-lg font-bold">Worth arguing about</h4>
+                <ul className="flex flex-col gap-3">
+                  {argue.map(({ f, spread: sp }) => <li key={f.title + f.year}><LbFilmRow title={f.title} year={f.year}>{f.ratings.map(r => `${r.name} ${r.rating}`).join(" · ")} · {fmt(sp, 1)} stars apart</LbFilmRow></li>)}
+                </ul>
+              </div>
+            )}
+            {cuts.length > 0 && (
+              <div>
+                <h4 className="mb-1 font-display text-lg font-bold">Deep cuts</h4>
+                <p className="mb-2 text-sm text-muted-foreground">One person loved it and nobody else has even watched it.</p>
+                <ul className="flex flex-col gap-3">
+                  {cuts.map(f => <li key={f.title + f.year}><LbFilmRow title={f.title} year={f.year}>{f.ratings[0].name} gave it {f.ratings[0].rating}</LbFilmRow></li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
       <section>

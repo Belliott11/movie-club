@@ -1,9 +1,12 @@
+import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
+import { clubVsHome, favoritesOf } from "@/lib/lbstats"
 import { avg, awardWinners, deviations, fmt, groupAvg, histogram, median, memberStats, tasteOverlap, tilt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
@@ -12,7 +15,8 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function MemberPage({ name }: { name: string }) {
-  const { movies, members } = useStore()
+  const { movies, members, lb, loadLb } = useStore()
+  useEffect(() => { loadLb() }, [loadLb])
   const back = (
     <a href="#/stats" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}><ArrowLeft /> Stats</a>
   )
@@ -31,6 +35,8 @@ export default function MemberPage({ name }: { name: string }) {
   const dev = deviations(movies, name).slice(0, 8)
   const me = memberStats(movies, members).find(p => p.n === name)
   const w = awardWinners(movies, members)
+  const lbFavs = favoritesOf(lb, name, 4)
+  const home = clubVsHome(movies, lb, name)
 
   const tags = [
     w.picker?.n === name && "Best pick",
@@ -86,6 +92,32 @@ export default function MemberPage({ name }: { name: string }) {
             <Strip title="Least favorite" films={[...sorted].reverse().slice(0, 3)} rating={m => m.ratings[name]} />
           </section>
         </>
+      )}
+
+      {(lbFavs.length > 0 || home.count >= 3) && (
+        <section className="flex flex-col gap-6">
+          {lbFavs.length > 0 && (
+            <div>
+              <h3 className="mb-1 text-xl font-bold">Letterboxd favorites</h3>
+              <p className="mb-3 text-sm text-muted-foreground">{name}'s highest-rated films on Letterboxd.</p>
+              <ul className="grid grid-cols-2 gap-3">
+                {lbFavs.map(f => <li key={f.title + f.year}><FavoriteStill {...f} /></li>)}
+              </ul>
+            </div>
+          )}
+          {home.count >= 3 && home.average != null && (
+            <div>
+              <h3 className="mb-1 text-xl font-bold">At the club and at home</h3>
+              <p className="text-sm">
+                Across {home.count} films {name} rated in both places, {name} rates{" "}
+                {Math.abs(home.average) < 0.1 ? <><b>about the same</b> at the club as on Letterboxd.</> : <><b>{fmt(Math.abs(home.average), 1)} stars {home.average > 0 ? "higher" : "lower"}</b> at the club than on Letterboxd.</>}
+              </p>
+              <ul className="mt-2 text-sm text-muted-foreground">
+                {home.biggest.map(r => <li key={r.movie.id}>{r.movie.title}: {r.club} at the club, {r.home} at home</li>)}
+              </ul>
+            </div>
+          )}
+        </section>
       )}
 
       {picks.length > 0 && (
