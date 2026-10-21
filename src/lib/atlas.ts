@@ -8,6 +8,12 @@ export const NATIONS: { code: string; name: string }[] = [
   { code: "CN", name: "China" }, { code: "TW", name: "Taiwan" }, { code: "MX", name: "Mexico" }, { code: "ES", name: "Spain" },
   { code: "SE", name: "Sweden" }, { code: "DK", name: "Denmark" }, { code: "RU", name: "Russia" }, { code: "PL", name: "Poland" },
   { code: "IR", name: "Iran" }, { code: "BR", name: "Brazil" }, { code: "AR", name: "Argentina" }, { code: "TH", name: "Thailand" },
+  // smaller or less-watched film nations come after the big twenty, so they only surface once those are covered
+  { code: "CA", name: "Canada" }, { code: "AU", name: "Australia" }, { code: "TR", name: "Turkey" }, { code: "GR", name: "Greece" },
+  { code: "EG", name: "Egypt" }, { code: "SN", name: "Senegal" }, { code: "RO", name: "Romania" }, { code: "HU", name: "Hungary" },
+  { code: "CZ", name: "Czech Republic" }, { code: "BE", name: "Belgium" }, { code: "NO", name: "Norway" }, { code: "FI", name: "Finland" },
+  { code: "PT", name: "Portugal" }, { code: "PH", name: "Philippines" }, { code: "IL", name: "Israel" }, { code: "NL", name: "Netherlands" },
+  { code: "AT", name: "Austria" }, { code: "NG", name: "Nigeria" },
 ]
 
 /** A landmark film: title, year, and optionally the other name it goes by (Letterboxd often uses the English title). */
@@ -28,11 +34,21 @@ export const MOVEMENTS: { name: string; years: string; films: Film[] }[] = [
   { name: "Dogme 95", years: "1998 to 2000", films: [["Festen", 1998, "The Celebration"], ["The Idiots", 1998], ["Mifune's Last Song", 1999, "Mifune"], ["Julien Donkey-Boy", 1999], ["Italian for Beginners", 2000]] },
   { name: "Pre-Code Hollywood", years: "1931 to 1934", films: [["Little Caesar", 1931], ["The Public Enemy", 1931], ["Scarface", 1932], ["I Am a Fugitive from a Chain Gang", 1932], ["Trouble in Paradise", 1932], ["Baby Face", 1933]] },
   { name: "British kitchen sink realism", years: "1959 to 1969", films: [["Room at the Top", 1959], ["Saturday Night and Sunday Morning", 1960], ["A Taste of Honey", 1961], ["The Loneliness of the Long Distance Runner", 1962], ["This Sporting Life", 1963], ["Kes", 1969]] },
-  { name: "Fifth Generation Chinese cinema", years: "1984 to 1994", films: [["Yellow Earth", 1984], ["Red Sorghum", 1987], ["Ju Dou", 1990], ["Raise the Red Lantern", 1991], ["Farewell My Concubine", 1993], ["To Live", 1994]] },
+  { name: "Fifth Generation Chinese cinema", years: "1984 to 1994", films: [["Yellow Earth", 1984], ["Red Sorghum", 1988], ["Ju Dou", 1990], ["Raise the Red Lantern", 1991], ["Farewell My Concubine", 1993], ["To Live", 1994]] },
   { name: "New German Cinema", years: "1972 to 1979", films: [["Aguirre, the Wrath of God", 1972], ["The Bitter Tears of Petra von Kant", 1972], ["Ali: Fear Eats the Soul", 1974], ["Kings of the Road", 1976], ["The Marriage of Maria Braun", 1979]] },
-  { name: "Cinema Novo", years: "1963 to 1969", films: [["Vidas Secas", 1963, "Barren Lives"], ["Black God, White Devil", 1964], ["Entranced Earth", 1967], ["Antonio das Mortes", 1969], ["Macunaíma", 1969]] },
+  { name: "Cinema Novo", years: "1963 to 1969", films: [["Vidas Secas", 1963, "Barren Lives"], ["Black God, White Devil", 1964], ["Entranced Earth", 1967], ["Antonio das Mortes", 1969], ["Macunaíma", 1969, "Macunaima"]] },
   { name: "Direct cinema and cinema verite", years: "1960 to 1976", films: [["Primary", 1960], ["Chronicle of a Summer", 1961], ["Salesman", 1969], ["Gimme Shelter", 1970], ["Grey Gardens", 1975], ["Harlan County, USA", 1976]] },
   { name: "Surrealism", years: "1929 to 1972", films: [["Un Chien Andalou", 1929], ["L'Âge d'or", 1930], ["Meshes of the Afternoon", 1943], ["Belle de Jour", 1967], ["The Discreet Charm of the Bourgeoisie", 1972]] },
+  { name: "French Poetic Realism", years: "1934 to 1939", films: [["L'Atalante", 1934], ["Pépé le Moko", 1937], ["Grand Illusion", 1937], ["Port of Shadows", 1938, "Le Quai des brumes"], ["La Bête Humaine", 1938], ["Daybreak", 1939, "Le jour se lève"], ["The Rules of the Game", 1939]] },
+  { name: "Film noir", years: "1941 to 1958", films: [["The Maltese Falcon", 1941], ["Double Indemnity", 1944], ["Laura", 1944], ["Out of the Past", 1947], ["The Third Man", 1949], ["Sunset Boulevard", 1950], ["Kiss Me Deadly", 1955], ["Touch of Evil", 1958]] },
+  { name: "Polish Film School", years: "1955 to 1962", films: [["A Generation", 1955], ["Kanal", 1957], ["Ashes and Diamonds", 1958], ["Eroica", 1958], ["Mother Joan of the Angels", 1961], ["Knife in the Water", 1962]] },
+  { name: "Bengali and Indian parallel cinema", years: "1955 to 1964", films: [["Pather Panchali", 1955], ["Aparajito", 1956], ["Pyaasa", 1957], ["Apur Sansar", 1959, "The World of Apu"], ["Meghe Dhaka Tara", 1960, "The Cloud-Capped Star"], ["Charulata", 1964]] },
+  { name: "Japanese New Wave", years: "1960 to 1969", films: [["Cruel Story of Youth", 1960], ["Pigs and Battleships", 1961], ["Pitfall", 1962], ["Woman in the Dunes", 1964], ["Branded to Kill", 1967], ["Death by Hanging", 1968], ["Funeral Parade of Roses", 1969]] },
+  { name: "Taiwanese New Cinema", years: "1983 to 1991", films: [["That Day, on the Beach", 1983], ["Taipei Story", 1985], ["The Terrorizers", 1986, "Terrorizers"], ["Dust in the Wind", 1986], ["A City of Sadness", 1989], ["A Brighter Summer Day", 1991]] },
+  { name: "Korean cinema", years: "1960 to 2019", films: [["The Housemaid", 1960], ["Peppermint Candy", 1999], ["Memories of Murder", 2003], ["Oldboy", 2003], ["Poetry", 2010], ["Burning", 2018], ["Parasite", 2019]] },
+  { name: "Romanian New Wave", years: "2005 to 2015", films: [["The Death of Mr. Lazarescu", 2005], ["12:08 East of Bucharest", 2006], ["4 Months, 3 Weeks and 2 Days", 2007], ["Police, Adjective", 2009], ["Aferim!", 2015]] },
+  { name: "New Argentine Cinema", years: "1998 to 2008", films: [["Pizza, Beer, and Cigarettes", 1998, "Pizza, birra, faso"], ["Nine Queens", 2000], ["La Ciénaga", 2001], ["The Holy Girl", 2004], ["The Headless Woman", 2008]] },
+  { name: "West African cinema", years: "1966 to 1992", films: [["Black Girl", 1966], ["Touki Bouki", 1973], ["Xala", 1975], ["Yeelen", 1987], ["Hyenas", 1992]] },
   { name: "Iranian cinema", years: "1969 to 2011", films: [["The Cow", 1969], ["Where Is the Friend's House?", 1987], ["Close-Up", 1990], ["Through the Olive Trees", 1994], ["The White Balloon", 1995], ["Taste of Cherry", 1997], ["A Separation", 2011]] },
 ]
 
