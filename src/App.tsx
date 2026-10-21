@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react"
 import { Clapperboard } from "@/components/Clapperboard"
 import { Hero } from "@/components/Hero"
 import { Leader } from "@/components/Leader"
@@ -16,12 +17,15 @@ import { AddPerson } from "@/components/AddPerson"
 import { fieldCls } from "@/components/field"
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Films from "@/pages/Films"
-import MemberPage from "@/pages/MemberPage"
-import FilmPage from "@/pages/FilmPage"
-import Next from "@/pages/Next"
-import Stats from "@/pages/Stats"
-import Suggest from "@/pages/Suggest"
-import Watch from "@/pages/Watch"
+
+// every page but the first one loads when it is opened, so the site starts with a much smaller download
+const lazyPage = (f: () => Promise<{ default: React.ComponentType<any> }>) => lazy(f)
+const MemberPage = lazyPage(() => import("@/pages/MemberPage"))
+const FilmPage = lazyPage(() => import("@/pages/FilmPage"))
+const Next = lazyPage(() => import("@/pages/Next"))
+const Stats = lazyPage(() => import("@/pages/Stats"))
+const Suggest = lazyPage(() => import("@/pages/Suggest"))
+const Watch = lazyPage(() => import("@/pages/Watch"))
 
 const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"], ["watch", "Watchlists"], ["stats", "Stats"]] as const
 
@@ -151,11 +155,11 @@ function Shell() {
         </TabsList>
       </Tabs>
 
-      <main key={tab + (sub ?? "")}>
+      <main key={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
-      </main>
+      </Suspense></main>
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
         <ClubCode />
         <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
