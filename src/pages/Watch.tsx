@@ -2,6 +2,8 @@ import { useEffect, useState, type ChangeEvent } from "react"
 import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { fetchFeed, mergeHistory } from "@/lib/lbrss"
 import { parseWatchlist } from "@/lib/csv"
 import { findEntry, parseExports, readZip } from "@/lib/letterboxd"
 import { fmt, key } from "@/lib/stats"
@@ -12,6 +14,32 @@ export default function Watch() {
   const [msg, setMsg] = useState("")
   const [busy, setBusy] = useState(false)
   useEffect(() => { loadLb() }, [loadLb])
+
+  // Letterboxd profile sync: the username is remembered on this device, and the feed is re-read at most every 6 hours
+  const userKey = `lb-user:${me}`
+  const [user, setUser] = useState("")
+  const [syncing, setSyncing] = useState(false)
+  const [loaded, setLoaded] = useState(false)
+  useEffect(() => { setUser(me ? localStorage.getItem(userKey) ?? "" : "") }, [me, userKey])
+  useEffect(() => { const t = setTimeout(() => setLoaded(true), 1500); return () => clearTimeout(t) }, [])
+  const sync = async (name: string, quiet = false) => {
+    if (!me || !name.trim()) return
+    setSyncing(true)
+    try {
+      const fresh = await fetchFeed(name)
+      await importLb(mergeHistory(lb[me] ?? [], fresh))
+      localStorage.setItem(userKey, name.trim()); localStorage.setItem(`${userKey}:at`, String(Date.now()))
+      if (!quiet) setMsg(`Synced ${fresh.length} recent ${fresh.length === 1 ? "film" : "films"} from Letterboxd for ${me}.`)
+    } catch (err) {
+      if (!quiet) setMsg((err as Error).message)
+    } finally {
+      setSyncing(false)
+    }
+  }
+  useEffect(() => {
+    const saved = me ? localStorage.getItem(userKey) : null
+    if (saved && loaded && Date.now() - Number(localStorage.getItem(`${userKey}:at`) ?? 0) > 6 * 3600_000) sync(saved, true)
+  }, [me, loaded]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const counts = new Map<string, number>()
   watchlist.forEach(w => counts.set(w.member, (counts.get(w.member) || 0) + 1))
@@ -67,6 +95,17 @@ export default function Watch() {
 
   return (
     <div className="stagger flex flex-col gap-6">
+      {me && (
+        <Card className="gap-3 px-5">
+          <h3 className="text-xl font-bold">Sync from your Letterboxd profile</h3>
+          <p className="text-sm text-muted-foreground">Enter your Letterboxd username (your profile must be public). It adds your latest diary entries and ratings, and checks again about every 6 hours. For your full history, upload the export below once.</p>
+          <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); sync(user) }}>
+            <Input value={user} onChange={e => setUser(e.target.value)} placeholder="Letterboxd username" aria-label="Letterboxd username" autoCapitalize="none" autoCorrect="off" className="h-11 min-w-48 flex-1" />
+            <Button type="submit" className="h-11 px-4" disabled={syncing || !user.trim()}>{syncing ? "Syncing…" : "Sync now"}</Button>
+          </form>
+        </Card>
+      )}
+
       <Card className="gap-3 px-5">
         <h3 className="text-xl font-bold">Import from Letterboxd</h3>
         <ol className="list-decimal pl-5 text-sm leading-relaxed">
