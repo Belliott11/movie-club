@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-const HUES = [25, 60, 100, 155, 195, 240, 290, 335]
+const HUES = [15, 40, 70, 105, 150, 190, 220, 250]
 
 /** The same name always gets the same hue, so a person is recognisable across pages. */
 export const hueOf = (name: string) => {

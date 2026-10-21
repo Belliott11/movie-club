@@ -1,6 +1,6 @@
 const pos = (v: number) => `${(v / 5) * 100}%`
 
-/** 0-5 ruler: red dot is the club's average, violet dot is everyone else's, the band between is the gap. */
+/** 0-5 ruler: red dot is the club's average, teal dot is everyone else's, the band between is the gap. */
 export function Scale({ us, world }: { us: number | null; world: number | null }) {
   return (
     <div aria-hidden className="relative mt-2 h-6">

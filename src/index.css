@@ -4,54 +4,54 @@
 @custom-variant dark (&:is(.dark *));
 
 /* Every color is a token. Light and dark are two sets of the same names.
-   Data colors come from three-strip Technicolor: magenta is the club, cyan is everyone else, yellow is the standout. */
+   Cinema palette on warm paper and charcoal: curtain red is the club, teal is everyone else, marquee amber is the standout. */
 :root {
   --radius: 0.75rem;
-  --background: #f1f0f8;
-  --foreground: #0d1530;
-  --card: #ffffff;
-  --card-foreground: #0d1530;
-  --primary: #0d1530;
-  --primary-foreground: #ffffff;
-  --secondary: #e4e2f1;
-  --secondary-foreground: #0d1530;
-  --muted: #e4e2f1;
-  --muted-foreground: #596084;
-  --accent: #e4e2f1;
-  --accent-foreground: #0d1530;
-  --destructive: #c4124f;
-  --border: #d6d4e6;
-  --input: #d6d4e6;
-  --ring: #0092b8;
+  --background: #f5f0e6;
+  --foreground: #1c1915;
+  --card: #fffdf8;
+  --card-foreground: #1c1915;
+  --primary: #1c1915;
+  --primary-foreground: #fffdf8;
+  --secondary: #ebe4d4;
+  --secondary-foreground: #1c1915;
+  --muted: #ebe4d4;
+  --muted-foreground: #6b6354;
+  --accent: #ebe4d4;
+  --accent-foreground: #1c1915;
+  --destructive: #9f1d1d;
+  --border: #ddd4c0;
+  --input: #ddd4c0;
+  --ring: #0f7b86;
   /* meaning colors stay fixed */
-  --us: #e0157a;
-  --world: #0092b8;
-  --pos: #12935a;
-  --gold: #8a6100; /* yellow for text */
-  --sun: #ffc21a; /* yellow for fills */
+  --us: #d1432a;
+  --world: #0f7b86;
+  --pos: #4a8a1f;
+  --gold: #8a5a00; /* yellow for text */
+  --sun: #f2b01e; /* yellow for fills */
 }
 .dark {
-  --background: #070b19;
-  --foreground: #eceffb;
-  --card: #111936;
-  --card-foreground: #eceffb;
-  --primary: #eceffb;
-  --primary-foreground: #070b19;
-  --secondary: #1b2547;
-  --secondary-foreground: #eceffb;
-  --muted: #1b2547;
-  --muted-foreground: #9aa4c9;
-  --accent: #1b2547;
-  --accent-foreground: #eceffb;
-  --destructive: #ff6b9a;
-  --border: #243059;
-  --input: #243059;
-  --ring: #36d3f2;
-  --us: #ff4da0;
-  --world: #36d3f2;
-  --pos: #3ccf8e;
-  --gold: #ffd23f;
-  --sun: #ffd23f;
+  --background: #14110e;
+  --foreground: #f3ece0;
+  --card: #1f1b17;
+  --card-foreground: #f3ece0;
+  --primary: #f3ece0;
+  --primary-foreground: #14110e;
+  --secondary: #2a251f;
+  --secondary-foreground: #f3ece0;
+  --muted: #2a251f;
+  --muted-foreground: #a99f8c;
+  --accent: #2a251f;
+  --accent-foreground: #f3ece0;
+  --destructive: #ff7a6b;
+  --border: #38312a;
+  --input: #38312a;
+  --ring: #4cc3cf;
+  --us: #ff6a4d;
+  --world: #4cc3cf;
+  --pos: #8fcf55;
+  --gold: #f7be3a;
+  --sun: #f7be3a;
 }
 
 @theme inline {

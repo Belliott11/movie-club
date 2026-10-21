@@ -10,7 +10,7 @@ export function PosterThumb({ title, year, badge, className = "w-14", gold = fal
     <span className={`relative inline-block shrink-0 ${className}`}>
       {p ? <img src={`${IMG}w185${p}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="block aspect-[2/3] w-full rounded-md bg-muted" />}
       {badge != null && (
-        <span className={`absolute -right-1 -bottom-1 min-w-7 rounded-full px-1.5 py-0.5 text-center font-display text-sm leading-none font-bold shadow ring-2 ring-card ${gold ? "bg-sun text-[#0d1530]" : "bg-foreground text-background"}`}>{badge}</span>
+        <span className={`absolute -right-1 -bottom-1 min-w-7 rounded-full px-1.5 py-0.5 text-center font-display text-sm leading-none font-bold shadow ring-2 ring-card ${gold ? "bg-sun text-[#1c1915]" : "bg-foreground text-background"}`}>{badge}</span>
       )}
     </span>
   )

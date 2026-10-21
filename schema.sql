@@ -39,9 +39,16 @@ create table if not exists lb_history (
   member text primary key, data jsonb not null, updated_at timestamptz default now()
 );
 
+-- Sealed scores: everyone locks a score with the host's public key, and only the host's device can open them.
+create table if not exists club_settings (key text primary key, value text);
+create table if not exists sealed (
+  movie_id bigint references movies(id) on delete cascade,
+  member text, cipher text not null, primary key (movie_id, member)
+);
+
 -- Open access for every table (replaces any earlier policy, so re-running is fine).
 do $$ declare t text; begin
-  foreach t in array array['movies','ratings','watchlist','suggestions','members','takes','rec_flags','lb_history'] loop
+  foreach t in array array['movies','ratings','watchlist','suggestions','members','takes','rec_flags','lb_history','club_settings','sealed'] loop
     execute format('alter table %I enable row level security', t);
     execute format('drop policy if exists "open" on %I', t);
     execute format('create policy "open" on %I for all using (true) with check (true)', t);

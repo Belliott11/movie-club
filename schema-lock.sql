@@ -4,7 +4,7 @@
 -- To undo: re-run the "open" policy lines at the bottom of this file.
 
 do $$ declare t text; begin
-  foreach t in array array['movies','ratings','watchlist','suggestions','members','takes','rec_flags','lb_history'] loop
+  foreach t in array array['movies','ratings','watchlist','suggestions','members','takes','rec_flags','lb_history','club_settings','sealed'] loop
     execute format('drop policy if exists "open" on %I', t);
     execute format('drop policy if exists "read" on %I', t);
     execute format('drop policy if exists "write" on %I', t);

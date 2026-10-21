@@ -112,7 +112,7 @@ export default function Stats() {
             rowKey={p => p.n}
             initial={{ id: "attend", dir: "desc" }}
             columns={[
-              { id: "name", label: "Name", get: p => p.n, first: "asc", render: p => <a className="flex items-center gap-1.5 underline" href={personHref(p.n)}><span className="hidden min-[400px]:inline-flex"><Avatar name={p.n} size="sm" /></span>{p.n}</a> },
+              { id: "name", label: "Name", get: p => p.n, first: "asc", render: p => <a className="flex items-center gap-1.5 font-medium hover:underline" href={personHref(p.n)}><span className="hidden min-[400px]:inline-flex"><Avatar name={p.n} size="sm" /></span>{p.n}</a> },
               {
                 id: "attend", label: "Attend", get: p => p.attend,
                 render: p => (
@@ -265,7 +265,7 @@ function PersonRow({ name, unused, onRename, onRemove }: { name: string; unused:
   if (!editing) {
     return (
       <div className="flex items-center gap-2 px-4 py-1">
-        <a className="flex flex-1 items-center gap-2 underline" href={personHref(name)}><Avatar name={name} size="sm" />{name}</a>
+        <a className="flex flex-1 items-center gap-2 font-medium hover:underline" href={personHref(name)}><Avatar name={name} size="sm" />{name}</a>
         <Button variant="ghost" className="h-10 px-3" onClick={() => { setTo(name); setEditing(true) }}>Rename or merge</Button>
         {unused && <Button variant="ghost" className="h-10 px-3 text-destructive" onClick={onRemove}>Remove</Button>}
       </div>

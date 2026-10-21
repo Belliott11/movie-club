@@ -59,7 +59,7 @@ export default function MemberPage({ name }: { name: string }) {
       </header>
       {tags.length > 0 && (
         <ul className="-mt-4 flex flex-wrap gap-2">
-          {tags.map((tag, i) => <li key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${i === 0 && tags[0] === "Best pick" ? "bg-sun text-[#0d1530]" : "bg-card ring-1 ring-foreground/10"}`}>{tag}</li>)}
+          {tags.map((tag, i) => <li key={tag} className={`rounded-full px-3 py-1 text-sm font-medium ${i === 0 && tags[0] === "Best pick" ? "bg-sun text-[#1c1915]" : "bg-card ring-1 ring-foreground/10"}`}>{tag}</li>)}
         </ul>
       )}
 

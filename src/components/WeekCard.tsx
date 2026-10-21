@@ -4,11 +4,12 @@ import { fmt, groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { buttonVariants } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { SealedPanel } from "./SealedPanel"
 import { StarRating } from "./StarRating"
 
 /** The newest film, with one-tap rating for whoever is signed in and a "waiting on" line for everyone else. */
 export function WeekCard() {
-  const { movies, mini, me, attending, setRating } = useStore()
+  const { movies, mini, me, attending, setRating, seal } = useStore()
   const m = [...movies].sort((a, b) => b.seq - a.seq)[0]
   const [d, setD] = useState<any>(null)
   const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
@@ -40,7 +41,7 @@ export function WeekCard() {
   const streaming = where?.names ?? []
 
   return (
-    <Card className="stub rise gap-3 px-4" style={{ "--cut": "calc(100% - 4.5rem)" } as React.CSSProperties}>
+    <Card className={`${seal.openMovie === String(m.id) ? "" : "stub "}rise gap-3 px-4`} style={{ "--cut": "calc(100% - 4.5rem)" } as React.CSSProperties}>
       <div className="flex gap-4">
         {info?.p ? <img src={`${IMG}w154${info.p}`} alt="" className="aspect-[2/3] w-20 shrink-0 self-start rounded-md object-cover" /> : <span className="aspect-[2/3] w-20 shrink-0 self-start rounded-md bg-muted" />}
         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -67,7 +68,9 @@ export function WeekCard() {
           </div>
         </div>
       )}
-      {me ? (
+      <SealedPanel m={m} />
+      {/* while scores are being sealed for this film, the open rating row would give them away */}
+      {seal.openMovie === String(m.id) ? null : me ? (
         <div className="-mx-4 flex min-h-14 flex-wrap items-center gap-x-3 border-t-2 border-dashed border-border px-4 pt-3">
           <span className="text-sm text-muted-foreground">Your rating</span>
           <StarRating label={`Your rating for ${m.title}`} value={mine} onChange={v => setRating(m, me, v)} />

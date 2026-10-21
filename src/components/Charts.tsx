@@ -5,6 +5,11 @@ import { fmt } from "@/lib/stats"
  * Bars for how many ratings sit at each half-star step, shaded from magenta (low) to cyan (high). They grow up from the baseline in turn.
  * `average` and `median` are noted underneath. Screen readers get the same numbers as a list.
  */
+/** Low scores run red, the middle amber, high scores teal. */
+const scale = (t: number) => t < 0.5
+  ? `color-mix(in oklab, var(--sun) ${t * 200}%, var(--us))`
+  : `color-mix(in oklab, var(--world) ${(t - 0.5) * 200}%, var(--sun))`
+
 export function Histogram({ bins, label, average, median }: { bins: { v: number; n: number }[]; label: string; average?: number | null; median?: number | null }) {
   const max = Math.max(1, ...bins.map(b => b.n))
   const at = (v: number) => `${((v * 2 - 1 + 0.5) / 10) * 100}%` // centre of that half-star's column
@@ -18,7 +23,7 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
               className="grow-y w-full rounded-t"
               style={{
                 height: `${(b.n / max) * 80}%`, minHeight: b.n ? 4 : 0, "--d": `${i * 50}ms`,
-                background: `color-mix(in oklab, var(--world) ${((b.v - 0.5) / 4.5) * 100}%, var(--us))`,
+                background: scale((b.v - 0.5) / 4.5),
               } as CSSProperties}
             />
           </div>

@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
 import { findEntry, type LbEntry, type LbHistory } from "./letterboxd"
 import { isUnused, mergeMovies, mergeSuggestions, mergeWatch } from "./people"
+import { newSealKeys, openScore, sealScore } from "./seal"
 import { SEED } from "./seed"
 import { key, membersOf } from "./stats"
 import type { Id, Mini, Movie, RecFlag, Suggestion, WatchItem } from "./types"
@@ -31,6 +32,16 @@ const fail = (e: { message: string; code?: string } | null) => {
 
 export type Toast = { id: number; msg: string; undo?: () => void }
 export type Takes = Record<string, string> // "movieId|member" -> one-line take
+export type SealState = {
+  ready: boolean
+  /** false when the shared tables don't exist yet, so sealing works on this device only */
+  shared: boolean
+  publicKey: string | null
+  /** the film whose scores are being sealed right now */
+  openMovie: string | null
+  /** who has sealed a score, per film. Only names, never scores. */
+  sealedBy: Record<string, string[]>
+}
 
 type Store = {
   ready: boolean; error: string; offline: boolean
@@ -50,6 +61,20 @@ type Store = {
   addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   setTake: (m: Movie, member: string, text: string) => Promise<void>
+  seal: SealState
+  /** True on the device that holds the reveal key. */
+  isHost: boolean
+  loadSeal: (force?: boolean) => void
+  /** Makes this device the host: creates the key pair, shares the public half, and returns the private half to back up. */
+  sealSetup: () => Promise<string>
+  sealUseKey: (privateKey: string) => Promise<boolean>
+  sealOpen: (m: Movie) => Promise<void>
+  sealMine: (m: Movie, v: number) => Promise<void>
+  /** What this device sealed for a film, so you can see your own pick. */
+  sealedValue: (m: Movie) => number | null
+  /** Opens every sealed score for the film, records them as ratings, and returns them lowest first. */
+  sealReveal: (m: Movie) => Promise<{ member: string; value: number }[]>
+  sealCancel: (m: Movie) => Promise<void>
   /** Everyone's imported Letterboxd history. Loaded the first time a page asks for it, since it is the biggest data in the club. */
   lb: LbHistory; loadLb: () => void
   importLb: (entries: LbEntry[]) => Promise<void>
@@ -78,6 +103,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [lb, setLb] = useState<LbHistory>(() => lsGet("lb-local", {}))
   const lbRequested = useRef(false)
   const [flags, setFlags] = useState<RecFlag[]>(() => lsGet("rec-flags-local", []))
+  const [seal, setSeal] = useState<SealState>({ ready: false, shared: false, publicKey: null, openMovie: null, sealedBy: {} })
+  const sealRef = useRef(seal)
+  sealRef.current = seal
+  const sealLoaded = useRef(false)
+  const [hostKey, setHostKey] = useState<string | null>(() => localStorage.getItem("seal-private-key"))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
   const [posterPref, setPosterPref] = useState<Record<string, string>>(() => lsGet("poster-pref-v1", {}))
@@ -296,6 +326,112 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return todo.length
   }, [me, lb, writeRating, notify])
 
+  // ---- sealed scores ----
+  type SealLocal = { publicKey: string | null; open: string | null; rows: Record<string, Record<string, string>> }
+  const readSealLocal = (): SealLocal => lsGet("seal-local-v1", { publicKey: null, open: null, rows: {} })
+
+  const loadSeal = useCallback(async (force = false) => {
+    if (sealLoaded.current && !force) return
+    sealLoaded.current = true
+    if (sb) {
+      const s = await sb.from("club_settings").select("key,value")
+      if (!s.error) {
+        const get = (k: string) => (s.data as { key: string; value: string }[]).find(r => r.key === k)?.value ?? null
+        const rows = await sb.from("sealed").select("movie_id,member")
+        const by: Record<string, string[]> = {}
+        for (const r of (rows.data ?? []) as { movie_id: number; member: string }[]) (by[String(r.movie_id)] ||= []).push(r.member)
+        setSeal({ ready: true, shared: true, publicKey: get("seal_public_key"), openMovie: get("seal_open"), sealedBy: by })
+        return
+      }
+    }
+    const l = readSealLocal()
+    setSeal({ ready: true, shared: false, publicKey: l.publicKey, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
+  }, [])
+
+  // one place that writes a setting to the shared table, or to this device when the table isn't there
+  const putSetting = async (k: "seal_public_key" | "seal_open", value: string | null) => {
+    if (sealRef.current.shared && sb) {
+      fail((value == null ? await sb.from("club_settings").delete().eq("key", k) : await sb.from("club_settings").upsert({ key: k, value })).error)
+    } else {
+      const l = readSealLocal()
+      if (k === "seal_public_key") l.publicKey = value
+      else l.open = value
+      lsSet("seal-local-v1", l)
+    }
+  }
+
+  const sealSetup = useCallback(async () => {
+    const { publicKey, privateKey } = await newSealKeys()
+    await putSetting("seal_public_key", publicKey)
+    localStorage.setItem("seal-private-key", privateKey)
+    setHostKey(privateKey)
+    setSeal(s => ({ ...s, publicKey }))
+    return privateKey
+  }, [])
+
+  const sealUseKey = useCallback(async (privateKey: string) => {
+    const pub = sealRef.current.publicKey
+    if (!pub) return false
+    const key = privateKey.trim()
+    if ((await openScore(key, await sealScore(pub, 3))) !== 3) return false // the key must open what the public key seals
+    localStorage.setItem("seal-private-key", key)
+    setHostKey(key)
+    return true
+  }, [])
+
+  const sealOpen = useCallback(async (m: Movie) => {
+    await putSetting("seal_open", String(m.id))
+    setSeal(s => ({ ...s, openMovie: String(m.id) }))
+  }, [])
+
+  const sealMine = useCallback(async (m: Movie, v: number) => {
+    const pub = sealRef.current.publicKey
+    if (!me || !pub) return
+    const cipher = await sealScore(pub, v)
+    if (sealRef.current.shared && sb) fail((await sb.from("sealed").upsert({ movie_id: m.id, member: me, cipher })).error)
+    else {
+      const l = readSealLocal()
+      ;(l.rows[String(m.id)] ||= {})[me] = cipher
+      lsSet("seal-local-v1", l)
+    }
+    lsSet(`sealed-mine:${me}:${m.id}`, v) // your own pick stays visible to you
+    setSeal(s => ({ ...s, sealedBy: { ...s.sealedBy, [String(m.id)]: [...new Set([...(s.sealedBy[String(m.id)] ?? []), me])] } }))
+  }, [me])
+
+  const sealedValue = useCallback((m: Movie) => (me ? lsGet<number | null>(`sealed-mine:${me}:${m.id}`, null) : null), [me])
+
+  const sealReveal = useCallback(async (m: Movie) => {
+    const priv = localStorage.getItem("seal-private-key")
+    if (!priv) return []
+    let rows: { member: string; cipher: string }[]
+    if (sealRef.current.shared && sb) {
+      const r = await sb.from("sealed").select("member,cipher").eq("movie_id", m.id)
+      rows = (r.data ?? []) as typeof rows
+    } else {
+      rows = Object.entries(readSealLocal().rows[String(m.id)] ?? {}).map(([member, cipher]) => ({ member, cipher }))
+    }
+    const opened: { member: string; value: number }[] = []
+    for (const r of rows) {
+      const value = await openScore(priv, r.cipher)
+      if (value != null) opened.push({ member: r.member, value })
+    }
+    for (const o of opened) await writeRating(m, o.member, o.value) // the sealed scores become ordinary ratings
+    await sealCancelInner(m)
+    return opened.sort((a, b) => a.value - b.value || a.member.localeCompare(b.member))
+  }, [writeRating])
+
+  const sealCancelInner = async (m: Movie) => {
+    if (sealRef.current.shared && sb) await sb.from("sealed").delete().eq("movie_id", m.id)
+    else {
+      const l = readSealLocal()
+      delete l.rows[String(m.id)]
+      lsSet("seal-local-v1", l)
+    }
+    await putSetting("seal_open", null)
+    setSeal(s => ({ ...s, openMovie: null, sealedBy: { ...s.sealedBy, [String(m.id)]: [] } }))
+  }
+  const sealCancel = useCallback(async (m: Movie) => { await sealCancelInner(m) }, [])
+
   const seed = useCallback(async () => {
     const have = new Set(movRef.current.map(m => key(m.title, m.year)))
     for (const [t, y, p, r] of SEED) if (!have.has(key(t, y))) await addMovie(t, y, p, r)
@@ -415,7 +551,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, sealSetup, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
