@@ -3,20 +3,20 @@ import { Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { LbEntry } from "@/lib/letterboxd"
-import { groupProgress, seenMatcher, upNext } from "@/lib/plan"
+import { filmKey, groupProgress, seenMatcher, upNext } from "@/lib/plan"
 import { useStore } from "@/lib/store"
 import { usePlan } from "@/lib/usePlan"
 
 /** Only ever shown to the person it belongs to, on their own page. */
 export function MyPlan({ name, history }: { name: string; history: LbEntry[] | undefined }) {
   const { suggest } = useStore()
-  const { plan, status, save, unlock, lock, remove } = usePlan(name)
+  const { plan, status, save, unlock, lock, remove, setSeen } = usePlan(name)
   const [text, setText] = useState("")
   const [pass, setPass] = useState("")
   const [bad, setBad] = useState("")
   const [replacing, setReplacing] = useState(false)
   const [openGroup, setOpenGroup] = useState<number | null>(null)
-  const seen = useMemo(() => seenMatcher(history), [history])
+  const seen = useMemo(() => seenMatcher(history, plan?.overrides), [history, plan?.overrides])
   const all = plan?.groups.flatMap(g => g.films) ?? []
   const done = all.filter(seen).length
   const next = plan ? upNext(plan, seen) : null
@@ -82,8 +82,10 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
                           const s = seen(f)
                           return (
                             <li key={f.title + f.year} className="flex items-center gap-2 py-1 text-sm">
-                              <span aria-hidden className={`size-4 shrink-0 rounded-full border-2 ${s ? "border-world bg-world" : "border-border"}`} />
-                              <span className={`min-w-0 flex-1 ${s ? "text-muted-foreground line-through" : ""}`}>{f.title}{f.year ? ` (${f.year})` : ""}<span className="sr-only">{s ? ", seen" : ", not seen"}</span></span>
+                              <button type="button" role="checkbox" aria-checked={s} aria-label={`${f.title}: seen`} onClick={() => setSeen(f, !s)} className="-m-2 flex size-11 shrink-0 items-center justify-center">
+                                <span className={`block size-5 rounded-full border-2 ${s ? "border-world bg-world" : "border-border"}`} />
+                              </button>
+                              <span className={`min-w-0 flex-1 ${s ? "text-muted-foreground line-through" : ""}`}>{f.title}{f.year ? ` (${f.year})` : ""}{plan.overrides?.[filmKey(f)] != null && <button type="button" className="ml-1.5 text-xs underline" onClick={() => setSeen(f, null)}>set by you, undo</button>}</span>
                               {!s && <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => suggest(f.title, f.year ?? null)}>Suggest to club</Button>}
                             </li>
                           )

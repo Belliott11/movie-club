@@ -9,7 +9,7 @@ export function ClubShortlist() {
   const { me, lb, suggest, suggestions, movies } = useStore()
   const { plan, status } = usePlan(me)
   if (!me || status !== "open" || !plan?.club.length) return null
-  const seen = seenMatcher(lb[me])
+  const seen = seenMatcher(lb[me], plan.overrides)
   const asked = new Set(suggestions.map(s => s.title.toLowerCase()))
   const played = new Set(movies.map(m => m.title.toLowerCase()))
   const left = plan.club.filter(t => !seen({ title: t }) && !played.has(t.toLowerCase()))

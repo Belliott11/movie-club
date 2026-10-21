@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { groupProgress, parsePlan, seenMatcher, upNext } from "./plan"
+import { filmKey, groupProgress, parsePlan, seenMatcher, upNext } from "./plan"
 
 const sample = `WATCHLIST PLAN BY GROUP, some intro
 Long hauls to save for weekends or split over two nights: Shoah, Dekalog, Jeanne Dielman.
@@ -40,4 +40,12 @@ test("seen films come from the Letterboxd history, with or without a year, and d
   const next = upNext(p, seen, 2)!
   expect(next.group.n).toBe(1)
   expect(next.films.map(f => f.title)).toEqual(["Psycho", "Black Swan"])
+})
+
+test("a correction beats Letterboxd either way", () => {
+  const h: [string, number, number | null][] = [["The Thing", 1982, 5]]
+  const seen = seenMatcher(h, { [filmKey({ title: "The Thing" })]: false, [filmKey({ title: "Psycho" })]: true })
+  expect(seen({ title: "The Thing" })).toBe(false)
+  expect(seen({ title: "Psycho" })).toBe(true)
+  expect(seen({ title: "Alien" })).toBe(false)
 })

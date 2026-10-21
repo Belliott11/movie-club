@@ -3,7 +3,10 @@ import { key } from "./stats"
 
 export type PlanFilm = { title: string; year?: number; added?: boolean; canon?: string }
 export type PlanGroup = { n: number; title: string; blurb: string; films: PlanFilm[] }
-export type Plan = { groups: PlanGroup[]; club: string[]; long: string[] }
+/** `overrides` holds the owner's own corrections: true = seen, false = not seen, whatever Letterboxd says. */
+export type Plan = { groups: PlanGroup[]; club: string[]; long: string[]; overrides?: Record<string, boolean> }
+
+export const filmKey = (f: { title: string; year?: number }) => key(f.title, f.year ?? 0)
 
 const list = (line: string) => line.slice(line.indexOf(":") + 1).replace(/\.\s*$/, "").split(/,\s+/).map(s => s.trim()).filter(Boolean)
 
@@ -39,10 +42,10 @@ export function parsePlan(text: string): Plan {
 
 const titleKey = (t: string) => key(t, 0).split("|")[0]
 
-/** Whether someone has watched a plan film, going by their Letterboxd history. Plan films without a year match on title alone. */
-export function seenMatcher(history: LbEntry[] | undefined) {
+/** Whether someone has watched a plan film: their own correction if they made one, otherwise their Letterboxd history. Plan films without a year match on title alone. */
+export function seenMatcher(history: LbEntry[] | undefined, overrides: Record<string, boolean> = {}) {
   const titles = new Set((history ?? []).map(e => titleKey(e[0])))
-  return (f: { title: string; year?: number }) => (f.year ? !!findEntry(history, f.title, f.year) : titles.has(titleKey(f.title)))
+  return (f: { title: string; year?: number }) => overrides[filmKey(f)] ?? (f.year ? !!findEntry(history, f.title, f.year) : titles.has(titleKey(f.title)))
 }
 
 export function groupProgress(g: PlanGroup, seen: (f: PlanFilm) => boolean) {
