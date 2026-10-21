@@ -1,4 +1,5 @@
 import { lazy, Suspense } from "react"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Clapperboard } from "@/components/Clapperboard"
 import { Hero } from "@/components/Hero"
 import { Leader } from "@/components/Leader"
@@ -19,7 +20,14 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import Films from "@/pages/Films"
 
 // every page but the first one loads when it is opened, so the site starts with a much smaller download
-const lazyPage = (f: () => Promise<{ default: React.ComponentType<any> }>) => lazy(f)
+// If a tab's code is gone because the site was just updated, reload once to pick up the new version (once, so it can't loop).
+const lazyPage = (f: () => Promise<{ default: React.ComponentType<any> }>) =>
+  lazy(() => f().catch(err => {
+    if (sessionStorage.getItem("chunk-reload")) throw err
+    sessionStorage.setItem("chunk-reload", "1")
+    location.reload()
+    return new Promise<never>(() => {})
+  }))
 const loaders = {
   MemberPage: () => import("@/pages/MemberPage"),
   FilmPage: () => import("@/pages/FilmPage"),
@@ -75,9 +83,10 @@ function Shell() {
   // once the first page is up, quietly download the rest of the tabs
   useEffect(() => {
     if (!ready) return
-    const t = setTimeout(() => Object.values(loaders).forEach(load => load()), 1200)
+    const t = setTimeout(() => Object.values(loaders).forEach(load => load().catch(() => {})), 1200)
     return () => clearTimeout(t)
   }, [ready])
+  useEffect(() => { const t = setTimeout(() => sessionStorage.removeItem("chunk-reload"), 15000); return () => clearTimeout(t) }, [])
   const firstTab = useRef(true)
   useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)
@@ -176,11 +185,11 @@ function Shell() {
         </TabsList>
       </Tabs>
 
-      <main key={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
+      <main key={tab + (sub ?? "")}><ErrorBoundary resetKey={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
-      </Suspense></main>
+      </Suspense></ErrorBoundary></main>
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
         <ClubCode />
         <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
