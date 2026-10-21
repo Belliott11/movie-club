@@ -73,6 +73,7 @@ export function Breakdown({ movies }: { movies: Movie[] }) {
   const info = useFilmTags(movies)
   const genres = useMemo(() => byTag(movies, m => info[String(m.id)]?.genres ?? []), [movies, info])
   const countries = useMemo(() => byTag(movies, m => info[String(m.id)]?.countries ?? []), [movies, info])
+  const languages = useMemo(() => byTag(movies, m => info[String(m.id)]?.language ? [info[String(m.id)].language!] : []), [movies, info])
   const decades = byDecade(movies)
   return (
     <section className="flex flex-col gap-5">
@@ -86,7 +87,8 @@ export function Breakdown({ movies }: { movies: Movie[] }) {
         <Years movies={movies} />
       </div>
       {genres.length > 0 && <Tags title="Genres" groups={genres} />}
-      {countries.length > 0 && <Tags title="Countries" groups={countries} />}
+      {countries.length > 0 && <Tags title="Main country" groups={countries} />}
+      {languages.length > 0 && <Tags title="Original language" groups={languages} />}
     </section>
   )
 }
