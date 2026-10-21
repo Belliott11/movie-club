@@ -58,12 +58,19 @@ const names = (n: string[]) => (n.length <= 2 ? n.join(" and ") : `${n.slice(0, 
 export function rankForGroup(attending: string[], lb: LbHistory, watchlist: WatchItem[], movies: Movie[], limit = 8): Ranked[] {
   if (!attending.length) return []
   const history = indexHistory(lb)
-  const find = (title: string, year: number) => history.find(p => norm(p.title) === norm(title) && Math.abs(p.year - year) <= 1)
+  const historyByTitle = new Map<string, Pick[]>()
+  for (const p of history) historyByTitle.set(norm(p.title), [...(historyByTitle.get(norm(p.title)) ?? []), p])
+  const find = (title: string, year: number) => historyByTitle.get(norm(title))?.find(p => Math.abs(p.year - year) <= 1)
+  const watchByTitle = new Map<string, WatchItem[]>()
+  for (const w of watchlist) watchByTitle.set(norm(w.title), [...(watchByTitle.get(norm(w.title)) ?? []), w])
+  const clubYears = new Map<string, number[]>()
+  for (const m of movies) clubYears.set(norm(m.title), [...(clubYears.get(norm(m.title)) ?? []), m.year])
+  const played = (title: string, year: number) => !!clubYears.get(norm(title))?.some(y => Math.abs(y - year) <= 1)
 
   // candidates: what the room wants to see, plus what friends loved
   const pool = new Map<string, Pick>()
   const add = (p: Pick) => {
-    if (!inClub(movies, p.title, p.year) && !pool.has(norm(p.title))) pool.set(norm(p.title), p)
+    if (!played(p.title, p.year) && !pool.has(norm(p.title))) pool.set(norm(p.title), p)
   }
   for (const w of watchlist) if (attending.includes(w.member)) add(find(w.title, w.year) ?? { title: w.title, year: w.year, ratings: [], seenBy: [] })
   for (const p of history) if (p.ratings.some(r => r.rating >= 4)) add(p)
@@ -72,7 +79,7 @@ export function rankForGroup(attending: string[], lb: LbHistory, watchlist: Watc
   for (const p of pool.values()) {
     const seen = attending.filter(n => findEntry(lb[n], p.title, p.year))
     if (seen.length >= 2) continue // the club never plays a film two or more of the room have seen
-    const wantedBy = watchlist.filter(w => attending.includes(w.member) && norm(w.title) === norm(p.title) && Math.abs(w.year - p.year) <= 1).map(w => w.member)
+    const wantedBy = (watchByTitle.get(norm(p.title)) ?? []).filter(w => attending.includes(w.member) && Math.abs(w.year - p.year) <= 1).map(w => w.member)
     const fans = p.ratings.filter(r => r.rating >= 4 && !attending.includes(r.name))
     const score = 2 * wantedBy.length + Math.min(3, fans.length) - 2 * seen.length
     if (score <= 0) continue

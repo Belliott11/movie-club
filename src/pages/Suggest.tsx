@@ -71,29 +71,22 @@ export default function Suggest() {
       // seeds: your own Letterboxd favorites first (films the club hasn't watched), then the club's highest-rated films
       const mine = me ? favoritesOf(lb, me, 5).filter(f => !played.has(key(f.title, f.year))) : []
       const seeds: { id: number; title: string }[] = []
-      for (const f of mine) {
-        const id = (await searchFilm(f.title, f.year))?.id
-        if (id) seeds.push({ id, title: f.title })
-      }
+      for (const [f, hit] of await Promise.all(mine.map(async f => [f, await searchFilm(f.title, f.year)] as const))) if (hit?.id) seeds.push({ id: hit.id, title: f.title })
       seeds.push(...[...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10).map(m => ({ id: m.tmdb_id!, title: m.title })))
       // a watchlist film is "because you liked X" when TMDB recommends it alongside X
       const because = new Map<string, string>()
-      for (const seed of seeds) {
-        const r = await tmdb<{ results?: any[] }>(`/movie/${seed.id}/recommendations`)
+      const recSets = await Promise.all(seeds.map(async seed => [seed, await tmdb<{ results?: any[] }>(`/movie/${seed.id}/recommendations`)] as const))
+      for (const [seed, r] of recSets) {
         for (const x of r?.results || []) {
           const c = cands.find(c => key(c.title, c.year) === key(x.title, +(x.release_date || "").slice(0, 4)))
           if (c && !because.has(key(c.title, c.year))) because.set(key(c.title, c.year), seed.title)
         }
       }
       const ranked = cands.sort((a, b) => Number(because.has(key(b.title, b.year))) - Number(because.has(key(a.title, a.year))) || b.wantedBy.length - a.wantedBy.length || a.title.localeCompare(b.title)).slice(0, 36)
-      const out: Rec[] = []
-      for (let i = 0; i < ranked.length; i += 6) {
-        const part = await Promise.all(ranked.slice(i, i + 6).map(async c => {
-          const x = await searchFilm(c.title, c.year)
-          return x ? { id: x.id as number, title: c.title, year: c.year, because: because.get(key(c.title, c.year)) ?? "", wantedBy: c.wantedBy, poster: x.poster_path as string | null, overview: (x.overview as string) || "", score: x.vote_average as number } : null
-        }))
-        out.push(...part.filter((r): r is Rec => !!r))
-      }
+      const out: Rec[] = (await Promise.all(ranked.map(async c => {
+        const x = await searchFilm(c.title, c.year)
+        return x ? { id: x.id as number, title: c.title, year: c.year, because: because.get(key(c.title, c.year)) ?? "", wantedBy: c.wantedBy, poster: x.poster_path as string | null, overview: (x.overview as string) || "", score: x.vote_average as number } : null
+      }))).filter((r): r is Rec => !!r)
       if (!dead) { setRecs(out); writeRecs(sig, out) }
     })()
     return () => { dead = true }

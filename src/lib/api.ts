@@ -12,8 +12,27 @@ export async function tmdb<T = any>(path: string, q = ""): Promise<T | null> {
     return null
   }
 }
-export const searchFilm = (title: string, year: number | null) =>
-  tmdb<{ results?: any[] }>("/search/movie", `&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ""}`).then(r => r?.results?.[0])
+const SEARCH = "film-search-v1"
+const searches = new Map<string, Promise<any>>()
+let stored: Record<string, any> | null = null
+const readStored = () => (stored ??= (() => { try { return JSON.parse(localStorage.getItem(SEARCH) ?? "{}") } catch { return {} } })())
+/** The top TMDB match for a title, remembered across visits (only the fields the site uses are kept). */
+export function searchFilm(title: string, year: number | null): Promise<any> {
+  const k = `${title}|${year ?? ""}`.toLowerCase()
+  const saved = readStored()[k]
+  if (saved) return Promise.resolve(saved)
+  if (!searches.has(k)) {
+    searches.set(k, tmdb<{ results?: any[] }>("/search/movie", `&query=${encodeURIComponent(title)}${year ? `&year=${year}` : ""}`).then(r => {
+      const x = r?.results?.[0]
+      if (!x) { searches.delete(k); return undefined } // not remembered: it may be a network failure
+      const slim = { id: x.id, title: x.title, release_date: x.release_date, poster_path: x.poster_path, backdrop_path: x.backdrop_path, vote_average: x.vote_average, overview: String(x.overview ?? "").slice(0, 400) }
+      readStored()[k] = slim
+      try { localStorage.setItem(SEARCH, JSON.stringify(stored)) } catch { /* full: it will be looked up again */ }
+      return slim
+    }))
+  }
+  return searches.get(k)!
+}
 
 const detailCache = new Map<number, any>()
 export async function filmDetail(tmdbId: number) {

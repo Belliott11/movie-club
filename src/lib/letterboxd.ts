@@ -62,11 +62,27 @@ export function parseExports(files: { name: string; text: string }[]): LbEntry[]
 /** Finds a film in someone's history: exact title and year, else the same title a year either side (release years differ by region). */
 export function findEntry(h: LbEntry[] | undefined, title: string, year: number | null): LbEntry | undefined {
   if (!h?.length) return undefined
-  const k = key(title, year)
-  const exact = h.find(e => key(e[0], e[1]) === k)
+  const ix = indexOf(h)
+  const exact = ix.exact.get(key(title, year))
   if (exact || !year) return exact
-  const t = key(title, 0).split("|")[0]
-  return h.find(e => key(e[0], 0).split("|")[0] === t && Math.abs(e[1] - year) <= 1)
+  return ix.byTitle.get(key(title, 0).split("|")[0])?.find(e => Math.abs(e[1] - year) <= 1)
+}
+
+type Index = { exact: Map<string, LbEntry>; byTitle: Map<string, LbEntry[]> }
+const indexes = new WeakMap<LbEntry[], Index>() // one per history array, rebuilt only when the array itself is replaced
+function indexOf(h: LbEntry[]): Index {
+  let ix = indexes.get(h)
+  if (!ix) {
+    ix = { exact: new Map(), byTitle: new Map() }
+    for (const e of h) {
+      const k = key(e[0], e[1])
+      if (!ix.exact.has(k)) ix.exact.set(k, e) // the first entry wins, as it always did
+      const t = key(e[0], 0).split("|")[0]
+      ix.byTitle.set(t, [...(ix.byTitle.get(t) ?? []), e])
+    }
+    indexes.set(h, ix)
+  }
+  return ix
 }
 
 export const seenBy = (lb: LbHistory, title: string, year: number | null) => Object.keys(lb).filter(m => findEntry(lb[m], title, year))
