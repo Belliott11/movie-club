@@ -13,7 +13,7 @@ export type Slide = {
   film?: Movie
 }
 
-const stars = (n: number) => `${fmt(n, 1)} ${+fmt(n, 1) === 1 ? "star" : "stars"}`
+const stars = (n: number | null | undefined) => `${fmt(n, 1)} ${+fmt(n, 1) === 1 ? "star" : "stars"}`
 const films = (n: number, word = "film") => `${n} ${word}${n === 1 ? "" : "s"}`
 
 /**
