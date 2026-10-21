@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { WorldMap } from "@/components/WorldMap"
 import { Button } from "@/components/ui/button"
 import { blindspots, entryKey, movementBlindspots, NATIONS, tallyCountries } from "@/lib/atlas"
 import { loadCountryCache, resolveCountries, topUnseen, type CountryCache } from "@/lib/lbCountries"
@@ -46,6 +47,7 @@ export function PersonAtlas({ name, history }: { name: string; history: LbEntry[
             {running && <Button variant="ghost" className="h-11 px-4" onClick={() => { stop.current = true; setRunning(false) }}>Pause</Button>}
           </div>
         )}
+        {counts.length > 0 && <div className="mb-4"><WorldMap counts={Object.fromEntries(counts.map(c => [c.code, c.n]))} label={`World map of the films ${name} has watched, shaded by country`} /></div>}
         {top.length > 0 && (
           <ul className="flex flex-col gap-2">
             {top.map(c => (

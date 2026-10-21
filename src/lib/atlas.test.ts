@@ -28,3 +28,7 @@ test("movement progress counts watched landmark films, and finished movements dr
 test("films filed under the Soviet Union count toward Russia", () => {
   expect(tallyCountries(h, () => "SU")).toEqual([{ code: "RU", n: 4, avg: 4 }])
 })
+
+test("a film counts as seen under its other name too", () => {
+  expect(movementProgress([["The Celebration", 1998, 4]], [["Festen", 1998, "The Celebration"]]).seen).toBe(1)
+})

@@ -39,9 +39,14 @@ const picks = new Map<string, { title: string; year: number } | null>()
 export async function topUnseen(code: string, history: LbEntry[]) {
   const k = code + history.length
   if (picks.has(k)) return picks.get(k)!
-  const pages = await Promise.all([1, 2, 3].map(p => tmdb<{ results?: any[] }>("/discover/movie", `&with_origin_country=${code}&sort_by=vote_average.desc&vote_count.gte=2000&page=${p}`)))
-  const films = pages.flatMap(r => r?.results ?? []).map(x => ({ title: x.title as string, year: parseInt(x.release_date) }))
-  const pick = films.find(f => f.year && !findEntry(history, f.title, f.year)) ?? null
+  // start with films lots of people have rated, and relax the vote count for countries with fewer (Thailand has almost none above 2000)
+  let pick: { title: string; year: number } | null = null
+  for (const votes of [2000, 500, 100]) {
+    const pages = await Promise.all([1, 2, 3].map(p => tmdb<{ results?: any[] }>("/discover/movie", `&with_origin_country=${code}&sort_by=vote_average.desc&vote_count.gte=${votes}&page=${p}`)))
+    const films = pages.flatMap(r => r?.results ?? []).map(x => ({ title: x.title as string, year: parseInt(x.release_date) }))
+    pick = films.find(f => f.year && !findEntry(history, f.title, f.year)) ?? null
+    if (pick) break
+  }
   picks.set(k, pick)
   return pick
 }
