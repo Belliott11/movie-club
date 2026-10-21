@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
-import { filmDetail } from "@/lib/api"
+import { useMemo, useState } from "react"
 import { byDecade, byTag, byYear, type Group } from "@/lib/breakdown"
+import { useFilmTags } from "@/lib/useFilmTags"
 import { fmt } from "@/lib/stats"
 import type { Movie } from "@/lib/types"
 
@@ -53,20 +53,7 @@ function Years({ movies }: { movies: Movie[] }) {
 }
 
 export function Breakdown({ movies }: { movies: Movie[] }) {
-  const [info, setInfo] = useState<Record<string, { genres: string[]; countries: string[] }>>({})
-  const ids = movies.map(m => m.tmdb_id).filter(Boolean).join(",")
-  useEffect(() => {
-    let dead = false
-    ;(async () => {
-      const out: typeof info = {}
-      await Promise.all(movies.filter(m => m.tmdb_id).map(async m => {
-        const d = await filmDetail(m.tmdb_id!)
-        if (d) out[String(m.id)] = { genres: (d.genres ?? []).map((g: any) => g.name), countries: (d.production_countries ?? []).map((c: any) => c.iso_3166_1 === "US" ? "USA" : c.name) }
-      }))
-      if (!dead) setInfo(out)
-    })()
-    return () => { dead = true }
-  }, [ids]) // eslint-disable-line react-hooks/exhaustive-deps
+  const info = useFilmTags(movies)
   const genres = useMemo(() => byTag(movies, m => info[String(m.id)]?.genres ?? []), [movies, info])
   const countries = useMemo(() => byTag(movies, m => info[String(m.id)]?.countries ?? []), [movies, info])
   const decades = byDecade(movies)

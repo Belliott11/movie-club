@@ -20,3 +20,8 @@ test("a film counts once per tag, even if the tag repeats", () => {
   expect(g.find(x => x.name === "Drama")).toMatchObject({ n: 2, avg: 3 })
   expect(g.find(x => x.name === "Crime")?.n).toBe(1)
 })
+
+test("tags can be averaged on any rating, such as one person's", () => {
+  const a = { year: 2000, ratings: { me: 5, you: 1 } } as unknown as Movie
+  expect(byTag([a], () => ["Drama"], m => m.ratings.me)[0].avg).toBe(5)
+})

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
 import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
 import { isUnused } from "@/lib/people"
-import { awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, spread, tilt, trend } from "@/lib/stats"
+import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ratingRange, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
@@ -29,7 +29,7 @@ export default function Stats() {
   if (!rated.length) return <p className="text-muted-foreground">Stats appear after the first screening: rate a film and the credits start rolling.</p>
 
   const sum = overview(movies)
-  const people = memberStats(movies, members).filter(p => p.count).map(p => ({ ...p, tilt: tilt(movies, p.n), attend: p.count / rated.length }))
+  const people = memberStats(movies, members).filter(p => p.count).map(p => ({ ...p, range: ratingRange(rated.filter(m => m.ratings[p.n] != null).map(m => m.ratings[p.n])), tilt: tilt(movies, p.n), attend: p.count / rated.length }))
   const { picker, harsh, kind, odd } = awardWinners(movies, members)
   const awards: { icon: LucideIcon; label: string; who: string; detail: string; gold?: boolean }[] = [
     picker && { icon: Trophy, label: "Best pick", who: picker.n, detail: `their picks average ${fmt(picker.pickAvg)}`, gold: true },
@@ -125,7 +125,14 @@ export default function Stats() {
                   </span>
                 ),
               },
-              { id: "avg", label: "Avg", align: "right", get: p => p.avg, render: p => <HeatChip v={p.avg} lo={1.5} hi={4.5}>{fmt(p.avg)}</HeatChip> },
+              { id: "avg", label: "Avg", align: "right", get: p => p.avg, render: p => (
+                <span className="inline-flex flex-col items-end gap-1">
+                  <HeatChip v={p.avg} lo={1.5} hi={4.5}>{fmt(p.avg)}</HeatChip>
+                  {p.range
+                    ? <span title={`Likely between ${fmt(p.range.lo, 1)} and ${fmt(p.range.hi, 1)} (${p.count} films)`} className="relative block h-1.5 w-14 rounded-full bg-muted"><span className="absolute h-1.5 rounded-full bg-foreground/45" style={{ left: `${(p.range.lo / 5) * 100}%`, width: `${((p.range.hi - p.range.lo) / 5) * 100}%` }} /><span className="absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground ring-2 ring-card" style={{ left: `${(p.range.mean / 5) * 100}%` }} /><span className="sr-only">likely between {fmt(p.range.lo, 1)} and {fmt(p.range.hi, 1)}</span></span>
+                    : <span className="text-[10px] text-muted-foreground">1 film</span>}
+                </span>
+              ) },
               { id: "picks", label: "Picks", align: "right", get: p => p.pickAvg, render: p => <HeatChip v={p.pickAvg} lo={2} hi={4}>{fmt(p.pickAvg)}</HeatChip> },
               { id: "tilt", label: "Vs group", align: "right", get: p => p.tilt, render: p => <HeatChip v={p.tilt} lo={-1.5} hi={1.5}>{p.tilt != null && p.tilt > 0 ? "+" : ""}{fmt(p.tilt, 1)}</HeatChip> },
             ]}
@@ -155,7 +162,7 @@ export default function Stats() {
           <ul className="flex flex-col gap-3">
             {gap.map(m => (
               <li key={m.id}>
-                <a href={filmHref(m)} className="flex items-baseline justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">us {fmt(groupAvg(m))}, outside {fmt(outsideAvg(m))}</span></a>
+                <a href={filmHref(m)} className="flex items-baseline justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">us {fmt(groupAvg(m))}, outside {fmt(outsideAvg(m))} <b className="text-foreground">({groupAvg(m)! > outsideAvg(m)! ? "+" : "−"}{fmt(Math.abs(groupAvg(m)! - outsideAvg(m)!), 1)})</b></span></a>
                 <Scale us={groupAvg(m)} world={outsideAvg(m)} />
               </li>
             ))}
@@ -249,15 +256,29 @@ function Stat({ label, n, format, suffix }: { label: string; n: number; format?:
 /** One dot per rater on a 0-5 ruler, colored like their avatar. Matching ratings stack upward so none hides another. */
 function RaterDots({ m }: { m: Movie }) {
   const seen = new Map<number, number>()
+  const vals = Object.values(m.ratings), mean = avg(vals), lo = Math.min(...vals), hi = Math.max(...vals)
+  const x = (v: number) => `${(v / 5) * 100}%`
+  const rows = Math.max(1, ...Object.values(vals.reduce<Record<number, number>>((a, v) => ({ ...a, [v]: (a[v] ?? 0) + 1 }), {})))
   return (
-    <div className="relative mt-1 h-12" role="img" aria-label={Object.entries(m.ratings).map(([n, v]) => `${n} ${v}`).join(", ")}>
-      <div className="absolute inset-x-0 bottom-2 h-0.5 bg-border" />
-      {[1, 2, 3, 4].map(i => <span key={i} className="absolute bottom-1.5 h-2.5 w-0.5 bg-border" style={{ left: `${(i / 5) * 100}%` }} />)}
-      {Object.entries(m.ratings).map(([n, v]) => {
-        const stack = seen.get(v) ?? 0
-        seen.set(v, stack + 1)
-        return <span key={n} title={`${n}: ${v}`} className="absolute -ml-2.5 rounded-full ring-2 ring-card" style={{ left: `${(v / 5) * 100}%`, bottom: 0 + stack * 14 }}><Avatar name={n} size="xs" className="block size-5" /></span>
-      })}
+    <div className="px-2.5 pt-1" role="img" aria-label={Object.entries(m.ratings).map(([n, v]) => `${n} ${v}`).join(", ")}>
+      <div className="relative" style={{ height: 14 + rows * 22 }}>
+        <div className="absolute inset-x-0 bottom-0 h-px bg-foreground/40" />
+        {[0, 1, 2, 3, 4, 5].map(i => <span key={i} className="absolute bottom-0 h-1.5 w-px bg-foreground/40" style={{ left: x(i) }} />)}
+        {vals.length > 1 && <span className="grow absolute bottom-0 h-1.5 rounded-full bg-gradient-to-r from-us to-world opacity-70" style={{ left: x(lo), width: `${((hi - lo) / 5) * 100}%` }} />}
+        {Object.entries(m.ratings).map(([n, v]) => {
+          const stack = seen.get(v) ?? 0
+          seen.set(v, stack + 1)
+          return (
+            <span key={n} title={`${n}: ${v}`} className="pop absolute -ml-2.5 flex flex-col items-center" style={{ left: x(v), bottom: 6 + stack * 22, "--d": `${stack * 80}ms` } as React.CSSProperties}>
+              <span className="rounded-full ring-2 ring-card"><Avatar name={n} size="xs" className="block size-5" /></span>
+            </span>
+          )
+        })}
+        {mean != null && vals.length > 1 && <span aria-hidden className="absolute -bottom-1 -ml-1.5 size-3 rotate-45 border-2 border-card bg-foreground" style={{ left: x(mean) }} />}
+      </div>
+      <div className="relative mt-1.5 h-4 text-[10px] text-muted-foreground" aria-hidden>
+        {[0, 1, 2, 3, 4, 5].map(i => <span key={i} className="absolute -translate-x-1/2" style={{ left: x(i) }}>{i}</span>)}
+      </div>
     </div>
   )
 }

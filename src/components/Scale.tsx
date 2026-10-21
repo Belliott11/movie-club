@@ -10,7 +10,7 @@ export function Scale({ us, world }: { us: number | null; world: number | null }
       ))}
       {us != null && world != null && (
         <span
-          className={`grow absolute top-2.5 h-1.5 rounded-full opacity-40 ${us <= world ? "bg-gradient-to-r" : "bg-gradient-to-l"} from-us to-world`}
+          className={`grow absolute top-[10px] h-1 rounded-full opacity-80 ${us <= world ? "bg-gradient-to-r" : "bg-gradient-to-l"} from-us to-world`}
           style={{ left: pos(Math.min(us, world)), width: `${(Math.abs(us - world) / 5) * 100}%` }}
         />
       )}

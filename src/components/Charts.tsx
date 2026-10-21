@@ -2,7 +2,7 @@ import { useId, useState, type CSSProperties, type PointerEvent } from "react"
 import { fmt } from "@/lib/stats"
 
 /**
- * Bars for how many ratings sit at each half-star step, shaded from magenta (low) to cyan (high). They grow up from the baseline in turn.
+ * Bars for how many ratings sit at each half-star step, shaded from red (low) through amber to teal (high). They grow up from the baseline in turn.
  * `average` and `median` are noted underneath. Screen readers get the same numbers as a list.
  */
 /** Low scores run red, the middle amber, high scores teal. */
@@ -13,33 +13,35 @@ const scale = (t: number) => t < 0.5
 export function Histogram({ bins, label, average, median }: { bins: { v: number; n: number }[]; label: string; average?: number | null; median?: number | null }) {
   const max = Math.max(1, ...bins.map(b => b.n))
   const at = (v: number) => `${((v * 2 - 1 + 0.5) / 10) * 100}%` // centre of that half-star's column
+  const top = Math.max(2, max) // the tallest bar fills the plot, gridlines sit at quarter steps of it
   return (
     <figure data-no-swipe>
-      <div role="img" aria-label={label} className="flex h-32 items-end gap-1">
-        {bins.map((b, i) => (
-          <div key={b.v} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
-            <span className="fade-in text-[11px] leading-none text-muted-foreground" style={{ "--d": `${300 + i * 50}ms` } as CSSProperties}>{b.n || ""}</span>
-            <span
-              className="grow-y w-full rounded-t"
-              style={{
-                height: `${(b.n / max) * 80}%`, minHeight: b.n ? 4 : 0, "--d": `${i * 50}ms`,
-                background: scale((b.v - 0.5) / 4.5),
-              } as CSSProperties}
-            />
-          </div>
-        ))}
-      </div>
-      <div className="relative mt-1 h-9" aria-hidden>
-        <div className="flex gap-1">
+      <div className="relative pt-7">
+        <div role="img" aria-label={label} className="relative flex h-32 items-end gap-1.5 border-b border-foreground/40">
+          {[0.5, 1].map(f => <span key={f} aria-hidden className="absolute inset-x-0 border-t border-dashed border-border" style={{ bottom: `${f * 100}%` }} />)}
+          {bins.map((b, i) => (
+            <div key={b.v} className="relative z-10 flex h-full flex-1 flex-col items-center justify-end">
+              <span className="fade-in mb-1 text-xs leading-none font-semibold" style={{ "--d": `${300 + i * 50}ms` } as CSSProperties}>{b.n || ""}</span>
+              <span
+                className="grow-y w-full rounded-t-md"
+                style={{
+                  height: `${(b.n / top) * 88}%`, minHeight: b.n ? 6 : 0, "--d": `${i * 50}ms`,
+                  background: scale((b.v - 0.5) / 4.5), boxShadow: "inset 0 -10px 14px -10px rgb(0 0 0 / 0.25)",
+                } as CSSProperties}
+              />
+            </div>
+          ))}
+          {average != null && (
+            <span aria-hidden className="fade-in absolute -top-7 bottom-0 z-20 w-px -translate-x-1/2 bg-foreground" style={{ left: at(average), "--d": "700ms" } as CSSProperties}>
+              <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 rounded-full bg-foreground px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-background">avg {fmt(average, 1)}</span>
+            </span>
+          )}
+        </div>
+        <div className="mt-1 flex gap-1.5" aria-hidden>
           {bins.map(b => <span key={b.v} className="flex-1 text-center text-[11px] text-muted-foreground">{b.v % 1 ? "" : b.v}</span>)}
         </div>
-        {average != null && (
-          <span className="fade-in absolute top-4 -translate-x-1/2 text-xs font-semibold" style={{ left: at(average), "--d": "700ms" } as CSSProperties}>
-            <span className="mx-auto block h-1.5 w-px bg-foreground" />avg {fmt(average, 1)}
-          </span>
-        )}
       </div>
-      {median != null && <figcaption className="text-xs text-muted-foreground">Middle rating {fmt(median, 1)}</figcaption>}
+      {median != null && <figcaption className="mt-1 text-xs text-muted-foreground">Middle rating {fmt(median, 1)}</figcaption>}
       <ul className="sr-only">{bins.map(b => <li key={b.v}>{b.v} stars: {b.n}</li>)}</ul>
     </figure>
   )

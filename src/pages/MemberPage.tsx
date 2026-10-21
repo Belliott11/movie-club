@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
+import { Flower } from "@/components/Flower"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
@@ -79,10 +80,12 @@ export default function MemberPage({ name }: { name: string }) {
             <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} />
           </section>
 
+          <Flower movies={movies} name={name} />
+
           {dev.length > 0 && (
             <section>
               <h3 className="text-xl font-bold">Where {name} differs from the group</h3>
-              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Cyan is higher, magenta is lower.</p>
+              <p className="mb-3 text-sm text-muted-foreground">Rating minus everyone else's average on the same film. Teal is higher, red is lower.</p>
               <DeviationChart rows={dev} name={name} />
             </section>
           )}

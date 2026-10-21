@@ -12,6 +12,13 @@ export const spread = (m: Movie) => {
   const v = Object.values(m.ratings), a = avg(v)
   return a == null || v.length < 2 ? 0 : Math.sqrt(avg(v.map(x => (x - a) ** 2))!)
 }
+/** Mean and a rough 95% range for someone's ratings. Null with fewer than two ratings, where nothing can be said about how sure the mean is. */
+export function ratingRange(values: number[]) {
+  const n = values.length, mean = avg(values)
+  if (n < 2 || mean == null) return null
+  const sd = Math.sqrt(values.reduce((t, v) => t + (v - mean) ** 2, 0) / (n - 1)), half = (1.96 * sd) / Math.sqrt(n)
+  return { mean, lo: Math.max(0.5, mean - half), hi: Math.min(5, mean + half) }
+}
 export const bestFilm = (ms: Movie[]) => [...ms].filter(m => Object.keys(m.ratings).length >= 3).sort((a, b) => groupAvg(b)! - groupAvg(a)!)[0]
 
 export const membersOf = (ms: Movie[], wl: WatchItem[], extra: string[] = []) =>

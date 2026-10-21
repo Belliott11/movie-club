@@ -3,9 +3,8 @@ import type { Movie } from "./types"
 
 export type Group = { name: string; n: number; avg: number }
 
-const rate = (ms: Movie[]) => ms.map(groupAvg).filter((v): v is number => v != null)
-const summarize = (name: string, ms: Movie[]): Group | null => {
-  const r = rate(ms)
+const summarize = (name: string, ms: Movie[], value: (m: Movie) => number | null = groupAvg): Group | null => {
+  const r = ms.map(value).filter((v): v is number => v != null)
   return r.length ? { name, n: ms.length, avg: r.reduce((a, b) => a + b, 0) / r.length } : null
 }
 
@@ -25,8 +24,8 @@ export function byYear(movies: Movie[]): { year: number; n: number }[] {
 }
 
 /** Group films by any list of labels (genres, countries) the caller supplies per film. */
-export function byTag(movies: Movie[], tagsOf: (m: Movie) => string[]): Group[] {
+export function byTag(movies: Movie[], tagsOf: (m: Movie) => string[], value?: (m: Movie) => number | null): Group[] {
   const g = new Map<string, Movie[]>()
   for (const m of movies) for (const t of new Set(tagsOf(m))) g.set(t, [...(g.get(t) ?? []), m])
-  return [...g].map(([t, ms]) => summarize(t, ms)).filter((x): x is Group => !!x)
+  return [...g].map(([t, ms]) => summarize(t, ms, value)).filter((x): x is Group => !!x)
 }

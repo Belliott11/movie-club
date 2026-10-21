@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { groupAvg, outsideAvg, pickOrder } from "./stats"
+import { groupAvg, outsideAvg, pickOrder, ratingRange } from "./stats"
 import type { Movie } from "./types"
 
 const mk = (seq: number, pick: string, ratings: Record<string, number>): Movie => ({ id: seq, seq, title: "t" + seq, year: 2000, pick, ratings })
@@ -91,4 +91,12 @@ test("award winners: harshest, most generous, contrarian need enough films; best
   expect(w.kind?.n).toBe("C")
   expect(w.picker?.n).toBeDefined()
   expect(awardWinners(ms.slice(0, 2), ["A", "B", "C"]).harsh).toBeUndefined()
+})
+
+test("a rating range needs two ratings and narrows as ratings pile up", () => {
+  expect(ratingRange([4])).toBeNull()
+  const few = ratingRange([2, 4])!, many = ratingRange([2, 4, 2, 4, 2, 4, 2, 4])!
+  expect(many.hi - many.lo).toBeLessThan(few.hi - few.lo)
+  expect(few.lo).toBeGreaterThanOrEqual(0.5)
+  expect(few.hi).toBeLessThanOrEqual(5)
 })
