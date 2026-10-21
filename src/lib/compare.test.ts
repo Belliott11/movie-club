@@ -28,12 +28,16 @@ test("too few shared ratings gives no match score, and identical tastes are 100"
 
 import { rankPairRecs } from "./pairRecs"
 
-test("pair recommendations favor films several seeds point at, skip anything seen, and ignore weak scores", () => {
-  const r = (id: number, title: string, votes = 7.5) => ({ id, title, year: 2000, poster: null, votes })
+test("pair recommendations need both tastes, skip seen films, compilations, TV movies and weak scores", () => {
+  const r = (id: number, title: string, extra = {}) => ({ id, title, year: 2000, poster: null, votes: 7.5, ratings: 5000, ...extra })
   const out = rankPairRecs(
-    [{ because: "X", results: [r(1, "Popular"), r(2, "Once"), r(3, "Seen"), r(4, "Weak", 5)] }, { because: "Y", results: [r(1, "Popular"), r(2, "Once", 7.2)] }, { because: "Z", results: [r(1, "Popular")] }],
+    [
+      { because: "Both", who: "both", results: [r(1, "Shared pick"), r(3, "Seen"), r(4, "Weak", { votes: 5 }), r(5, "Big Trilogy: 1901-1980"), r(6, "Telefilm", { tv: true }), r(7, "Obscure", { ratings: 20 })] },
+      { because: "A fav", who: "a", results: [r(2, "Bridge"), r(8, "Only A")] },
+      { because: "B fav", who: "b", results: [r(2, "Bridge"), r(1, "Shared pick")] },
+    ],
     t => t === "Seen",
   )
-  expect(out.map(x => x.title)).toEqual(["Popular", "Once"])
-  expect(out[0].because).toEqual(["X", "Y", "Z"])
+  expect(out.map(x => x.title)).toEqual(["Shared pick", "Bridge"]) // Only A suits just one of them
+  expect(out[0].because).toEqual(["Both", "B fav"])
 })

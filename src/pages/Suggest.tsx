@@ -32,10 +32,10 @@ function SuggestionCard({ s }: { s: Suggestion }) {
   )
 }
 
-type Rec = { id: number; title: string; year: number; because: string; poster: string | null; overview: string; score: number }
+type Rec = { id: number; title: string; year: number; because: string; wantedBy: string[]; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
-  const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb } = useStore()
+  const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb, watchlist } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   const [recs, setRecs] = useState<Rec[] | null>(null)
   const sorted = [...suggestions].sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0))
@@ -44,39 +44,54 @@ export default function Suggest() {
     if (!hasTmdb() || !movies.length) return
     let dead = false
     ;(async () => {
-      const seen = new Set(movies.map(m => key(m.title, m.year)))
-      const out: Rec[] = []
+      const played = new Set(movies.map(m => key(m.title, m.year)))
+      // the pool is what the club has on its watchlists, minus films already played and films two or more of you have seen
+      const pool = new Map<string, { title: string; year: number; wantedBy: string[] }>()
+      for (const w of watchlist) {
+        const k = key(w.title, w.year)
+        if (played.has(k)) continue
+        const e = pool.get(k) ?? { title: w.title, year: w.year, wantedBy: [] }
+        if (!e.wantedBy.includes(w.member)) e.wantedBy.push(w.member)
+        pool.set(k, e)
+      }
+      const cands = [...pool.values()].filter(c => seenBy(lb, c.title, c.year).length < 2)
       // seeds: your own Letterboxd favorites first (films the club hasn't watched), then the club's highest-rated films
-      const mine = me ? favoritesOf(lb, me, 5).filter(f => !seen.has(key(f.title, f.year))) : []
+      const mine = me ? favoritesOf(lb, me, 5).filter(f => !played.has(key(f.title, f.year))) : []
       const seeds: { id: number; title: string }[] = []
       for (const f of mine) {
         const id = (await searchFilm(f.title, f.year))?.id
         if (id) seeds.push({ id, title: f.title })
       }
       seeds.push(...[...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10).map(m => ({ id: m.tmdb_id!, title: m.title })))
+      // a watchlist film is "because you liked X" when TMDB recommends it alongside X
+      const because = new Map<string, string>()
       for (const seed of seeds) {
         const r = await tmdb<{ results?: any[] }>(`/movie/${seed.id}/recommendations`)
-        let n = 0
         for (const x of r?.results || []) {
-          if (n === 6) break
-          const year = +(x.release_date || "").slice(0, 4)
-          if (seen.has(key(x.title, year)) || out.some(q => q.id === x.id)) continue
-          out.push({ id: x.id, title: x.title, year, because: seed.title, poster: x.poster_path, overview: x.overview || "", score: x.vote_average })
-          n++
+          const c = cands.find(c => key(c.title, c.year) === key(x.title, +(x.release_date || "").slice(0, 4)))
+          if (c && !because.has(key(c.title, c.year))) because.set(key(c.title, c.year), seed.title)
         }
+      }
+      const ranked = cands.sort((a, b) => Number(because.has(key(b.title, b.year))) - Number(because.has(key(a.title, a.year))) || b.wantedBy.length - a.wantedBy.length || a.title.localeCompare(b.title)).slice(0, 36)
+      const out: Rec[] = []
+      for (let i = 0; i < ranked.length; i += 6) {
+        const part = await Promise.all(ranked.slice(i, i + 6).map(async c => {
+          const x = await searchFilm(c.title, c.year)
+          return x ? { id: x.id as number, title: c.title, year: c.year, because: because.get(key(c.title, c.year)) ?? "", wantedBy: c.wantedBy, poster: x.poster_path as string | null, overview: (x.overview as string) || "", score: x.vote_average as number } : null
+        }))
+        out.push(...part.filter((r): r is Rec => !!r))
       }
       if (!dead) setRecs(out)
     })()
     return () => { dead = true }
-  }, [movies, me, lb[me]?.length])
+  }, [movies, watchlist, me, lb])
 
-  // up to 6 candidates per film are loaded; each person sees the first 2 they haven't marked seen or not interested
+  // everyone sees the watchlist films they haven't marked seen or not interested
   const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind
-  const sources = [...new Set((recs ?? []).map(r => r.because))]
   const onLb = (r: Rec) => !!(me && findEntry(lb[me], r.title, r.year)) // already watched on Letterboxd
-  const visible = sources.flatMap(src => (recs ?? []).filter(r => r.because === src && !myFlag(r.id) && !onLb(r)).slice(0, 2))
+  const visible = (recs ?? []).filter(r => !myFlag(r.id) && !onLb(r))
   const hidden = (recs ?? []).filter(r => myFlag(r.id) || onLb(r))
-  const crowd = crowdPicks(lb, movies).slice(0, 8)
+  const crowd = crowdPicks(lb, movies, { minRaters: 1, maxSeen: 1 }).slice(0, 8)
   const importedCount = Object.values(lb).filter(h => h.length).length
   const suggested = (t: string, y: number) => suggestions.some(x => key(x.title, x.year) === key(t, y))
   const [title, setTitle] = useState("")
@@ -106,8 +121,8 @@ export default function Suggest() {
         )}
       </section>
       <section>
-        <h3 className="mb-1 text-xl font-bold">Crowd picks</h3>
-        <p className="mb-3 text-sm text-muted-foreground">Films at least two of you rated 4 or higher on Letterboxd that the club hasn't watched.</p>
+        <h3 className="mb-1 text-xl font-bold">One of you loved it</h3>
+        <p className="mb-3 text-sm text-muted-foreground">Films one of you rated 4 or higher on Letterboxd that nobody else has seen, so the rest of you can see it fresh.</p>
         {crowd.length ? (
           <ul className="grid gap-3 sm:grid-cols-2">
             {crowd.map(p => (
@@ -117,24 +132,24 @@ export default function Suggest() {
                   year={p.year}
                   done={suggested(p.title, p.year)}
                   onSuggest={() => suggest(p.title, p.year)}
-                  lines={[p.ratings.filter(r => r.rating >= 4).map(r => `${r.name} ${r.rating}`).join(" · "), `${p.seenBy.length} of the club ${p.seenBy.length === 1 ? "has" : "have"} seen it`]}
+                  lines={[p.ratings.filter(r => r.rating >= 4).map(r => `${r.name} ${r.rating}`).join(" · "), "nobody else has seen it"]}
                 />
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-muted-foreground">{importedCount < 2 ? "Crowd picks appear once two or more people have imported their Letterboxd history." : "No film has two 4-star fans that the club hasn't watched yet."}</p>
+          <p className="text-muted-foreground">{importedCount < 2 ? "This fills in once two or more people have imported their Letterboxd history." : "No film is loved by just one of you and unseen by the rest yet."}</p>
         )}
       </section>
       <section>
-        <h3 className="mb-1 text-xl font-bold">Because you liked them</h3>
-        <p className="mb-3 text-sm text-muted-foreground">Starts with your own Letterboxd favorites, then the films the club rated 3.5 or higher.</p>
+        <h3 className="mb-1 text-xl font-bold">From your watchlists</h3>
+        <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
         {!hasTmdb() ? (
           <p className="text-muted-foreground">Add a TMDB key to config.js to get recommendations here.</p>
         ) : recs === null ? (
           <p className="text-muted-foreground">Loading…</p>
         ) : (
-          <ul className="grid grid-cols-2 gap-3">
+          <ul className="grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4">
             {visible.map(r => {
               const seenByNames = [...new Set([...flags.filter(f => f.tmdb_id === r.id && f.kind === "seen").map(f => f.member), ...seenBy(lb, r.title, r.year)])].filter(n => n !== me)
               const done = suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))
@@ -143,9 +158,9 @@ export default function Suggest() {
                   <Card className="h-full gap-2 px-3">
                     {r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <h4 className="font-display text-lg leading-tight font-bold">{r.title} <small className="font-sans text-sm font-medium text-muted-foreground">{r.year || ""}</small></h4>
-                      <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}because you liked {r.because}</p>
-                      <p className="line-clamp-5 text-sm leading-snug">{r.overview || "No synopsis available."}</p>
+                      <h4 className="font-display text-base leading-tight font-bold">{r.title} <small className="font-sans text-xs font-medium text-muted-foreground">{r.year || ""}</small></h4>
+                      <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}{r.because ? `because you liked ${r.because}` : `wanted by ${r.wantedBy.join(", ")}`}</p>
+                      <p className="line-clamp-3 text-xs leading-snug">{r.overview || "No synopsis available."}</p>
                       {seenByNames.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenByNames.join(", ")}</p>}
                       <div className="mt-auto flex flex-col gap-1.5 pt-1">
                         <Button variant={done ? "ghost" : "outline"} disabled={done} className="h-10 w-full px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>

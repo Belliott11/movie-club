@@ -47,7 +47,7 @@ export default function Next() {
       </section>
       <section>
         <h3 className="mb-1 text-xl font-bold">Best picks for tonight</h3>
-        <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films the room has seen are dropped.</p>
+        <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped.</p>
         {!attending.length ? (
           <p className="text-muted-foreground">Switch on whoever is coming and the best picks show up here.</p>
         ) : ranked.length ? (

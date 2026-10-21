@@ -37,12 +37,12 @@ const avgRating = (p: Pick) => (p.ratings.length ? p.ratings.reduce((t, r) => t 
 
 /**
  * Films several members rated highly on Letterboxd that the club has not watched yet.
- * `minRaters` people must have rated it `minRating` or higher. Most-loved first.
+ * `minRaters` people must have rated it `minRating` or higher, and no more than `maxSeen` people may have watched it. Most-loved first.
  */
-export function crowdPicks(lb: LbHistory, movies: Movie[], { minRaters = 2, minRating = 4 } = {}): Pick[] {
+export function crowdPicks(lb: LbHistory, movies: Movie[], { minRaters = 2, minRating = 4, maxSeen = Infinity } = {}): Pick[] {
   const fans = (p: Pick) => p.ratings.filter(r => r.rating >= minRating)
   return indexHistory(lb)
-    .filter(p => fans(p).length >= minRaters && !inClub(movies, p.title, p.year))
+    .filter(p => fans(p).length >= minRaters && p.seenBy.length <= maxSeen && !inClub(movies, p.title, p.year))
     .sort((a, b) => fans(b).length - fans(a).length || avgRating(b) - avgRating(a) || a.title.localeCompare(b.title))
 }
 
@@ -53,7 +53,7 @@ const names = (n: string[]) => (n.length <= 2 ? n.join(" and ") : `${n.slice(0, 
 /**
  * Ranks what to watch tonight for the people in the room. A film scores for each attendee who has it on their watchlist (+2)
  * and for friends who aren't here but loved it (+1 each, up to 3), and loses points for each attendee who has already watched it (-2).
- * Films most of the room has seen are dropped. The reasons say why, so the ranking is never a black box.
+ * Films two or more of the room have seen are dropped. The reasons say why, so the ranking is never a black box.
  */
 export function rankForGroup(attending: string[], lb: LbHistory, watchlist: WatchItem[], movies: Movie[], limit = 8): Ranked[] {
   if (!attending.length) return []
@@ -71,7 +71,7 @@ export function rankForGroup(attending: string[], lb: LbHistory, watchlist: Watc
   const out: Ranked[] = []
   for (const p of pool.values()) {
     const seen = attending.filter(n => findEntry(lb[n], p.title, p.year))
-    if (seen.length > attending.length / 2) continue
+    if (seen.length >= 2) continue // the club never plays a film two or more of the room have seen
     const wantedBy = watchlist.filter(w => attending.includes(w.member) && norm(w.title) === norm(p.title) && Math.abs(w.year - p.year) <= 1).map(w => w.member)
     const fans = p.ratings.filter(r => r.rating >= 4 && !attending.includes(r.name))
     const score = 2 * wantedBy.length + Math.min(3, fans.length) - 2 * seen.length
