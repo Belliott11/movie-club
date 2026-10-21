@@ -163,6 +163,7 @@ function Shell() {
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">
         <ClubCode />
         <p>Film data and images from <a className="underline" href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This site uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        <p>Looking for more stills? <a className="underline" href="https://film-grab.com/" target="_blank" rel="noopener">Film-Grab</a> collects frames from thousands of films.</p>
       </footer>
     </div>
     </>

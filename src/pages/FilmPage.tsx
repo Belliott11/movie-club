@@ -86,6 +86,7 @@ export default function FilmPage({ id }: { id: string }) {
           {where && where.names.length > 0 && (
             <p className="max-w-[62ch]"><span className="text-sm text-muted-foreground">Where to watch (US): </span>{where.names.slice(0, 8).join(", ")}{where.names.length > 8 && <span className="text-muted-foreground"> +{where.names.length - 8} more</span>}{where.link && <> · <a className="underline" href={where.link} target="_blank" rel="noopener">all options</a></>}</p>
           )}
+          <p className="text-sm"><a className="underline" href={`https://film-grab.com/?s=${encodeURIComponent(m.title)}`} target="_blank" rel="noopener">More stills from {m.title} on Film-Grab</a></p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" className="h-10 px-4" onClick={share}>{copied ? "Copied" : "Copy for group chat"}</Button>
             {trailer && <a className={buttonVariants({ className: "h-10 px-4" })} href={`https://www.youtube.com/watch?v=${trailer.key}`} target="_blank" rel="noopener">Watch trailer</a>}
