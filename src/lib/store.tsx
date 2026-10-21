@@ -1,6 +1,6 @@
-import { createClient } from "@supabase/supabase-js"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
+import { createDb } from "./db"
 import { findEntry, type LbEntry, type LbHistory } from "./letterboxd"
 import { isUnused, mergeMovies, mergeSuggestions, mergeWatch } from "./people"
 import { lockKey, newSealKeys, openScore, sealScore, unlockKey } from "./seal"
@@ -12,9 +12,7 @@ import type { Id, Mini, Movie, RecFlag, Suggestion, WatchItem } from "./types"
 const CODE_KEY = "club-code"
 export const getClubCode = () => localStorage.getItem(CODE_KEY) || ""
 export const setClubCode = (c: string) => { if (c) localStorage.setItem(CODE_KEY, c); else localStorage.removeItem(CODE_KEY); location.reload() }
-const sb = CONFIG.SUPABASE_URL
-  ? createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY, { global: { headers: getClubCode() ? { "x-club-code": getClubCode() } : {} } })
-  : null
+const sb = CONFIG.SUPABASE_URL ? createDb({ url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY, code: getClubCode }) : null
 
 const LS = "movieclub-v1"
 const SNAP = "snapshot-v1"
