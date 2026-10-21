@@ -14,22 +14,22 @@ export function WorldMap({ counts, label }: { counts: Record<string, number>; la
   const max = Math.max(1, ...Object.values(counts))
   const fill = (code: string) => {
     const n = counts[code] ?? 0
-    return n ? `color-mix(in oklab, var(--world) ${Math.round(30 + 70 * (Math.log(1 + n) / Math.log(1 + max)))}%, var(--muted))` : "var(--muted)"
+    return n ? `color-mix(in oklab, var(--world) ${Math.round(35 + 65 * (Math.log(1 + n) / Math.log(1 + max)))}%, var(--card))` : "color-mix(in oklab, var(--foreground) 24%, var(--background))"
   }
   const shown = active ? `${shapes[active]?.n ?? active}: ${counts[active] ?? 0} ${(counts[active] ?? 0) === 1 ? "film" : "films"}` : "Hover or tap a country"
   return (
     <figure data-no-swipe>
-      <svg viewBox="0 0 960 500" role="img" aria-label={label} className="block h-auto w-full rounded-xl bg-card ring-1 ring-foreground/10" onPointerLeave={e => e.pointerType === "mouse" && setActive(null)}>
+      <svg viewBox="0 0 960 500" role="img" aria-label={label} className="block h-auto w-full rounded-xl bg-background ring-1 ring-foreground/10" onPointerLeave={e => e.pointerType === "mouse" && setActive(null)}>
         {Object.entries(shapes).map(([code, s]) => (
           <path
-            key={code} d={s.d} fill={fill(code)} stroke={active === code ? "var(--foreground)" : "var(--card)"} strokeWidth={active === code ? 1.4 : 0.5} strokeLinejoin="round"
+            key={code} d={s.d} fill={fill(code)} stroke={active === code ? "var(--foreground)" : "var(--background)"} strokeWidth={active === code ? 1.4 : 0.5} strokeLinejoin="round"
             onPointerEnter={() => setActive(code)} onPointerDown={() => setActive(code)}
           />
         ))}
       </svg>
       <figcaption className="mt-2 flex min-h-8 items-center justify-between gap-3 text-sm" aria-live="polite">
         <b>{shown}</b>
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-hidden>fewer<span className="h-2 w-20 rounded-full" style={{ background: "linear-gradient(90deg, color-mix(in oklab, var(--world) 30%, var(--muted)), var(--world))" }} />more</span>
+        <span className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-hidden>fewer<span className="h-2 w-20 rounded-full" style={{ background: "linear-gradient(90deg, color-mix(in oklab, var(--world) 35%, var(--card)), var(--world))" }} />more</span>
       </figcaption>
     </figure>
   )

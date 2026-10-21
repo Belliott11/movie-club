@@ -307,7 +307,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     lbRequested.current = true
     sb.from("lb_history").select("member,data").then(({ data, error }) => {
       if (error || !data) return // table is optional
-      setLb(local => ({ ...local, ...Object.fromEntries((data as { member: string; data: LbEntry[] }[]).map(r => [r.member, r.data])) }))
+      setLb(local => {
+        const next = { ...local, ...Object.fromEntries((data as { member: string; data: LbEntry[] }[]).map(r => [r.member, r.data])) }
+        lsSet("lb-local", next) // remembered, so the next visit has it before the download finishes
+        return next
+      })
     })
   }, [])
 

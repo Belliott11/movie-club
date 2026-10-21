@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { filmDetail } from "./api"
+import { tmdb } from "./api"
 import type { Movie } from "./types"
 
 const regions = new Intl.DisplayNames(["en"], { type: "region" }), languages = new Intl.DisplayNames(["en"], { type: "language" })
@@ -14,19 +14,30 @@ export const mainCountry = (d: any): string[] => {
 
 export type FilmTags = Record<string, { genres: string[]; countries: string[]; language: string | null }>
 
-/** Genres and countries for each film, from TMDB, keyed by movie id. Fills in as the lookups finish. */
+const KEY = "film-tags-v1" // by TMDB id, so a film is only ever looked up once per device
+const read = (): Record<string, FilmTags[string]> => { try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") } catch { return {} } }
+const fromCache = (movies: Movie[]): FilmTags => {
+  const c = read(), out: FilmTags = {}
+  for (const m of movies) if (m.tmdb_id && c[m.tmdb_id]) out[String(m.id)] = c[m.tmdb_id]
+  return out
+}
+
+/** Genres, main country and language for each film, from TMDB, keyed by movie id. Remembered films show at once; the rest fill in as they load. */
 export function useFilmTags(movies: Movie[]): FilmTags {
-  const [info, setInfo] = useState<FilmTags>({})
+  const [info, setInfo] = useState<FilmTags>(() => fromCache(movies))
   const ids = movies.map(m => m.tmdb_id).filter(Boolean).join(",")
   useEffect(() => {
     let dead = false
+    setInfo(fromCache(movies))
     ;(async () => {
-      const out: FilmTags = {}
-      await Promise.all(movies.filter(m => m.tmdb_id).map(async m => {
-        const d = await filmDetail(m.tmdb_id!)
-        if (d) out[String(m.id)] = { genres: (d.genres ?? []).map((g: any) => g.name), countries: mainCountry(d), language: d.original_language ? safe(() => languages.of(d.original_language)) ?? null : null }
+      const cache = read(), missing = movies.filter(m => m.tmdb_id && !cache[m.tmdb_id])
+      if (!missing.length) return
+      await Promise.all(missing.map(async m => {
+        const d = await tmdb<any>(`/movie/${m.tmdb_id}`) // the light call: no cast, crew or trailers
+        if (d?.id) cache[m.tmdb_id!] = { genres: (d.genres ?? []).map((g: any) => g.name), countries: mainCountry(d), language: d.original_language ? safe(() => languages.of(d.original_language)) ?? null : null }
       }))
-      if (!dead) setInfo(out)
+      try { localStorage.setItem(KEY, JSON.stringify(cache)) } catch { /* full: looked up again next time */ }
+      if (!dead) setInfo(fromCache(movies))
     })()
     return () => { dead = true }
   }, [ids]) // eslint-disable-line react-hooks/exhaustive-deps

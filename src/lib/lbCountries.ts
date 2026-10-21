@@ -34,11 +34,15 @@ export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCa
   onStep({ ...cache })
 }
 
+const PICKS = "lb-unseen-v1"
+const readPicks = (): Record<string, { pick: { title: string; year: number } | null; t: number }> => { try { return JSON.parse(localStorage.getItem(PICKS) ?? "{}") } catch { return {} } }
 const picks = new Map<string, { title: string; year: number } | null>()
 /** The best-rated well-known film from a country that this person hasn't watched, or null. */
 export async function topUnseen(code: string, history: LbEntry[]) {
   const k = code + history.length
   if (picks.has(k)) return picks.get(k)!
+  const saved = readPicks()[k]
+  if (saved && Date.now() - saved.t < 7 * 864e5) { picks.set(k, saved.pick); return saved.pick }
   // start with films lots of people have rated, and relax the vote count for countries with fewer (Thailand has almost none above 2000)
   let pick: { title: string; year: number } | null = null
   for (const votes of [2000, 500, 100]) {
@@ -48,5 +52,6 @@ export async function topUnseen(code: string, history: LbEntry[]) {
     if (pick) break
   }
   picks.set(k, pick)
+  try { localStorage.setItem(PICKS, JSON.stringify({ ...readPicks(), [k]: { pick, t: Date.now() } })) } catch { /* fine */ }
   return pick
 }
