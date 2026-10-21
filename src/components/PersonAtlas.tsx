@@ -66,11 +66,11 @@ export function PersonAtlas({ name, history }: { name: string; history: LbEntry[
         <div>
           <h3 className="mb-1 text-xl font-bold">Biggest country blindspots</h3>
           <p className="mb-3 text-sm text-muted-foreground">Major film nations {name} has watched the least, with a top-rated film from each that they haven't seen.</p>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
             {spots.map(s => {
               const idea = ideas[s.code]
               return (
-                <li key={s.code} className="flex flex-col gap-1 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+                <li key={s.code} className="flex min-w-0 flex-col gap-1 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
                   <span className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">{s.name}</b><span className="text-sm text-muted-foreground">{s.n} {s.n === 1 ? "film" : "films"}</span></span>
                   {idea ? (
                     <span className="flex items-center justify-between gap-2 text-sm">
