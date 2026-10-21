@@ -14,7 +14,7 @@ import type { Movie } from "@/lib/types"
 export function SealedPanel({ m }: { m: Movie }) {
   const { me, seal, isHost, loadSeal, sealSetup, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, members, attending } = useStore()
   const [pick, setPick] = useState<number | null>(null)
-  const [backup, setBackup] = useState<string | null>(null)
+  const [setupPin, setSetupPin] = useState("")
   const [keyText, setKeyText] = useState("")
   const [keyBad, setKeyBad] = useState(false)
   const [revealed, setRevealed] = useState<{ member: string; value: number }[] | null>(null)
@@ -45,7 +45,11 @@ export function SealedPanel({ m }: { m: Movie }) {
     body = (
       <>
         <p className="text-sm text-muted-foreground">Rate in secret, then reveal everyone's scores at once. One person sets it up and becomes the host who does the reveal.</p>
-        {!backup && <Button variant="outline" className="h-11 w-fit px-4" onClick={async () => setBackup(await sealSetup())}>Set up sealed ratings and become the host</Button>}
+        <form className="flex flex-wrap items-center gap-2" onSubmit={async e => { e.preventDefault(); await sealSetup(setupPin) }}>
+          <Input value={setupPin} onChange={e => setSetupPin(e.target.value.replace(/\D/g, "").slice(0, 8))} inputMode="numeric" autoComplete="off" placeholder="Choose a PIN (4 to 8 digits)" aria-label="Host PIN" className="h-11 w-56" />
+          <Button type="submit" variant="outline" className="h-11 px-4" disabled={setupPin.length < 4}>Become the host</Button>
+          <p className="w-full text-xs text-muted-foreground">You'll need this PIN to host from another device or after clearing this browser. Don't forget it: it can't be reset.</p>
+        </form>
         {offline}
       </>
     )
@@ -60,11 +64,11 @@ export function SealedPanel({ m }: { m: Movie }) {
       <div className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">Sealed ratings are set up. The host starts them for a film.</p>
         <details className="text-sm">
-          <summary className="min-h-11 cursor-pointer py-2 text-muted-foreground">I'm the host on a different device</summary>
+          <summary className="min-h-11 cursor-pointer py-2 text-muted-foreground">I'm the host</summary>
           <form className="flex flex-wrap gap-2" onSubmit={async e => { e.preventDefault(); setKeyBad(!(await sealUseKey(keyText))) }}>
-            <Input value={keyText} onChange={e => setKeyText(e.target.value)} placeholder="Paste your reveal key" aria-label="Reveal key" className="h-10 min-w-48 flex-1 font-mono text-xs" />
-            <Button type="submit" variant="outline" className="h-10 px-4">Use this key</Button>
-            {keyBad && <p role="alert" className="w-full text-sm text-destructive">That key doesn't open this club's sealed scores.</p>}
+            <Input value={keyText} onChange={e => setKeyText(e.target.value)} inputMode="numeric" autoComplete="off" placeholder="Host PIN" aria-label="Host PIN" className="h-10 min-w-40 flex-1" />
+            <Button type="submit" variant="outline" className="h-10 px-4">Unlock</Button>
+            {keyBad && <p role="alert" className="w-full text-sm text-destructive">That PIN is wrong.</p>}
           </form>
         </details>
       </div>
@@ -99,18 +103,6 @@ export function SealedPanel({ m }: { m: Movie }) {
     )
   }
 
-  const backupBlock = backup && (
-    <div className="flex flex-col gap-2 rounded-lg bg-muted/60 p-3">
-      <p className="text-sm font-medium">You're the host. Back up your reveal key.</p>
-      <p className="text-sm text-muted-foreground">It's saved on this device and it's the only thing that can open the sealed scores. If you lose it, they're gone.</p>
-      <Input readOnly value={backup} aria-label="Reveal key" onFocus={e => e.currentTarget.select()} className="h-10 font-mono text-xs" />
-      <div className="flex gap-2">
-        <Button variant="outline" className="h-10 px-4" onClick={() => navigator.clipboard?.writeText(backup)}>Copy the key</Button>
-        <Button variant="ghost" className="h-10 px-4" onClick={() => setBackup(null)}>I've saved it</Button>
-      </div>
-    </div>
-  )
-  body = <>{backupBlock}{body}</>
   const title = <><Lock className="size-4" aria-hidden />Sealed ratings</>
   return (
     <>

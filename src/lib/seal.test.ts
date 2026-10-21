@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { newSealKeys, openScore, sealScore } from "./seal"
+import { lockKey, newSealKeys, openScore, sealScore, unlockKey } from "./seal"
 
 test("a sealed score opens with the host's key and round-trips every half star", async () => {
   const { publicKey, privateKey } = await newSealKeys()
@@ -19,4 +19,12 @@ test("nobody else can open it: a different key gets nothing, and the same score 
 test("anything that isn't a half-star rating comes back null, even with the right key", async () => {
   const { publicKey, privateKey } = await newSealKeys()
   for (const bad of [0, 7, 3.3, -1]) expect(await openScore(privateKey, await sealScore(publicKey, bad))).toBeNull()
+})
+
+test("a PIN-locked key opens only with the right PIN", async () => {
+  const { privateKey } = await newSealKeys()
+  const locked = await lockKey(privateKey, "482913")
+  expect(await unlockKey(locked, "482913")).toBe(privateKey)
+  expect(await unlockKey(locked, "000000")).toBeNull()
+  expect(await unlockKey("junk", "482913")).toBeNull()
 })

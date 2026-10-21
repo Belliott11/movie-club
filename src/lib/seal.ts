@@ -32,3 +32,29 @@ export async function openScore(privateKey: string, cipher: string): Promise<num
     return null
   }
 }
+
+/**
+ * The host's private key locked with a PIN, safe to keep in the shared database so any device can unlock it with the PIN.
+ * ponytail: a short PIN can be guessed offline by anyone who copies this row; the slow key derivation only makes that costly. Use a longer PIN to harden.
+ */
+const pinKey = async (pin: string, salt: Uint8Array) =>
+  crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt: salt as BufferSource, iterations: 300_000, hash: "SHA-256" },
+    await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]),
+    { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"])
+
+export async function lockKey(privateKey: string, pin: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12))
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await pinKey(pin, salt), new TextEncoder().encode(privateKey))
+  return [salt, iv, new Uint8Array(ct)].map(a => b64(a.buffer as ArrayBuffer)).join(".")
+}
+
+/** The private key inside, or null for a wrong PIN or damaged value. */
+export async function unlockKey(locked: string, pin: string): Promise<string | null> {
+  try {
+    const [salt, iv, ct] = locked.split(".").map(unb64)
+    return new TextDecoder().decode(await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv as BufferSource }, await pinKey(pin, salt), ct as BufferSource))
+  } catch {
+    return null
+  }
+}
