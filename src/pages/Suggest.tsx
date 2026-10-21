@@ -32,16 +32,29 @@ function SuggestionCard({ s }: { s: Suggestion }) {
   )
 }
 
+const RECS = "suggest-recs-v1"
+const readRecs = (sig: string): Rec[] | null => {
+  try {
+    const c = JSON.parse(localStorage.getItem(RECS) ?? "null")
+    return c && c.sig === sig && Date.now() - c.t < 864e5 ? c.recs : null
+  } catch { return null }
+}
+const writeRecs = (sig: string, recs: Rec[]) => { try { localStorage.setItem(RECS, JSON.stringify({ sig, t: Date.now(), recs })) } catch { /* full: it will look up again */ } }
+
 type Rec = { id: number; title: string; year: number; because: string; wantedBy: string[]; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
   const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb, watchlist } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
-  const [recs, setRecs] = useState<Rec[] | null>(null)
+  // the same inputs give the same answer, so a repeat visit shows it at once (and for a day, skips the lookups)
+  const sig = [movies.length, watchlist.length, me, Object.values(lb).reduce((t, h) => t + h.length, 0)].join("|")
+  const [recs, setRecs] = useState<Rec[] | null>(() => readRecs(sig))
   const sorted = [...suggestions].sort((a, b) => (b.votes?.length || 0) - (a.votes?.length || 0))
 
   useEffect(() => {
     if (!hasTmdb() || !movies.length) return
+    const saved = readRecs(sig)
+    if (saved) { setRecs(saved); return }
     let dead = false
     ;(async () => {
       const played = new Set(movies.map(m => key(m.title, m.year)))
@@ -81,10 +94,10 @@ export default function Suggest() {
         }))
         out.push(...part.filter((r): r is Rec => !!r))
       }
-      if (!dead) setRecs(out)
+      if (!dead) { setRecs(out); writeRecs(sig, out) }
     })()
     return () => { dead = true }
-  }, [movies, watchlist, me, lb])
+  }, [sig]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // everyone sees the watchlist films they haven't marked seen or not interested
   const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind

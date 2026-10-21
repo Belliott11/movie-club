@@ -99,13 +99,12 @@ button:not(:disabled):active { transform: scale(0.97); }
 table { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
-  /* children of .stagger reveal one after another, up to the first twelve */
-  .stagger > * { animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
-  .stagger > :nth-child(1) { --d: 0ms } .stagger > :nth-child(2) { --d: 60ms } .stagger > :nth-child(3) { --d: 120ms }
-  .stagger > :nth-child(4) { --d: 180ms } .stagger > :nth-child(5) { --d: 240ms } .stagger > :nth-child(6) { --d: 300ms }
-  .stagger > :nth-child(7) { --d: 360ms } .stagger > :nth-child(8) { --d: 420ms } .stagger > :nth-child(9) { --d: 480ms }
-  .stagger > :nth-child(10) { --d: 540ms } .stagger > :nth-child(11) { --d: 600ms } .stagger > :nth-child(12) { --d: 660ms }
+  .rise { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+  /* children of .stagger reveal one after another, quickly: the whole page is in within about half a second */
+  .stagger > * { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
+  .stagger > :nth-child(1) { --d: 0ms } .stagger > :nth-child(2) { --d: 25ms } .stagger > :nth-child(3) { --d: 50ms }
+  .stagger > :nth-child(4) { --d: 75ms } .stagger > :nth-child(5) { --d: 100ms } .stagger > :nth-child(6) { --d: 125ms }
+  .stagger > :nth-child(n+7) { --d: 150ms }
   .grow { transform-origin: left; animation: growX 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.15s); }
   .grow-y { transform-origin: bottom; animation: growY 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.1s); }
   .draw { stroke-dasharray: 1; animation: draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) both; animation-delay: var(--d, 0.1s); }

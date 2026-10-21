@@ -20,12 +20,20 @@ import Films from "@/pages/Films"
 
 // every page but the first one loads when it is opened, so the site starts with a much smaller download
 const lazyPage = (f: () => Promise<{ default: React.ComponentType<any> }>) => lazy(f)
-const MemberPage = lazyPage(() => import("@/pages/MemberPage"))
-const FilmPage = lazyPage(() => import("@/pages/FilmPage"))
-const Next = lazyPage(() => import("@/pages/Next"))
-const Stats = lazyPage(() => import("@/pages/Stats"))
-const Suggest = lazyPage(() => import("@/pages/Suggest"))
-const Watch = lazyPage(() => import("@/pages/Watch"))
+const loaders = {
+  MemberPage: () => import("@/pages/MemberPage"),
+  FilmPage: () => import("@/pages/FilmPage"),
+  Next: () => import("@/pages/Next"),
+  Stats: () => import("@/pages/Stats"),
+  Suggest: () => import("@/pages/Suggest"),
+  Watch: () => import("@/pages/Watch"),
+}
+const MemberPage = lazyPage(loaders.MemberPage)
+const FilmPage = lazyPage(loaders.FilmPage)
+const Next = lazyPage(loaders.Next)
+const Stats = lazyPage(loaders.Stats)
+const Suggest = lazyPage(loaders.Suggest)
+const Watch = lazyPage(loaders.Watch)
 
 const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"], ["watch", "Watchlists"], ["stats", "Stats"], ["me", "Me"]] as const
 
@@ -64,6 +72,12 @@ function Shell() {
   const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
   // every time a tab is opened the header moves on to another still
   const [spin, setSpin] = useState(0)
+  // once the first page is up, quietly download the rest of the tabs
+  useEffect(() => {
+    if (!ready) return
+    const t = setTimeout(() => Object.values(loaders).forEach(load => load()), 1200)
+    return () => clearTimeout(t)
+  }, [ready])
   const firstTab = useRef(true)
   useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)

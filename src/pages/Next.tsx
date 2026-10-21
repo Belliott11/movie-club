@@ -4,7 +4,7 @@ import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
 import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { seenBy } from "@/lib/letterboxd"
 import { rankForGroup } from "@/lib/picks"
 import { key, pickOrder } from "@/lib/stats"
@@ -13,7 +13,7 @@ import { useStore } from "@/lib/store"
 export default function Next() {
   const { movies, members, attending, toggleAttend, watchlist, lb, loadLb, suggestions, suggest } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
-  const ranked = rankForGroup(attending, lb, watchlist, movies, 6)
+  const ranked = useMemo(() => rankForGroup(attending, lb, watchlist, movies, 6), [attending, lb, watchlist, movies])
   const order = pickOrder(movies, attending)
   const watched = new Set(movies.map(m => key(m.title, m.year)))
   const hits = new Map<string, { t: string; y: number; who: string[] }>()

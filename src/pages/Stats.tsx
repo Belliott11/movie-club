@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
 import { PersonAtlas } from "@/components/PersonAtlas"
@@ -29,6 +29,14 @@ export default function Stats() {
   const { movies, members, watchlist, suggestions, renameMember, removeMember, lb, loadLb } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   const rated = movies.filter(m => Object.keys(m.ratings).length)
+  // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
+  const lbStats = useMemo(() => ({
+    club: [...new Map([...movies.map((m): LbEntry => [m.title, m.year, null]), ...Object.values(lb).flat()].map(e => [entryKey(e), e])).values()],
+    twins: tasteTwins(lb),
+    favs: groupFavorites(lb, movies),
+    argue: divisiveOnLb(lb),
+    cuts: deepCuts(lb, movies).slice(0, 6),
+  }), [lb, movies])
   if (!rated.length) return <p className="text-muted-foreground">Stats appear after the first screening: rate a film and the credits start rolling.</p>
 
   const sum = overview(movies)
@@ -41,12 +49,7 @@ export default function Stats() {
     odd && { icon: Shuffle, label: "Most contrarian", who: odd.n, detail: `${fmt(odd.offGroup)} stars from the group` },
   ].filter(Boolean) as typeof awards
   const imported = Object.keys(lb).filter(n => lb[n]?.length)
-  // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
-  const club = [...new Map([...movies.map((m): LbEntry => [m.title, m.year, null]), ...Object.values(lb).flat()].map(e => [entryKey(e), e])).values()]
-  const twins = tasteTwins(lb)
-  const favs = groupFavorites(lb, movies)
-  const argue = divisiveOnLb(lb)
-  const cuts = deepCuts(lb, movies).slice(0, 6)
+  const { club, twins, favs, argue, cuts } = lbStats
   const top = [...rated].sort((a, b) => groupAvg(b)! - groupAvg(a)!).slice(0, 5)
   const divisive = [...rated].filter(m => Object.keys(m.ratings).length > 1).sort((a, b) => spread(b) - spread(a)).slice(0, 5)
   const gap = rated.filter(m => outsideAvg(m) != null).sort((a, b) => Math.abs(groupAvg(b)! - outsideAvg(b)!) - Math.abs(groupAvg(a)! - outsideAvg(a)!)).slice(0, 5)
