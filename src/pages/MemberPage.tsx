@@ -5,6 +5,7 @@ import { Flower } from "@/components/Flower"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
+import { PersonAtlas } from "@/components/PersonAtlas"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
 import { clubVsHome, favoritesOf } from "@/lib/lbstats"
@@ -122,6 +123,8 @@ export default function MemberPage({ name }: { name: string }) {
           )}
         </section>
       )}
+
+      {(lb[name]?.length ?? 0) > 0 && <PersonAtlas name={name} history={lb[name]} />}
 
       {picks.length > 0 && (
         <section>
