@@ -59,7 +59,11 @@ function Shell() {
   const [tab = "films", sub] = useHash()
   const up = pickOrder(movies, attending)[0]?.n
   const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
-  const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [tab, sub ?? ""].filter(Boolean))
+  // every time a tab is opened the header moves on to another still
+  const [spin, setSpin] = useState(0)
+  const firstTab = useRef(true)
+  useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
+  const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [tab, sub ?? ""].filter(Boolean), new Date(), spin)
   // a person's page opens on their own favorite from Letterboxd when they have imported, otherwise on their favorite club film
   useEffect(() => { if (tab === "people") loadLb() }, [tab, loadLb])
   const lbFav = tab === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined
@@ -67,7 +71,7 @@ function Shell() {
   const subject = lbFav
     ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: `${sub}'s favorite on Letterboxd` }
     : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
-  const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject)
+  const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject, spin)
   const active = tab === "people" ? "stats" : tab // member pages live under Stats
   // the pill behind the active tab slides to it
   const barRef = useRef<HTMLDivElement>(null)

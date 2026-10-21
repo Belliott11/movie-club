@@ -5,10 +5,10 @@ const dayOfYear = (d: Date) => Math.floor((+d - +new Date(d.getFullYear(), 0, 0)
 
 /**
  * Which film's still to show behind the page title. A film page shows that film, a person's page shows their favorite,
- * Stats shows the club's best, and every other page rotates by day through the films the club rated 3.5 or higher
- * (so the opening shot is a great film, not whatever was added last).
+ * Stats shows the club's best, and every other page rotates through the films the club rated 3.5 or higher
+ * (one step further each time you open a tab, so the opening shot is a great film, not whatever was added last).
  */
-export function pickHeroFilm(ms: Movie[], hasStill: (m: Movie) => boolean, route: string[], today = new Date()): Movie | undefined {
+export function pickHeroFilm(ms: Movie[], hasStill: (m: Movie) => boolean, route: string[], today = new Date(), spin = 0): Movie | undefined {
   const pool = ms.filter(hasStill)
   if (!pool.length) return undefined
   const [tab = "films", sub] = route
@@ -23,5 +23,5 @@ export function pickHeroFilm(ms: Movie[], hasStill: (m: Movie) => boolean, route
   if (tab === "stats") return [...pool].sort((a, b) => (groupAvg(b) ?? -1) - (groupAvg(a) ?? -1))[0]
   const loved = pool.filter(m => (groupAvg(m) ?? 0) >= 3.5)
   const rotation = loved.length ? loved : pool
-  return rotation[dayOfYear(today) % rotation.length]
+  return rotation[(dayOfYear(today) + spin) % rotation.length]
 }

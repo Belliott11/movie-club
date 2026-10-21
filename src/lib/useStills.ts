@@ -18,14 +18,14 @@ export function useFilmImages(tmdbId?: number | null) {
 }
 
 /**
- * Picks one still to show for a film and lets the caller step to the next. The first still changes with the day and the film,
+ * Picks one still to show for a film and lets the caller step to the next. The first still changes with the day, the film and `spin` (bumped each time a tab opens),
  * so the header looks different over the week, and `next` cycles through the rest. Falls back to `fallback` until stills load.
  */
-export function useStills(subject: { title: string; tmdbId?: number | null; fallback?: string | null } | undefined) {
+export function useStills(subject: { title: string; tmdbId?: number | null; fallback?: string | null } | undefined, spin = 0) {
   const imgs = useFilmImages(subject?.tmdbId)
   const [shift, setShift] = useState(0)
   useEffect(() => setShift(0), [subject?.title])
   const list = imgs?.backdrops.length ? imgs.backdrops : subject?.fallback ? [subject.fallback] : []
-  const still = list.length ? list[(dayOfYear() + hash(subject?.title ?? "") + shift) % list.length] : null
+  const still = list.length ? list[(dayOfYear() + hash(subject?.title ?? "") + shift + spin) % list.length] : null
   return { still, count: list.length, next: () => setShift(s => s + 1) }
 }

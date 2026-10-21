@@ -21,3 +21,9 @@ test("films without a still are skipped, rotation is stable within a day, and no
   expect(pickHeroFilm(ms, () => false, ["films"])).toBeUndefined()
   expect([1, 2, 3]).toContain(pickHeroFilm(ms, all, ["films", "999"])?.id) // unknown id falls back to the daily pick
 })
+
+test("each spin moves the daily pick on to another film", () => {
+  const d = new Date("2026-03-10T09:00:00")
+  const seen = new Set([0, 1, 2].map(spin => pickHeroFilm(ms, all, ["films"], d, spin)?.id))
+  expect(seen.size).toBe(3)
+})
