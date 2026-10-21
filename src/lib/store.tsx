@@ -158,7 +158,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return
     }
     try {
-      const [m, r, w, s] = await Promise.all(["movies", "ratings", "watchlist", "suggestions"].map(t => sb.from(t).select("*")))
+      // members, takes and rec_flags are optional tables, but they go out with the rest so nothing waits on anything else
+      const [m, r, w, s, mem, tk, fl] = await Promise.all(["movies", "ratings", "watchlist", "suggestions", "members", "takes", "rec_flags"].map(t => sb.from(t).select("*")))
       const bad = [m, r, w, s].find(x => x.error)
       if (bad) throw bad.error
       const ms: Movie[] = (m.data as any[]).sort((a, b) => a.seq - b.seq).map(x => ({ ...x, ratings: {} }))
@@ -168,12 +169,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (mv) mv.ratings[x.member] = +x.value
       }
       setMovies(ms); setWatchlist(w.data as WatchItem[]); setSuggestions(s.data as Suggestion[])
-      // members and takes tables are optional: older setups do not have them
-      const mem = await sb.from("members").select("name")
       if (!mem.error) setExtra(e => [...new Set([...e, ...(mem.data as { name: string }[]).map(x => x.name)])])
-      const tk = await sb.from("takes").select("*")
       if (!tk.error) setTakes(t => ({ ...t, ...Object.fromEntries((tk.data as any[]).map(x => [`${x.movie_id}|${x.member}`, x.text as string])) }))
-      const fl = await sb.from("rec_flags").select("*")
       if (!fl.error) setFlags(local => [...(fl.data as RecFlag[]), ...local.filter(l => !(fl.data as RecFlag[]).some(f => f.member === l.member && f.tmdb_id === l.tmdb_id))])
       setOffline(false)
       lsSet(SNAP, { movies: ms, watchlist: w.data, suggestions: s.data })
@@ -349,11 +346,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (sealLoaded.current && !force) return
     sealLoaded.current = true
     if (sb) {
-      const s = await sb.from("club_settings").select("key,value")
+      const [s, rows] = await Promise.all([sb.from("club_settings").select("key,value"), sb.from("sealed").select("movie_id,member")])
       if (!s.error) {
         const get = (k: string) => (s.data as { key: string; value: string }[]).find(r => r.key === k)?.value ?? null
         setCountries(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("country:")).map(r => [r.key.slice(8), r.value])))
-        const rows = await sb.from("sealed").select("movie_id,member")
         const by: Record<string, string[]> = {}
         for (const r of (rows.data ?? []) as { movie_id: number; member: string }[]) (by[String(r.movie_id)] ||= []).push(r.member)
         setSeal({ ready: true, shared: true, publicKey: get("seal_public_key"), lockedKey: get("seal_locked_key"), openMovie: get("seal_open"), sealedBy: by })
