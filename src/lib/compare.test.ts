@@ -25,3 +25,15 @@ test("too few shared ratings gives no match score, and identical tastes are 100"
   const same = Array.from({ length: 6 }, (_, i): [string, number, number] => [`F${i}`, 2000, 4])
   expect(headToHead({ A: same, B: same }, "A", "B").match).toBe(100)
 })
+
+import { rankPairRecs } from "./pairRecs"
+
+test("pair recommendations favor films several seeds point at, skip anything seen, and ignore weak scores", () => {
+  const r = (id: number, title: string, votes = 7.5) => ({ id, title, year: 2000, poster: null, votes })
+  const out = rankPairRecs(
+    [{ because: "X", results: [r(1, "Popular"), r(2, "Once"), r(3, "Seen"), r(4, "Weak", 5)] }, { because: "Y", results: [r(1, "Popular"), r(2, "Once", 7.2)] }, { because: "Z", results: [r(1, "Popular")] }],
+    t => t === "Seen",
+  )
+  expect(out.map(x => x.title)).toEqual(["Popular", "Once"])
+  expect(out[0].because).toEqual(["X", "Y", "Z"])
+})

@@ -1,7 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { headToHead, type Head2Head } from "@/lib/compare"
+import { IMG } from "@/lib/api"
+import { pairRecs, type PairRec } from "@/lib/pairRecs"
 import type { LbHistory } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -31,6 +33,10 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
   const others = Object.keys(lb).filter(n => n !== name && lb[n]?.length)
   const [pick, setPick] = useState("")
   const who = pick || others[0]
+  const { movies, suggest } = useStore()
+  const [recs, setRecs] = useState<PairRec[] | null>(null)
+  const [busy, setBusy] = useState(false)
+  useEffect(() => { setRecs(null) }, [name, who])
   if (!lb[name]?.length) return null
   if (!others.length) return (
     <section>
@@ -63,6 +69,26 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
       <Films title="Where they split" rows={h.splits.map(x => ({ film: x.film, text: `${name} ${f1(x.a)}, ${who} ${f1(x.b)}` }))} />
       <Films title={`${name} loves, ${who} hasn't seen`} rows={h.aLoves.map(x => ({ film: x.film, text: `${name} gave ${f1(x.rating)}`, ask: true }))} />
       <Films title={`${who} loves, ${name} hasn't seen`} rows={h.bLoves.map(x => ({ film: x.film, text: `${who} gave ${f1(x.rating)}`, ask: true }))} />
+      <div>
+        <h4 className="mb-1 font-display text-lg font-bold">Films {name} and {who} would both like</h4>
+        {recs == null ? (
+          <Button variant="outline" className="h-11 px-4" disabled={busy} onClick={async () => { setBusy(true); setRecs(await pairRecs(lb, name, who, movies)); setBusy(false) }}>{busy ? "Finding films…" : "Find films for both of them"}</Button>
+        ) : recs.length ? (
+          <ul className="grid grid-cols-1 gap-2">
+            {recs.map(r => (
+              <li key={r.id} className="flex items-center gap-3 rounded-xl bg-card p-2 ring-1 ring-foreground/10">
+                {r.poster ? <img src={`${IMG}w92${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-10 shrink-0 rounded object-cover" /> : <span className="aspect-[2/3] w-10 shrink-0 rounded bg-muted" />}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-medium">{r.title} <span className="font-normal text-muted-foreground">{r.year}</span></span>
+                  <span className="block truncate text-xs text-muted-foreground">Because of {r.because.slice(0, 3).join(", ")}</span>
+                </span>
+                <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => suggest(r.title, r.year)}>Suggest to club</Button>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="text-sm text-muted-foreground">Nothing new to recommend: they've seen the obvious ones.</p>}
+        <p className="mt-1 text-xs text-muted-foreground">Films TMDB recommends alongside what both loved and each person's favorites, leaving out anything either has watched.</p>
+      </div>
     </section>
   )
 }
