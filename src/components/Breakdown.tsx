@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react"
 import { byDecade, byTag, byYear, type Group } from "@/lib/breakdown"
+import { scale } from "@/components/Charts"
 import { useFilmTags } from "@/lib/useFilmTags"
-import { fmt } from "@/lib/stats"
+import { fmt, groupAvg } from "@/lib/stats"
 import type { Movie } from "@/lib/types"
 
 /** Rows of name, a bar and the numbers. The bar shows the club's average. */
@@ -38,16 +39,32 @@ function Tags({ title, groups }: { title: string; groups: Group[] }) {
   )
 }
 
-/** Release-year columns: one per year, so an era the club skipped shows as a gap. */
+/** Release-year columns: one per year, colored by the club's average for films from that year. Tap a column to see which films. */
 function Years({ movies }: { movies: Movie[] }) {
+  const [on, setOn] = useState<number | null>(null)
   const years = byYear(movies), max = Math.max(...years.map(y => y.n), 1)
+  const films = (yr: number) => movies.filter(m => m.year === yr)
+  const avgOf = (yr: number) => { const r = films(yr).map(groupAvg).filter((v): v is number => v != null); return r.length ? r.reduce((a, b) => a + b, 0) / r.length : null }
+  const first = years[0]?.year ?? 0, ticks = years.filter((y, i) => y.year % 10 === 0 || ((i === 0 || i === years.length - 1) && !years.some(o => o !== y && o.year % 10 === 0 && Math.abs(o.year - y.year) < 5)))
+  const span = Math.max(1, years.length - 1)
+  const picked = on != null ? films(on) : []
   return (
-    <figure>
-      <div className="flex h-24 items-end gap-px" aria-hidden>
-        {years.map(y => <span key={y.year} title={`${y.year}: ${y.n}`} className="grow-y min-w-px flex-1 rounded-t-sm bg-world" style={{ height: y.n ? `${(y.n / max) * 100}%` : 2, opacity: y.n ? 1 : 0.25 }} />)}
+    <figure data-no-swipe>
+      <div className="relative flex h-28 items-end gap-px border-b border-foreground/40">
+        {[0.5, 1].map(f => <span key={f} aria-hidden className="absolute inset-x-0 border-t border-dashed border-border" style={{ bottom: `${f * 100}%` }} />)}
+        {years.map(y => (
+          <button key={y.year} type="button" disabled={!y.n} aria-label={`${y.year}: ${y.n} ${y.n === 1 ? "film" : "films"}`} aria-pressed={on === y.year} onClick={() => setOn(on === y.year ? null : y.year)} className="relative z-10 flex h-full min-w-px flex-1 items-end disabled:cursor-default">
+            <span className="grow-y block w-full rounded-t-sm" style={{ height: y.n ? `${(y.n / max) * 100}%` : 0, minHeight: y.n ? 4 : 0, background: scale(((avgOf(y.year) ?? 2.5) - 0.5) / 4.5), outline: on === y.year ? "2px solid var(--foreground)" : undefined }} />
+          </button>
+        ))}
       </div>
-      <div className="mt-1 flex justify-between text-xs text-muted-foreground"><span>{years[0]?.year}</span><span>{years[years.length - 1]?.year}</span></div>
-      <figcaption className="sr-only">{years.filter(y => y.n).map(y => `${y.year}: ${y.n}`).join(", ")}</figcaption>
+      <div className="relative mt-1 h-4 text-[11px] text-muted-foreground" aria-hidden>
+        {ticks.map(t => <span key={t.year} className="absolute -translate-x-1/2 first:translate-x-0 last:translate-x-[-100%]" style={{ left: `${((t.year - first) / span) * 100}%` }}>{t.year}</span>)}
+      </div>
+      <p className="mt-1 min-h-10 text-sm" aria-live="polite">
+        {on == null ? <span className="text-muted-foreground">Bars are colored by the club's average for that year, red low to teal high. Tap one to see the films.</span> : <><b>{on}</b>: {picked.map(m => `${m.title} ${fmt(groupAvg(m), 1)}`).join(", ")}</>}
+      </p>
+      <p className="sr-only">{years.filter(y => y.n).map(y => `${y.year}: ${y.n}`).join(", ")}</p>
     </figure>
   )
 }

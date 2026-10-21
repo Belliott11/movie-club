@@ -6,7 +6,7 @@ import { fmt } from "@/lib/stats"
  * `average` and `median` are noted underneath. Screen readers get the same numbers as a list.
  */
 /** Low scores run red, the middle amber, high scores teal. */
-const scale = (t: number) => t < 0.5
+export const scale = (t: number) => t < 0.5
   ? `color-mix(in oklab, var(--sun) ${t * 200}%, var(--us))`
   : `color-mix(in oklab, var(--world) ${(t - 0.5) * 200}%, var(--sun))`
 
@@ -49,18 +49,22 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
 
 /**
  * The group's average for each film in the order watched. The line draws itself on, the points pop in after it, and you can
- * press or drag along the chart to read any film. The dashed line is the club's overall average.
+ * press or drag along the chart to read any film. The axis zooms to the ratings that occur. The dashed line is the club's overall average.
  */
 export function TrendChart({ points, average }: { points: { id: string | number; title: string; avg: number }[]; average?: number | null }) {
   const gid = useId()
   const [active, setActive] = useState<number | null>(null)
   if (points.length < 2) return null
   const n = points.length
-  const W = 420, H = 210, P = { l: 24, r: 10, t: 24, b: 16 }
+  const W = 420, H = 250, P = { l: 24, r: 14, t: 30, b: 26 }
+  // zoom the scale to where the ratings actually live, so ups and downs are visible
+  const dMin = Math.max(0, Math.floor(Math.min(...points.map(p => p.avg)) - 0.5)), dMax = Math.min(5, Math.ceil(Math.max(...points.map(p => p.avg)) + 0.5))
+  const ticks = Array.from({ length: dMax - dMin + 1 }, (_, i) => dMin + i)
+  const step = Math.ceil(n / 6)
   const x = (i: number) => P.l + (i / (n - 1)) * (W - P.l - P.r)
-  const y = (v: number) => P.t + (1 - v / 5) * (H - P.t - P.b)
+  const y = (v: number) => P.t + (1 - (v - dMin) / (dMax - dMin)) * (H - P.t - P.b)
   const line = points.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.avg).toFixed(1)}`).join(" ")
-  const area = `${line} L${x(n - 1).toFixed(1)},${y(0)} L${x(0).toFixed(1)},${y(0)} Z`
+  const area = `${line} L${x(n - 1).toFixed(1)},${y(dMin)} L${x(0).toFixed(1)},${y(dMin)} Z`
   const mean = average ?? points.reduce((t, p) => t + p.avg, 0) / n
   const hi = points.reduce((a, b) => (b.avg > a.avg ? b : a)), lo = points.reduce((a, b) => (b.avg < a.avg ? b : a))
   const locate = (e: PointerEvent<SVGSVGElement>) => {
@@ -86,7 +90,7 @@ export function TrendChart({ points, average }: { points: { id: string | number;
             <stop offset="100%" style={{ stopColor: "var(--us)", stopOpacity: 0 }} />
           </linearGradient>
         </defs>
-        {[1, 2, 3, 4, 5].map(v => (
+        {ticks.map(v => (
           <g key={v}>
             <line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} className="stroke-border" strokeWidth={1} />
             <text x={P.l - 6} y={y(v) + 4} textAnchor="end" className="fill-muted-foreground" fontSize={11}>{v}</text>
@@ -95,7 +99,15 @@ export function TrendChart({ points, average }: { points: { id: string | number;
         <line x1={P.l} x2={W - P.r} y1={y(mean)} y2={y(mean)} className="stroke-world" strokeWidth={1.5} strokeDasharray="5 5" />
         <path d={area} fill={`url(#${gid})`} className="fade-in" style={{ "--d": "0.9s" } as CSSProperties} />
         <path d={line} pathLength={1} fill="none" className="draw stroke-us" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-        {active != null && <line x1={x(active)} x2={x(active)} y1={P.t - 6} y2={y(0)} className="stroke-foreground" strokeWidth={1} opacity={0.35} />}
+        {active != null && <line x1={x(active)} x2={x(active)} y1={P.t - 6} y2={y(dMin)} className="stroke-foreground" strokeWidth={1} opacity={0.35} />}
+        {points.map((_, i) => (i % step === 0 || i === n - 1) && (
+          <text key={`t${i}`} x={x(i)} y={H - 8} textAnchor="middle" className="fill-muted-foreground" fontSize={10}>{i + 1}</text>
+        ))}
+        <text x={W - P.r} y={y(mean) - 5} textAnchor="end" className="fill-world font-semibold" fontSize={10}>club avg {fmt(mean, 1)}</text>
+        {[hi, lo].map((p, k) => {
+          const i = points.indexOf(p), left = i > n / 2
+          return <text key={k} x={x(i) + (left ? -9 : 9)} y={y(p.avg) + (k ? 15 : -9)} textAnchor={left ? "end" : "start"} className="fill-foreground font-semibold" fontSize={10}>{p.title.length > 18 ? `${p.title.slice(0, 17)}…` : p.title} {fmt(p.avg, 1)}</text>
+        })}
         {points.map((p, i) => (
           <circle
             key={p.id}
