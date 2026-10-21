@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { byDecade, byTag, byYear, type Group } from "@/lib/breakdown"
 import { scale } from "@/components/Charts"
 import { useFilmTags } from "@/lib/useFilmTags"
 import { fmt, groupAvg } from "@/lib/stats"
+import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
 /** Rows of name, a bar and the numbers. The bar shows the club's average. */
@@ -70,9 +71,11 @@ function Years({ movies }: { movies: Movie[] }) {
 }
 
 export function Breakdown({ movies }: { movies: Movie[] }) {
+  const { countries: fixed, loadSeal } = useStore()
+  useEffect(() => { loadSeal() }, [loadSeal])
   const info = useFilmTags(movies)
   const genres = useMemo(() => byTag(movies, m => info[String(m.id)]?.genres ?? []), [movies, info])
-  const countries = useMemo(() => byTag(movies, m => info[String(m.id)]?.countries ?? []), [movies, info])
+  const countries = useMemo(() => byTag(movies, m => (fixed[String(m.id)] ? [fixed[String(m.id)]] : info[String(m.id)]?.countries ?? [])), [movies, info, fixed])
   const languages = useMemo(() => byTag(movies, m => info[String(m.id)]?.language ? [info[String(m.id)].language!] : []), [movies, info])
   const decades = byDecade(movies)
   return (

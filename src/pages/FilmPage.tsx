@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
 import { Lightbox } from "@/components/Lightbox"
+import { mainCountry } from "@/lib/useFilmTags"
 import { useFilmImages } from "@/lib/useStills"
 import { findEntry } from "@/lib/letterboxd"
 import { key } from "@/lib/stats"
@@ -12,9 +13,11 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
+  const { countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
   const [view, setView] = useState<{ kind: "still" | "poster"; i: number } | null>(null)
-  useEffect(() => { loadLb() }, [loadLb])
+  useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
+  const [editCountry, setEditCountry] = useState(false)
+  const [countryText, setCountryText] = useState("")
   const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
   const [recapCopied, setRecapCopied] = useState(false)
   const m = movies.find(x => String(x.id) === id)
@@ -82,6 +85,23 @@ export default function FilmPage({ id }: { id: string }) {
                 </div>
               ))}
             </dl>
+          )}
+          {m && d && (
+            <p className="text-sm">
+              <span className="text-muted-foreground">Main country (for Stats): </span>
+              {editCountry ? (
+                <form className="mt-1 inline-flex flex-wrap items-center gap-2" onSubmit={e => { e.preventDefault(); setCountry(m, countryText); setEditCountry(false) }}>
+                  <Input value={countryText} onChange={e => setCountryText(e.target.value)} placeholder="e.g. Japan" aria-label="Main country" className="h-10 w-44" />
+                  <Button type="submit" className="h-10 px-3">Save</Button>
+                  <Button type="button" variant="ghost" className="h-10 px-3" onClick={() => { setCountry(m, ""); setEditCountry(false) }}>Use TMDB's</Button>
+                </form>
+              ) : (
+                <>
+                  <b>{countries[String(m.id)] ?? mainCountry(d)[0] ?? "unknown"}</b>{countries[String(m.id)] && <span className="text-muted-foreground"> (set by the club)</span>}
+                  {" "}<button type="button" className="min-h-11 px-1 underline" onClick={() => { setCountryText(countries[String(m.id)] ?? mainCountry(d)[0] ?? ""); setEditCountry(true) }}>Change</button>
+                </>
+              )}
+            </p>
           )}
           {where && where.names.length > 0 && (
             <p className="max-w-[62ch]"><span className="text-sm text-muted-foreground">Where to watch (US): </span>{where.names.slice(0, 8).join(", ")}{where.names.length > 8 && <span className="text-muted-foreground"> +{where.names.length - 8} more</span>}{where.link && <> · <a className="underline" href={where.link} target="_blank" rel="noopener">all options</a></>}</p>

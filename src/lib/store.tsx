@@ -67,6 +67,9 @@ type Store = {
   /** True on the device that holds the reveal key. */
   isHost: boolean
   loadSeal: (force?: boolean) => void
+  /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
+  countries: Record<string, string>
+  setCountry: (m: Movie, country: string) => Promise<void>
   /** Makes this device the host: creates the key pair, shares the public half, and returns the private half to back up. */
   sealSetup: (pin: string) => Promise<void>
   /** Puts a PIN on the key this device already holds (hosts who set up before PINs existed). */
@@ -111,6 +114,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const sealRef = useRef(seal)
   sealRef.current = seal
   const sealLoaded = useRef(false)
+  const [countries, setCountries] = useState<Record<string, string>>({})
   const [hostKey, setHostKey] = useState<string | null>(() => localStorage.getItem("seal-private-key"))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
@@ -341,6 +345,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const s = await sb.from("club_settings").select("key,value")
       if (!s.error) {
         const get = (k: string) => (s.data as { key: string; value: string }[]).find(r => r.key === k)?.value ?? null
+        setCountries(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("country:")).map(r => [r.key.slice(8), r.value])))
         const rows = await sb.from("sealed").select("movie_id,member")
         const by: Record<string, string[]> = {}
         for (const r of (rows.data ?? []) as { movie_id: number; member: string }[]) (by[String(r.movie_id)] ||= []).push(r.member)
@@ -348,6 +353,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         return
       }
     }
+    setCountries(lsGet("country-local-v1", {}))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -364,6 +370,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       lsSet("seal-local-v1", l)
     }
   }
+
+  const setCountry = useCallback(async (m: Movie, country: string) => {
+    const c = country.trim(), k = String(m.id)
+    setCountries(all => {
+      const next = { ...all }
+      if (c) next[k] = c
+      else delete next[k]
+      if (!sealRef.current.shared) lsSet("country-local-v1", next)
+      return next
+    })
+    if (sealRef.current.shared && sb) fail((c ? await sb.from("club_settings").upsert({ key: `country:${k}`, value: c }) : await sb.from("club_settings").delete().eq("key", `country:${k}`)).error)
+  }, [])
 
   const sealSetup = useCallback(async (pin: string) => {
     const { publicKey, privateKey } = await newSealKeys()
@@ -566,7 +584,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
