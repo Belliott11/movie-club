@@ -10,6 +10,14 @@ export const loadCountryCache = (): CountryCache => {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") } catch { return {} }
 }
 
+const DIRECTORS = "lb-directors-v1"
+/** Film (title and year) to its director(s), looked up only for watchlist plans since it needs the cast and crew. */
+export type DirectorCache = Record<string, string[]>
+export const loadDirectorCache = (): DirectorCache => {
+  try { return JSON.parse(localStorage.getItem(DIRECTORS) ?? "{}") } catch { return {} }
+}
+const saveDirectors = (d: DirectorCache) => { try { localStorage.setItem(DIRECTORS, JSON.stringify(d)) } catch { /* fine */ } }
+
 const VOTES = "lb-votes-v1"
 export const loadVoteCache = (): Record<string, number> => {
   try { return JSON.parse(localStorage.getItem(VOTES) ?? "{}") } catch { return {} }
@@ -29,24 +37,25 @@ const save = (c: CountryCache) => { try { localStorage.setItem(KEY, JSON.stringi
  * Looks up the main country of every film in a Letterboxd history that isn't cached yet: one TMDB search and one detail call each,
  * six at a time. `onStep` gets the updated cache as it fills, and `stopped()` ends the run early. Results are kept between visits.
  */
-export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCache, g: GenreCache) => void, stopped: () => boolean) {
-  const cache = loadCountryCache(), genres = loadGenreCache(), votes = loadVoteCache()
-  const todo = history.filter(e => cache[entryKey(e)] === undefined || genres[entryKey(e)] === undefined)
+export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCache, g: GenreCache) => void, stopped: () => boolean, withDirectors = false) {
+  const cache = loadCountryCache(), genres = loadGenreCache(), votes = loadVoteCache(), directors = loadDirectorCache()
+  const todo = history.filter(e => cache[entryKey(e)] === undefined || genres[entryKey(e)] === undefined || (withDirectors && directors[entryKey(e)] === undefined))
   let next = 0, done = 0
   const worker = async () => {
     while (!stopped()) {
       const e = todo[next++]
       if (!e) return
       const hit = await searchFilm(e[0], e[1])
-      const d = hit?.id ? await tmdb<any>(`/movie/${hit.id}`) : null
+      const d = hit?.id ? await tmdb<any>(`/movie/${hit.id}`, withDirectors ? "&append_to_response=credits" : "") : null
       cache[entryKey(e)] = d?.origin_country?.[0] ?? d?.production_countries?.[0]?.iso_3166_1 ?? ""
       genres[entryKey(e)] = (d?.genres ?? []).map((g: any) => g.name as string)
       if (hit?.vote_average) votes[entryKey(e)] = hit.vote_average
-      if (++done % 20 === 0) { save(cache); saveGenres(genres); saveVotes(votes); onStep({ ...cache }, { ...genres }) }
+      if (withDirectors) directors[entryKey(e)] = [...new Set(((d?.credits?.crew ?? []) as any[]).filter(c => c.job === "Director").map(c => c.name as string))].slice(0, 2)
+      if (++done % 20 === 0) { save(cache); saveGenres(genres); saveVotes(votes); saveDirectors(directors); onStep({ ...cache }, { ...genres }) }
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker))
-  save(cache); saveGenres(genres); saveVotes(votes)
+  save(cache); saveGenres(genres); saveVotes(votes); saveDirectors(directors)
   onStep({ ...cache }, { ...genres })
 }
 

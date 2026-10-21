@@ -36,3 +36,11 @@ test("groups the person rates highest come first, and within a group the best-re
   expect(p.groups[0].films.map(f => f.title)).toEqual(["J2", "J3", "J1"])
   expect(filmAffinity(cands[3], aff)).toBeGreaterThan(filmAffinity(cands[0], aff))
 })
+
+test("a director with three or more films gets a group in release order, ahead of country and genre", () => {
+  const d = (title: string, year: number) => c(title, year, { country: "JP", genres: ["Drama"], directors: ["Akira Kurosawa"] })
+  const p = generatePlan([d("Ran", 1985), d("Stray Dog", 1949), d("Ikiru", 1952), c("Other", 2001, { country: "JP", genres: ["Drama"], directors: ["Someone"] })], flat, name)
+  const g = p.groups.find(x => x.title === "Director: Akira Kurosawa")!
+  expect(g.films.map(f => f.title)).toEqual(["Stray Dog", "Ikiru", "Ran"])
+  expect(p.groups.flatMap(x => x.films).length).toBe(4)
+})
