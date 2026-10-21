@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
+import { Lightbox } from "@/components/Lightbox"
+import { useFilmImages } from "@/lib/useStills"
 import { findEntry } from "@/lib/letterboxd"
+import { key } from "@/lib/stats"
 import { fmt, groupAvg, outsideAvg, recapLines } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -9,7 +12,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { movies, patchMovie, takes, setTake, me, lb, loadLb, setRating } = useStore()
+  const { movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
+  const [view, setView] = useState<{ kind: "still" | "poster"; i: number } | null>(null)
   useEffect(() => { loadLb() }, [loadLb])
   const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
   const [recapCopied, setRecapCopied] = useState(false)
@@ -34,6 +38,9 @@ export default function FilmPage({ id }: { id: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m?.id])
 
+  const imgs = useFilmImages(m?.tmdb_id ?? d?.id)
+  const myPoster = m ? mini[key(m.title, m.year)]?.p : null
+
   const back = (
     <a href="#/films" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}>
       <ArrowLeft /> All films
@@ -56,7 +63,7 @@ export default function FilmPage({ id }: { id: string }) {
     <div className="rise flex flex-col gap-5">
       {back}
       <div className="grid gap-6 sm:grid-cols-[minmax(150px,230px)_1fr]">
-        {d?.poster_path && <img src={`${IMG}w500${d.poster_path}`} alt={`Poster for ${m.title}`} className="w-full max-w-56 rounded-xl bg-card sm:max-w-none" />}
+        {(myPoster || d?.poster_path) && <img src={`${IMG}w500${myPoster || d.poster_path}`} alt={`Poster for ${m.title}`} className="w-full max-w-56 rounded-xl bg-card sm:max-w-none" />}
         <div className="flex flex-col gap-3">
           <h2 className="font-display text-4xl leading-none font-extrabold tracking-tight">
             {m.title} <small className="font-sans text-base font-medium text-muted-foreground">{m.year}</small>
@@ -85,6 +92,53 @@ export default function FilmPage({ id }: { id: string }) {
           </div>
         </div>
       </div>
+      {imgs && (imgs.backdrops.length > 0 || imgs.posters.length > 1) && (
+        <section className="flex flex-col gap-5">
+          {imgs.backdrops.length > 0 && (
+            <div>
+              <h3 className="mb-2 text-xl font-bold">Stills</h3>
+              <ul data-no-swipe className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
+                {imgs.backdrops.map((b, i) => (
+                  <li key={b} className="shrink-0">
+                    <button type="button" onClick={() => setView({ kind: "still", i })} className="block overflow-hidden rounded-lg ring-1 ring-foreground/10 focus-visible:ring-2" aria-label={`Open still ${i + 1} of ${imgs.backdrops.length}`}>
+                      <img src={`${IMG}w300${b}`} alt="" loading="lazy" className="aspect-video h-24 object-cover" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {imgs.posters.length > 1 && (
+            <div>
+              <h3 className="mb-2 text-xl font-bold">Posters</h3>
+              <ul data-no-swipe className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
+                {imgs.posters.map((pth, i) => (
+                  <li key={pth} className="shrink-0">
+                    <button type="button" onClick={() => setView({ kind: "poster", i })} className={`block overflow-hidden rounded-lg ring-1 focus-visible:ring-2 ${pth === myPoster ? "ring-2 ring-gold" : "ring-foreground/10"}`} aria-label={`Open poster ${i + 1} of ${imgs.posters.length}`}>
+                      <img src={`${IMG}w185${pth}`} alt="" loading="lazy" className="aspect-[2/3] h-32 object-cover" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </section>
+      )}
+      {view && imgs && (
+        <Lightbox
+          paths={view.kind === "still" ? imgs.backdrops : imgs.posters}
+          start={view.i}
+          kind={view.kind}
+          label={m.title}
+          onClose={() => setView(null)}
+          extra={view.kind === "poster" ? (pth => (
+            <div className="flex gap-2">
+              <Button className="h-11 px-4" onClick={() => { setPoster(m, pth); setView(null) }}>Use this poster</Button>
+              {myPoster && <Button variant="outline" className="h-11 px-4" onClick={() => { setPoster(m, null); setView(null) }}>Back to the default</Button>}
+            </div>
+          )) : undefined}
+        />
+      )}
       <section>
         <h3 className="mb-2 text-xl font-bold">Recap</h3>
         <Card className="gap-2 px-4">

@@ -35,7 +35,10 @@ export type Takes = Record<string, string> // "movieId|member" -> one-line take
 type Store = {
   ready: boolean; error: string; offline: boolean
   movies: Movie[]; watchlist: WatchItem[]; suggestions: Suggestion[]; takes: Takes; flags: RecFlag[]
-  mini: Record<string, Mini>; me: string; attending: string[]; members: string[]; shared: boolean
+  mini: Record<string, Mini>
+  /** Pick which TMDB poster shows for a film on this device; null goes back to the default. */
+  setPoster: (m: Movie, path: string | null) => void
+  me: string; attending: string[]; members: string[]; shared: boolean
   toast: Toast | null; dismissToast: () => void
   refresh: () => Promise<void>
   setMe: (n: string) => void; toggleAttend: (n: string) => void
@@ -77,6 +80,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [flags, setFlags] = useState<RecFlag[]>(() => lsGet("rec-flags-local", []))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
+  const [posterPref, setPosterPref] = useState<Record<string, string>>(() => lsGet("poster-pref-v1", {}))
+  const miniShown = useMemo(() => {
+    const out = { ...mini }
+    for (const [k, p] of Object.entries(posterPref)) out[k] = { ...(mini[k] ?? { v: null }), p }
+    return out
+  }, [mini, posterPref])
+  const setPoster = useCallback((m: Movie, path: string | null) => {
+    setPosterPref(prev => {
+      const next = { ...prev }
+      if (path) next[key(m.title, m.year)] = path
+      else delete next[key(m.title, m.year)]
+      lsSet("poster-pref-v1", next)
+      return next
+    })
+  }, [])
   const [me, setMeState] = useState(() => localStorage.getItem("me") || "")
   const [attending, setAttending] = useState<string[]>(() => lsGet("attending", []))
   const [extra, setExtra] = useState<string[]>(() => lsGet("extra-members", []))
@@ -397,7 +415,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, lb, loadLb, importLb, fillFromLb, flags, mini, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
