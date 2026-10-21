@@ -31,12 +31,14 @@ const lazyPage = (f: () => Promise<{ default: React.ComponentType<any> }>) =>
 const loaders = {
   MemberPage: () => import("@/pages/MemberPage"),
   MoviePage: () => import("@/pages/MoviePage"),
+  Wrapped: () => import("@/pages/Wrapped"),
   FilmPage: () => import("@/pages/FilmPage"),
   Next: () => import("@/pages/Next"),
   Stats: () => import("@/pages/Stats"),
   Suggest: () => import("@/pages/Suggest"),
   Watch: () => import("@/pages/Watch"),
 }
+const Wrapped = lazyPage(loaders.Wrapped)
 const MoviePage = lazyPage(loaders.MoviePage)
 const MemberPage = lazyPage(loaders.MemberPage)
 const FilmPage = lazyPage(loaders.FilmPage)
@@ -189,7 +191,7 @@ function Shell() {
 
       <main key={tab + (sub ?? "")}><ErrorBoundary resetKey={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
-          tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "movie" && sub ? <MoviePage title={sub} year={Number(rest[0]) || 0} /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
+          tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "wrapped" ? <Wrapped /> : tab === "movie" && sub ? <MoviePage title={sub} year={Number(rest[0]) || 0} /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
       </Suspense></ErrorBoundary></main>
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">

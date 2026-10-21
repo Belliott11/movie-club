@@ -56,6 +56,8 @@ export default function Stats() {
 
   return (
     <div className="stagger flex flex-col gap-8">
+      <a href="#/wrapped" className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10 hover:bg-muted/60"><span><b className="font-display text-lg">Club Wrapped</b><span className="block text-sm text-muted-foreground">The club's story so far, one card at a time</span></span><span aria-hidden>Open</span></a>
+
       <section aria-label="Summary" className="flex flex-col gap-4">
         <div className="grid grid-cols-3 divide-x divide-border border-y-2 border-foreground py-4">
           <Stat label="Films" n={sum.films} />
