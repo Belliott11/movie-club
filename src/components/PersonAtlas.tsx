@@ -11,7 +11,7 @@ const regions = new Intl.DisplayNames(["en"], { type: "region" })
 const nameOf = (code: string) => NATIONS.find(n => n.code === code)?.name ?? (code === "US" ? "USA" : (() => { try { return regions.of(code) ?? code } catch { return code } })())
 
 /** Someone's Letterboxd history as a world tour: countries watched, the countries they've neglected, and film movements left unseen. */
-export function PersonAtlas({ name, history }: { name: string; history: LbEntry[] }) {
+export function PersonAtlas({ name, history, group = false }: { name: string; history: LbEntry[]; group?: boolean }) {
   const { suggest } = useStore()
   const [cache, setCache] = useState<CountryCache>(loadCountryCache)
   const [running, setRunning] = useState(false)
@@ -39,8 +39,8 @@ export function PersonAtlas({ name, history }: { name: string; history: LbEntry[
   return (
     <section className="flex flex-col gap-6">
       <div>
-        <h3 className="mb-1 text-xl font-bold">{name}'s world tour</h3>
-        <p className="mb-3 text-sm text-muted-foreground">Countries of the films {name} has logged on Letterboxd, using TMDB's main country for each film.</p>
+        <h3 className="mb-1 text-xl font-bold">{group ? "The club's world tour" : `${name}'s world tour`}</h3>
+        <p className="mb-3 text-sm text-muted-foreground">{group ? "Countries of every film the club has played or any member has logged on Letterboxd" : `Countries of the films ${name} has logged on Letterboxd`}, using TMDB's main country for each film.</p>
         {!complete && (
           <div className="mb-3 flex flex-wrap items-center gap-3">
             <Button className="h-11 px-4" onClick={go} disabled={running}>{running ? `Looking up films… ${looked} of ${history.length}` : looked ? `Continue (${looked} of ${history.length} done)` : `Build ${name}'s country list`}</Button>
@@ -65,7 +65,7 @@ export function PersonAtlas({ name, history }: { name: string; history: LbEntry[
       {complete && counts.length > 0 && (
         <div>
           <h3 className="mb-1 text-xl font-bold">Biggest country blindspots</h3>
-          <p className="mb-3 text-sm text-muted-foreground">Major film nations {name} has watched the least, with a top-rated film from each that they haven't seen.</p>
+          <p className="mb-3 text-sm text-muted-foreground">{group ? "Major film nations the club has seen the least of, with a top-rated film from each that nobody has seen." : `Major film nations ${name} has watched the least, with a top-rated film from each that they haven't seen.`}</p>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
             {spots.map(s => {
               const idea = ideas[s.code]

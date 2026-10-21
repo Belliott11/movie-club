@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
+import { PersonAtlas } from "@/components/PersonAtlas"
 import { Avatar } from "@/components/Avatar"
 import { CountUp } from "@/components/CountUp"
 import { HeatChip } from "@/components/HeatChip"
@@ -14,6 +15,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
 import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
+import { entryKey } from "@/lib/atlas"
+import type { LbEntry } from "@/lib/letterboxd"
 import { isUnused } from "@/lib/people"
 import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ratingRange, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -38,6 +41,8 @@ export default function Stats() {
     odd && { icon: Shuffle, label: "Most contrarian", who: odd.n, detail: `${fmt(odd.offGroup)} stars from the group` },
   ].filter(Boolean) as typeof awards
   const imported = Object.keys(lb).filter(n => lb[n]?.length)
+  // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
+  const club = [...new Map([...movies.map((m): LbEntry => [m.title, m.year, null]), ...Object.values(lb).flat()].map(e => [entryKey(e), e])).values()]
   const twins = tasteTwins(lb)
   const favs = groupFavorites(lb, movies)
   const argue = divisiveOnLb(lb)
@@ -106,6 +111,8 @@ export default function Stats() {
       </section>
 
       <Breakdown movies={rated} />
+
+      {club.length > 0 && <PersonAtlas name="the club" history={club} group />}
 
       <section>
         <h3 className="mb-2 text-xl font-bold">People</h3>
