@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
+import { movieHref } from "@/lib/movieLink"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
 import { favoritesOf } from "@/lib/lbstats"
@@ -20,8 +21,8 @@ function SuggestionCard({ s }: { s: Suggestion }) {
   const info = useFilmInfo(s.title, s.year)
   return (
     <Card className="h-full gap-2 px-3">
-      {info?.poster_path ? <img src={`${IMG}w154${info.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
-      <h4 className="font-display text-lg leading-tight font-bold">{s.title} <small className="font-sans text-sm font-medium text-muted-foreground">{s.year || ""}</small></h4>
+      <a href={movieHref(s.title, s.year)} aria-label={`About ${s.title}`}>{info?.poster_path ? <img src={`${IMG}w154${info.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="block aspect-[2/3] w-full rounded-md bg-muted" />}</a>
+      <h4 className="font-display text-lg leading-tight font-bold"><a href={movieHref(s.title, s.year)} className="hover:underline">{s.title}</a> <small className="font-sans text-sm font-medium text-muted-foreground">{s.year || ""}</small></h4>
       <p className="text-xs text-muted-foreground">{info?.vote_average ? `TMDB ${+info.vote_average.toFixed(1)}/10 · ` : ""}suggested by {s.by}</p>
       {info?.overview && <p className="line-clamp-5 text-sm leading-snug">{info.overview}</p>}
       <div className="mt-auto flex items-center gap-2">
@@ -162,9 +163,9 @@ export default function Suggest() {
               return (
                 <li key={r.id}>
                   <Card className="h-full gap-2 px-3">
-                    {r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="aspect-[2/3] w-full rounded-md bg-muted" />}
+                    <a href={movieHref(r.title, r.year)} aria-label={`About ${r.title}`}>{r.poster ? <img src={`${IMG}w154${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="block aspect-[2/3] w-full rounded-md bg-muted" />}</a>
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
-                      <h4 className="font-display text-base leading-tight font-bold">{r.title} <small className="font-sans text-xs font-medium text-muted-foreground">{r.year || ""}</small></h4>
+                      <h4 className="font-display text-base leading-tight font-bold"><a href={movieHref(r.title, r.year)} className="hover:underline">{r.title}</a> <small className="font-sans text-xs font-medium text-muted-foreground">{r.year || ""}</small></h4>
                       <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}{r.because ? `because you liked ${r.because}` : `wanted by ${r.wantedBy.join(", ")}`}</p>
                       <p className="line-clamp-3 text-xs leading-snug">{r.overview || "No synopsis available."}</p>
                       {seenByNames.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenByNames.join(", ")}</p>}

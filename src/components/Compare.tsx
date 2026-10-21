@@ -3,6 +3,7 @@ import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { headToHead, type Head2Head } from "@/lib/compare"
 import { IMG } from "@/lib/api"
+import { movieHref } from "@/lib/movieLink"
 import { pairRecs, type PairRec } from "@/lib/pairRecs"
 import type { LbHistory } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
@@ -19,7 +20,7 @@ function Films({ title, rows }: { title: string; rows: { film: { title: string; 
       <ul className="flex flex-col">
         {rows.map(r => (
           <li key={r.film.title + r.film.year} className="flex items-center justify-between gap-2 py-1 text-sm">
-            <span className="min-w-0"><span className="font-medium">{r.film.title}</span> <span className="text-muted-foreground">{r.film.year} · {r.text}</span></span>
+            <span className="min-w-0"><a href={movieHref(r.film.title, r.film.year)} className="font-medium hover:underline">{r.film.title}</a> <span className="text-muted-foreground">{r.film.year} · {r.text}</span></span>
             {r.ask && <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => suggest(r.film.title, r.film.year)}>Suggest to club</Button>}
           </li>
         ))}
@@ -77,9 +78,9 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
           <ul className="grid grid-cols-1 gap-2">
             {recs.map(r => (
               <li key={r.id} className="flex items-center gap-3 rounded-xl bg-card p-2 ring-1 ring-foreground/10">
-                {r.poster ? <img src={`${IMG}w92${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-10 shrink-0 rounded object-cover" /> : <span className="aspect-[2/3] w-10 shrink-0 rounded bg-muted" />}
+                <a href={movieHref(r.title, r.year)} aria-label={`About ${r.title}`} className="shrink-0">{r.poster ? <img src={`${IMG}w92${r.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-10 rounded object-cover" /> : <span className="block aspect-[2/3] w-10 rounded bg-muted" />}</a>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-medium">{r.title} <span className="font-normal text-muted-foreground">{r.year}</span></span>
+                  <span className="block font-medium"><a href={movieHref(r.title, r.year)} className="hover:underline">{r.title}</a> <span className="font-normal text-muted-foreground">{r.year}</span></span>
                   <span className="block truncate text-xs text-muted-foreground">Because of {r.because.slice(0, 3).join(", ")}</span>
                 </span>
                 <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => suggest(r.title, r.year)}>Suggest to club</Button>

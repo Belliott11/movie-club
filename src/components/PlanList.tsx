@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { movieHref } from "@/lib/movieLink"
 import { Button } from "@/components/ui/button"
 import { filmKey, groupProgress, upNext, type Plan, type PlanFilm } from "@/lib/plan"
 
@@ -22,7 +23,7 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
         <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10">
           <p className="text-sm text-muted-foreground">Up next: group {next.group.n}, {shout(next.group.title).toLowerCase()}</p>
           <ul className="mt-1 flex flex-col gap-1">
-            {next.films.map(f => <li key={f.title} className="flex items-center justify-between gap-2"><span className="min-w-0 truncate font-medium">{f.title}{f.year ? ` (${f.year})` : ""}</span>{plan.long.includes(f.title) && <span className="shrink-0 text-xs text-muted-foreground">long, save for a weekend</span>}</li>)}
+            {next.films.map(f => <li key={f.title} className="flex items-center justify-between gap-2"><a href={movieHref(f.title, f.year)} className="min-w-0 truncate font-medium hover:underline">{f.title}{f.year ? ` (${f.year})` : ""}</a>{plan.long.includes(f.title) && <span className="shrink-0 text-xs text-muted-foreground">long, save for a weekend</span>}</li>)}
           </ul>
         </div>
       )}
@@ -49,7 +50,7 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
                           <button type="button" role="checkbox" aria-checked={s} aria-label={`${f.title}: seen`} onClick={() => onSeen(f, !s)} className="-m-2 flex size-11 shrink-0 items-center justify-center">
                             <span className={`block size-5 rounded-full border-2 ${s ? "border-world bg-world" : "border-border"}`} />
                           </button>
-                          <span className={`min-w-0 flex-1 ${s ? "text-muted-foreground line-through" : ""}`}>{f.title}{f.year ? ` (${f.year})` : ""}{overrides?.[filmKey(f)] != null && <button type="button" className="ml-1.5 text-xs underline" onClick={() => onSeen(f, null)}>set by you, undo</button>}</span>
+                          <span className={`min-w-0 flex-1 ${s ? "text-muted-foreground line-through" : ""}`}><a href={movieHref(f.title, f.year)} className="hover:underline">{f.title}{f.year ? ` (${f.year})` : ""}</a>{overrides?.[filmKey(f)] != null && <button type="button" className="ml-1.5 text-xs underline" onClick={() => onSeen(f, null)}>set by you, undo</button>}</span>
                           {!s && <Button variant="ghost" className="h-9 shrink-0 px-2 text-xs" onClick={() => onSuggest(f)}>Suggest to club</Button>}
                         </li>
                       )

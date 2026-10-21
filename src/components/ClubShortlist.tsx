@@ -1,4 +1,5 @@
 import { Lock } from "lucide-react"
+import { movieHref } from "@/lib/movieLink"
 import { Button } from "@/components/ui/button"
 import { seenMatcher } from "@/lib/plan"
 import { useStore } from "@/lib/store"
@@ -21,7 +22,7 @@ export function ClubShortlist() {
       <ul className="flex flex-col gap-1">
         {left.map(t => (
           <li key={t} className="flex items-center justify-between gap-2 rounded-lg bg-card px-3 py-1.5 ring-1 ring-foreground/10">
-            <span className="min-w-0 truncate font-medium">{t}</span>
+            <a href={movieHref(t, 0)} className="min-w-0 truncate font-medium hover:underline">{t}</a>
             <Button variant="outline" className="h-10 shrink-0 px-3" disabled={asked.has(t.toLowerCase())} onClick={() => suggest(t, null)}>{asked.has(t.toLowerCase()) ? "Suggested" : "Suggest it"}</Button>
           </li>
         ))}

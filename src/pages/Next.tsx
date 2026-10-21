@@ -1,3 +1,4 @@
+import { movieHref } from "@/lib/movieLink"
 import { AddPerson } from "@/components/AddPerson"
 import { ClubShortlist } from "@/components/ClubShortlist"
 import { ImportNudge } from "@/components/ImportNudge"
@@ -88,7 +89,7 @@ export default function Next() {
         {top.length ? (
           <ul className="flex flex-col gap-1.5">
             {top.map(h => (
-              <li key={h.t + h.y}>{h.t} <small className="text-muted-foreground">{h.y || ""}</small> · {h.who.length} of {attending.length}: {h.who.join(", ")}{seenAmong(h).length > 0 && <span className="text-muted-foreground"> · already seen by {seenAmong(h).join(", ")}</span>}</li>
+              <li key={h.t + h.y}><a href={movieHref(h.t, h.y)} className="hover:underline">{h.t}</a> <small className="text-muted-foreground">{h.y || ""}</small> · {h.who.length} of {attending.length}: {h.who.join(", ")}{seenAmong(h).length > 0 && <span className="text-muted-foreground"> · already seen by {seenAmong(h).join(", ")}</span>}</li>
             ))}
           </ul>
         ) : (

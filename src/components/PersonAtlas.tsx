@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { WorldMap } from "@/components/WorldMap"
 import { Button } from "@/components/ui/button"
+import { movieHref } from "@/lib/movieLink"
 import { Bars, Tags } from "@/components/Breakdown"
 import { blindspots, decadeOf, entryKey, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
 import { loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type CountryCache, type GenreCache } from "@/lib/lbCountries"
@@ -88,7 +89,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
                   <span className="flex items-baseline justify-between gap-2"><b className="font-display text-lg">{s.name}</b><span className="text-sm text-muted-foreground">{s.n} {s.n === 1 ? "film" : "films"}</span></span>
                   {idea ? (
                     <span className="flex items-center justify-between gap-2 text-sm">
-                      <span className="min-w-0 truncate">Try {idea.title} ({idea.year})</span>
+                      <span className="min-w-0 truncate">Try <a href={movieHref(idea.title, idea.year)} className="hover:underline">{idea.title}</a> ({idea.year})</span>
                       <Button variant="outline" className="h-10 shrink-0 px-3" onClick={() => suggest(idea.title, idea.year)}>Suggest it</Button>
                     </span>
                   ) : <span className="text-sm text-muted-foreground">{idea === null ? "Nothing to recommend." : "Finding a film…"}</span>}
