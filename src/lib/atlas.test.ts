@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { blindspots, movementBlindspots, movementProgress, tallyCountries } from "./atlas"
+import { blindspots, decadeOf, movementBlindspots, movementProgress, tallyBy, tallyCountries } from "./atlas"
 import type { LbEntry } from "./letterboxd"
 
 const h: LbEntry[] = [["Rashomon", 1950, 5], ["Ikiru", 1952, 4], ["Heat", 1995, null], ["Mystery", 2000, 3]]
@@ -31,4 +31,13 @@ test("films filed under the Soviet Union count toward Russia", () => {
 
 test("a film counts as seen under its other name too", () => {
   expect(movementProgress([["The Celebration", 1998, 4]], [["Festen", 1998, "The Celebration"]]).seen).toBe(1)
+})
+
+test("films tally by decade and by genre, counting a film once per label and averaging only rated ones", () => {
+  const dec = tallyBy(h, e => [decadeOf(e[1])])
+  expect(dec.find(d => d.name === "1950s")).toMatchObject({ n: 2, avg: 4.5, rated: 2 })
+  expect(dec.find(d => d.name === "1990s")).toMatchObject({ n: 1, avg: 0, rated: 0 })
+  const g = tallyBy(h, e => (e[0] === "Heat" ? ["Crime", "Crime", "Drama"] : ["Drama"]))
+  expect(g.find(x => x.name === "Drama")?.n).toBe(4)
+  expect(g.find(x => x.name === "Crime")?.n).toBe(1)
 })

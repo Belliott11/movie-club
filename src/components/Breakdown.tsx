@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
 /** Rows of name, a bar and the numbers. The bar shows the club's average. */
-function Bars({ rows }: { rows: Group[] }) {
+export function Bars({ rows }: { rows: Group[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {rows.map(r => (
@@ -22,7 +22,7 @@ function Bars({ rows }: { rows: Group[] }) {
 }
 
 /** Genre and country lists, most watched or highest rated. */
-function Tags({ title, groups }: { title: string; groups: Group[] }) {
+export function Tags({ title, groups }: { title: string; groups: Group[] }) {
   const [mode, setMode] = useState<"watched" | "rated">("watched")
   const rows = [...groups].filter(g => mode === "watched" || g.n >= 2).sort((a, b) => mode === "watched" ? b.n - a.n || b.avg - a.avg : b.avg - a.avg || b.n - a.n).slice(0, 6)
   return (

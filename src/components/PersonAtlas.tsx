@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { WorldMap } from "@/components/WorldMap"
 import { Button } from "@/components/ui/button"
-import { blindspots, entryKey, movementBlindspots, NATIONS, tallyCountries } from "@/lib/atlas"
-import { loadCountryCache, resolveCountries, topUnseen, type CountryCache } from "@/lib/lbCountries"
+import { Bars, Tags } from "@/components/Breakdown"
+import { blindspots, decadeOf, entryKey, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
+import { loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type CountryCache, type GenreCache } from "@/lib/lbCountries"
 import type { LbEntry } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -14,12 +15,15 @@ const nameOf = (code: string) => NATIONS.find(n => n.code === code)?.name ?? (co
 export function PersonAtlas({ name, history, group = false }: { name: string; history: LbEntry[]; group?: boolean }) {
   const { suggest } = useStore()
   const [cache, setCache] = useState<CountryCache>(loadCountryCache)
+  const [genreCache, setGenreCache] = useState<GenreCache>(loadGenreCache)
   const [running, setRunning] = useState(false)
   const stop = useRef(false)
   useEffect(() => () => { stop.current = true }, [])
-  const known = history.filter(e => cache[entryKey(e)]).length, looked = history.filter(e => cache[entryKey(e)] !== undefined).length
+  const known = history.filter(e => cache[entryKey(e)]).length, looked = history.filter(e => cache[entryKey(e)] !== undefined && genreCache[entryKey(e)] !== undefined).length
   const counts = useMemo(() => tallyCountries(history, e => cache[entryKey(e)] || undefined), [history, cache])
   const spots = useMemo(() => blindspots(counts), [counts])
+  const decades = useMemo(() => tallyBy(history, e => (e[1] ? [decadeOf(e[1])] : [])).filter(d => d.rated > 0).sort((a, b) => a.name.localeCompare(b.name)), [history])
+  const genres = useMemo(() => tallyBy(history, e => genreCache[entryKey(e)] ?? []), [history, genreCache])
   const moves = useMemo(() => movementBlindspots(history).slice(0, 5), [history])
   const [ideas, setIdeas] = useState<Record<string, { title: string; year: number } | null>>({})
   const spotKey = spots.map(s => s.code).join()
@@ -30,7 +34,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
 
   const go = async () => {
     stop.current = false; setRunning(true)
-    await resolveCountries(history, setCache, () => stop.current)
+    await resolveCountries(history, (c, g) => { setCache(c); setGenreCache(g) }, () => stop.current)
     setRunning(false)
   }
   const top = counts.slice(0, 8), max = Math.max(1, ...top.map(c => c.n))
@@ -61,6 +65,16 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
         )}
         {complete && known < history.length && <p className="mt-2 text-xs text-muted-foreground">{history.length - known} films had no country on TMDB and are left out.</p>}
       </div>
+
+      {decades.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-bold">{group ? "Films by decade" : `${name}'s decades`}</h3>
+          <Bars rows={decades.map(d => ({ name: d.name, n: d.n, avg: d.avg }))} />
+          <p className="text-xs text-muted-foreground">Bars show the average rating for each decade, with how many films went into it.</p>
+        </div>
+      )}
+
+      {genres.length > 0 && <Tags title={group ? "Genres across the club" : `${name}'s genres`} groups={genres.filter(g => g.rated > 0)} />}
 
       {complete && counts.length > 0 && (
         <div>

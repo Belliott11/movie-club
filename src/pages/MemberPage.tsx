@@ -2,7 +2,7 @@ import { useEffect } from "react"
 import { ArrowLeft } from "lucide-react"
 import { Avatar } from "@/components/Avatar"
 import { Compare } from "@/components/Compare"
-import { Flower } from "@/components/Flower"
+import { GenreTaste } from "@/components/GenreTaste"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
@@ -83,7 +83,7 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
             <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} />
           </section>
 
-          <Flower movies={movies} name={name} />
+          <GenreTaste movies={movies} name={name} />
 
           {dev.length > 0 && (
             <section>

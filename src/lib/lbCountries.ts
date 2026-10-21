@@ -9,15 +9,23 @@ export type CountryCache = Record<string, string>
 export const loadCountryCache = (): CountryCache => {
   try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") } catch { return {} }
 }
+
+const GENRES = "lb-genres-v1"
+/** Film (title and year) to its TMDB genres, filled by the same lookups as the countries. */
+export type GenreCache = Record<string, string[]>
+export const loadGenreCache = (): GenreCache => {
+  try { return JSON.parse(localStorage.getItem(GENRES) ?? "{}") } catch { return {} }
+}
+const saveGenres = (g: GenreCache) => { try { localStorage.setItem(GENRES, JSON.stringify(g)) } catch { /* storage full: it will look up again */ } }
 const save = (c: CountryCache) => { try { localStorage.setItem(KEY, JSON.stringify(c)) } catch { /* storage full: it will just look up again next time */ } }
 
 /**
  * Looks up the main country of every film in a Letterboxd history that isn't cached yet: one TMDB search and one detail call each,
  * six at a time. `onStep` gets the updated cache as it fills, and `stopped()` ends the run early. Results are kept between visits.
  */
-export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCache) => void, stopped: () => boolean) {
-  const cache = loadCountryCache()
-  const todo = history.filter(e => cache[entryKey(e)] === undefined)
+export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCache, g: GenreCache) => void, stopped: () => boolean) {
+  const cache = loadCountryCache(), genres = loadGenreCache()
+  const todo = history.filter(e => cache[entryKey(e)] === undefined || genres[entryKey(e)] === undefined)
   let next = 0, done = 0
   const worker = async () => {
     while (!stopped()) {
@@ -26,12 +34,13 @@ export async function resolveCountries(history: LbEntry[], onStep: (c: CountryCa
       const hit = await searchFilm(e[0], e[1])
       const d = hit?.id ? await tmdb<any>(`/movie/${hit.id}`) : null
       cache[entryKey(e)] = d?.origin_country?.[0] ?? d?.production_countries?.[0]?.iso_3166_1 ?? ""
-      if (++done % 20 === 0) { save(cache); onStep({ ...cache }) }
+      genres[entryKey(e)] = (d?.genres ?? []).map((g: any) => g.name as string)
+      if (++done % 20 === 0) { save(cache); saveGenres(genres); onStep({ ...cache }, { ...genres }) }
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker))
-  save(cache)
-  onStep({ ...cache })
+  save(cache); saveGenres(genres)
+  onStep({ ...cache }, { ...genres })
 }
 
 const PICKS = "lb-unseen-v1"
