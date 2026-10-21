@@ -27,7 +27,7 @@ const Stats = lazyPage(() => import("@/pages/Stats"))
 const Suggest = lazyPage(() => import("@/pages/Suggest"))
 const Watch = lazyPage(() => import("@/pages/Watch"))
 
-const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"], ["watch", "Watchlists"], ["stats", "Stats"]] as const
+const TABS = [["films", "Films"], ["next", "Next up"], ["suggest", "Suggestions"], ["watch", "Watchlists"], ["stats", "Stats"], ["me", "Me"]] as const
 
 /** Only needed when the club has turned on the edit lock (schema-lock.sql). */
 function ClubCode() {
@@ -56,23 +56,26 @@ function Shell() {
     k.t = now
     if (k.n >= 5) { k.n = 0; setSlate(true) }
   }
-  const [tab = "films", sub] = useHash()
+  const [tab = "films", sub0] = useHash()
+  // the Me tab is your own profile page: it behaves like #/people/<you>
+  const sub = tab === "me" ? me || undefined : sub0
+  const page = tab === "me" ? "people" : tab
   const up = pickOrder(movies, attending)[0]?.n
   const stillOf = (m: { title: string; year: number }) => mini[key(m.title, m.year)]?.b
   // every time a tab is opened the header moves on to another still
   const [spin, setSpin] = useState(0)
   const firstTab = useRef(true)
   useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
-  const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [tab, sub ?? ""].filter(Boolean), new Date(), spin)
+  const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)
   // a person's page opens on their own favorite from Letterboxd when they have imported, otherwise on their favorite club film
-  useEffect(() => { if (tab === "people") loadLb() }, [tab, loadLb])
-  const lbFav = tab === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined
+  useEffect(() => { if (page === "people") loadLb() }, [page, loadLb])
+  const lbFav = page === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined
   const favInfo = useFilmInfo(lbFav?.title ?? "", lbFav?.year ?? null)
   const subject = lbFav
     ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: `${sub}'s favorite on Letterboxd` }
     : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
   const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject, spin)
-  const active = tab === "people" ? "stats" : tab // member pages live under Stats
+  const active = tab === "people" ? (sub === me ? "me" : "stats") : tab // member pages live under Stats, yours under Me
   // the pill behind the active tab slides to it
   const barRef = useRef<HTMLDivElement>(null)
   const [pill, setPill] = useState<{ left: number; width: number } | null>(null)
@@ -161,7 +164,7 @@ function Shell() {
 
       <main key={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
-          tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
+          tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
       </Suspense></main>
       <footer className="mt-10 flex flex-col gap-2 text-xs text-muted-foreground">

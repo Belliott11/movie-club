@@ -17,10 +17,10 @@ import type { Movie } from "@/lib/types"
 const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
-export default function MemberPage({ name }: { name: string }) {
+export default function MemberPage({ name, own = false }: { name: string; own?: boolean }) {
   const { movies, members, lb, loadLb, me: signedIn } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
-  const back = (
+  const back = own ? null : (
     <a href="#/stats" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}><ArrowLeft /> Stats</a>
   )
   if (!members.includes(name)) return <>{back}<p className="mt-3 text-muted-foreground">Nobody called {name} is in the club.</p></>
