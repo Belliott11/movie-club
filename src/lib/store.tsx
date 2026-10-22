@@ -69,9 +69,6 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
-  /** Questions members have added for a film, by movie id. Loads with loadSeal. */
-  questions: Record<string, string[]>
-  setQuestions: (m: Movie, list: string[]) => Promise<void>
   /** A person's watching plan as stored: already locked with their passphrase, so what is in the database is unreadable to everyone else. */
   planCipher: (member: string) => Promise<string | null>
   savePlanCipher: (member: string, cipher: string | null) => Promise<void>
@@ -123,7 +120,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   sealRef.current = seal
   const sealLoaded = useRef(false)
   const [countries, setCountries] = useState<Record<string, string>>({})
-  const [questions, setQuestionsState] = useState<Record<string, string[]>>({})
   const [hostKey, setHostKey] = useState<string | null>(() => localStorage.getItem("seal-private-key"))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
@@ -369,7 +365,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!s.error) {
         const get = (k: string) => (s.data as { key: string; value: string }[]).find(r => r.key === k)?.value ?? null
         setCountries(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("country:")).map(r => [r.key.slice(8), r.value])))
-        setQuestionsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("q:")).flatMap(r => { try { return [[r.key.slice(2), JSON.parse(r.value) as string[]]] } catch { return [] } })))
         const by: Record<string, string[]> = {}
         for (const r of (rows.data ?? []) as { movie_id: number; member: string }[]) (by[String(r.movie_id)] ||= []).push(r.member)
         setSeal({ ready: true, shared: true, publicKey: get("seal_public_key"), lockedKey: get("seal_locked_key"), openMovie: get("seal_open"), sealedBy: by })
@@ -377,7 +372,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
     setCountries(lsGet("country-local-v1", {}))
-    setQuestionsState(lsGet("questions-local-v1", {}))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -409,18 +403,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     if (cipher == null) localStorage.removeItem(`plan-local:${member}`)
     else localStorage.setItem(`plan-local:${member}`, cipher)
-  }, [])
-
-  const setQuestions = useCallback(async (m: Movie, list: string[]) => {
-    const k = String(m.id), clean = list.map(q => q.trim()).filter(Boolean)
-    setQuestionsState(all => {
-      const next = { ...all }
-      if (clean.length) next[k] = clean
-      else delete next[k]
-      if (!sealRef.current.shared) lsSet("questions-local-v1", next)
-      return next
-    })
-    if (sealRef.current.shared && sb) fail((clean.length ? await sb.from("club_settings").upsert({ key: `q:${k}`, value: JSON.stringify(clean) }) : await sb.from("club_settings").delete().eq("key", `q:${k}`)).error)
   }, [])
 
   const setCountry = useCallback(async (m: Movie, country: string) => {
@@ -636,7 +618,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, questions, setQuestions, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

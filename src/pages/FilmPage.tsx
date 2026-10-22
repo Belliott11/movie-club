@@ -3,7 +3,6 @@ import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
 import { DatePicker } from "@/components/DatePicker"
-import { DiscussionQuestions } from "@/components/DiscussionQuestions"
 import { Lightbox } from "@/components/Lightbox"
 import { mainCountry } from "@/lib/useFilmTags"
 import { useFilmImages } from "@/lib/useStills"
@@ -16,7 +15,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { questions, setWatched, countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
+  const { setWatched, countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
   const [view, setView] = useState<{ kind: "still" | "poster"; i: number } | null>(null)
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   const [editCountry, setEditCountry] = useState(false)
@@ -167,7 +166,6 @@ export default function FilmPage({ id }: { id: string }) {
           )) : undefined}
         />
       )}
-      {(m.seq === Math.max(...movies.map(x => x.seq)) || (questions[String(m.id)]?.length ?? 0) > 0) && <DiscussionQuestions movie={m} />}
       <section>
         <h3 className="mb-2 text-xl font-bold">Recap</h3>
         <Card className="gap-2 px-4">
