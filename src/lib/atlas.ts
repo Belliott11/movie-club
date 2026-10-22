@@ -57,6 +57,18 @@ export const MOVEMENTS: { name: string; years: string; films: Film[] }[] = [
   { name: "Iranian cinema", years: "1969 to 2011", films: [["The Cow", 1969], ["Where Is the Friend's House?", 1987], ["Close-Up", 1990], ["Through the Olive Trees", 1994], ["The White Balloon", 1995], ["Taste of Cherry", 1997], ["A Separation", 2011]] },
 ]
 
+/**
+ * Every film the club knows about, once each: the films it played plus everything anyone logged on Letterboxd. A film several people
+ * watched is one entry, rated with the average of their Letterboxd ratings (or the club's own average when nobody rated it there).
+ */
+export function mergeHistories(club: { title: string; year: number; avg: number | null }[], lb: Record<string, LbEntry[]>): LbEntry[] {
+  const by = new Map<string, { title: string; year: number; lb: number[]; club: number | null }>()
+  const at = (title: string, year: number) => { const k = key(title, year); const x = by.get(k) ?? { title, year, lb: [], club: null }; by.set(k, x); return x }
+  for (const m of club) at(m.title, m.year).club = m.avg
+  for (const h of Object.values(lb)) for (const e of h) { const x = at(e[0], e[1]); if (e[2] != null) x.lb.push(e[2]) }
+  return [...by.values()].map((x): LbEntry => [x.title, x.year, x.lb.length ? x.lb.reduce((a, b) => a + b, 0) / x.lb.length : x.club])
+}
+
 /** Countries TMDB still lists under their old codes. */
 const OLD: Record<string, string> = { SU: "RU", XC: "CZ", YU: "RS", DD: "DE", XG: "DE" }
 

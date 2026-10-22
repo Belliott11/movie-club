@@ -19,8 +19,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
 import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
-import { entryKey } from "@/lib/atlas"
-import type { LbEntry } from "@/lib/letterboxd"
+import { mergeHistories } from "@/lib/atlas"
 import { isUnused } from "@/lib/people"
 import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ratingRange, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -36,7 +35,7 @@ export default function Stats() {
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
   const lbStats = useMemo(() => ({
-    club: [...new Map([...movies.map((m): LbEntry => [m.title, m.year, null]), ...Object.values(lb).flat()].map(e => [entryKey(e), e])).values()],
+    club: mergeHistories(movies.map(m => ({ title: m.title, year: m.year, avg: groupAvg(m) })), lb),
     twins: tasteTwins(lb),
     favs: groupFavorites(lb, movies),
     argue: divisiveOnLb(lb),

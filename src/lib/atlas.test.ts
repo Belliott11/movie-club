@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { blindspots, decadeOf, movementBlindspots, movementProgress, tallyBy, tallyCountries } from "./atlas"
+import { blindspots, decadeOf, mergeHistories, movementBlindspots, movementProgress, tallyBy, tallyCountries } from "./atlas"
 import type { LbEntry } from "./letterboxd"
 
 const h: LbEntry[] = [["Rashomon", 1950, 5], ["Ikiru", 1952, 4], ["Heat", 1995, null], ["Mystery", 2000, 3]]
@@ -40,4 +40,17 @@ test("films tally by decade and by genre, counting a film once per label and ave
   const g = tallyBy(h, e => (e[0] === "Heat" ? ["Crime", "Crime", "Drama"] : ["Drama"]))
   expect(g.find(x => x.name === "Drama")?.n).toBe(4)
   expect(g.find(x => x.name === "Crime")?.n).toBe(1)
+})
+
+test("the club's whole history counts each film once, rated by the average of everyone's Letterboxd ratings", () => {
+  const all = mergeHistories(
+    [{ title: "Heat", year: 1995, avg: 2 }, { title: "Alien", year: 1979, avg: 4 }, { title: "Only Club", year: 2000, avg: null }],
+    { Ann: [["Heat", 1995, 5], ["Jaws", 1975, null]], Bo: [["Heat", 1995, 3], ["Jaws", 1975, 4]] },
+  )
+  expect(all).toHaveLength(4) // Heat, Alien, Only Club and Jaws, each once however many people watched them
+  const by = Object.fromEntries(all.map(e => [e[0], e[2]]))
+  expect(by.Heat).toBe(4) // Ann 5 and Bo 3; the club's own 2 isn't mixed in
+  expect(by.Alien).toBe(4) // nobody logged it on Letterboxd, so the club's average stands
+  expect(by.Jaws).toBe(4) // only Bo rated it
+  expect(by["Only Club"]).toBeNull()
 })
