@@ -3,6 +3,7 @@ import { AddPerson } from "@/components/AddPerson"
 import { PickControls, FactsLine, useMyServices, usePickPrefs } from "@/components/PickControls"
 import { passesFilters, useFacts } from "@/lib/filmFacts"
 import { ConstraintDeck } from "@/components/ConstraintDeck"
+import { SelectorPanel } from "@/components/SelectorPanel"
 import { ClubShortlist } from "@/components/ClubShortlist"
 import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
@@ -39,6 +40,7 @@ export default function Next() {
     <div className="stagger flex flex-col gap-6">
       <ImportNudge />
       <ClubShortlist />
+      <SelectorPanel />
       <ConstraintDeck />
       <section>
         <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>

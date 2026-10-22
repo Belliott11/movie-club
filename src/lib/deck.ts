@@ -1,9 +1,11 @@
 import { MOVEMENTS } from "./atlas"
 import type { Continent, Region } from "./continents"
+import { isFamousDirector } from "./famousDirectors"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number }
+export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
+  directors?: string[]; bw?: boolean; silent?: boolean; trueStory?: boolean; franchise?: boolean; budget?: number; womanDirector?: boolean; oscars?: number }
 /** What the club has already done, so cards can ask for something new. */
 export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }
 
@@ -41,6 +43,14 @@ export const CARDS: Card[] = [
   { id: "romance", title: "Love story", rule: "A romance.", fits: f => known(f.genres, g => g.includes("Romance")) },
   { id: "war", title: "Wartime", rule: "A war film.", fits: f => known(f.genres, g => g.includes("War")) },
   { id: "scifi", title: "Out there", rule: "Science fiction.", fits: f => known(f.genres, g => g.includes("Science Fiction")) },
+  { id: "bw", title: "Black and white", rule: "No color allowed.", fits: f => f.bw },
+  { id: "silent", title: "Silent film", rule: "Title cards and music, no spoken dialogue.", fits: f => f.silent },
+  { id: "trueStory", title: "Based on a true story", rule: "It really happened, more or less.", fits: f => f.trueStory },
+  { id: "franchise", title: "Part of a franchise", rule: "A sequel, a prequel, or one of a series.", fits: f => f.franchise },
+  { id: "lowBudget", title: "Low budget", rule: "Made for under five million dollars.", fits: f => known(f.budget, b => b < 5_000_000) },
+  { id: "womanDirector", title: "Directed by a woman", rule: "A woman is the director.", fits: f => f.womanDirector },
+  { id: "famous", title: "A big-name director", rule: "Tarantino, Scorsese, Kubrick, Varda, Kurosawa: someone whose name sells the film.", fits: f => known(f.directors, d => d.some(isFamousDirector)) },
+  { id: "oscar", title: "Oscar winner", rule: "It won at least one Academy Award.", fits: f => known(f.oscars, n => n > 0) },
   { id: "word", title: "One word", rule: "The title is a single word.", fits: f => f.title.trim().split(/\s+/).length === 1 },
 ]
 

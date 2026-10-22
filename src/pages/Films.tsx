@@ -10,7 +10,7 @@ import { bestFilm, decadesOf, defaultFilter, filterFilms, pickOrder, type FilmFi
 import { useStore } from "@/lib/store"
 
 export default function Films() {
-  const { movies, attending, me, addMovie, seed } = useStore()
+  const { movies, attending, me, addMovie, seed, canPick, selector } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
@@ -73,7 +73,9 @@ export default function Films() {
           </form>
         </Card>
       ) : (
-        movies.length > 0 && <Button variant="outline" className="h-11 w-fit px-4" onClick={() => setAdding(true)}>Add a film</Button>
+        movies.length > 0 && (canPick
+          ? <Button variant="outline" className="h-11 w-fit px-4" onClick={() => setAdding(true)}>Add a film</Button>
+          : <p className="text-sm text-muted-foreground">Only {selector} can set this week's film.</p>)
       )}
     </div>
   )

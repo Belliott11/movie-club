@@ -69,6 +69,19 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
+  /** Each player's own club candidates: films they've added, and films from their plan they've taken off the list. Loads with loadSeal. */
+  candidates: Record<string, { add: { t: string; y?: number }[]; hide: string[] }>
+  setCandidates: (member: string, value: { add: { t: string; y?: number }[]; hide: string[] }) => Promise<void>
+  /** Who may set this week's film and deal the pick cards. Null when nobody is designated, which means anyone can. It lapses once that film is added. */
+  selector: string | null
+  setSelector: (name: string | null) => Promise<void>
+  /** Whether you can designate the selector: anyone, until a sealed-ratings host exists, then only the host. */
+  canDesignate: boolean
+  /** True when you may set the week's film and deal cards: no selector is designated, or you are the selector. */
+  canPick: boolean
+  /** The pick cards dealt for the film being chosen. Shared, so everyone sees the card the selector drew. */
+  deck: { drawn: string[]; used: string[] }
+  setDeck: (d: { drawn: string[]; used: string[] }) => Promise<void>
   /** A person's watching plan as stored: already locked with their passphrase, so what is in the database is unreadable to everyone else. */
   planCipher: (member: string) => Promise<string | null>
   savePlanCipher: (member: string, cipher: string | null) => Promise<void>
@@ -120,6 +133,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   sealRef.current = seal
   const sealLoaded = useRef(false)
   const [countries, setCountries] = useState<Record<string, string>>({})
+  const [candidates, setCandidatesState] = useState<Record<string, { add: { t: string; y?: number }[]; hide: string[] }>>({})
+  // who picks this week and the cards dealt, both tied to the number of the film being chosen so they lapse once it's added
+  const [turnState, setTurnState] = useState<{ selector: { name: string; turn: number } | null; deck: { turn: number; drawn: string[]; used: string[] } | null }>({ selector: null, deck: null })
   const [hostKey, setHostKey] = useState<string | null>(() => localStorage.getItem("seal-private-key"))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
@@ -365,6 +381,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!s.error) {
         const get = (k: string) => (s.data as { key: string; value: string }[]).find(r => r.key === k)?.value ?? null
         setCountries(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("country:")).map(r => [r.key.slice(8), r.value])))
+        setCandidatesState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("cand:")).flatMap(r => { try { return [[r.key.slice(5), JSON.parse(r.value)] as const] } catch { return [] } })))
+        const json = (k: string) => { try { return JSON.parse(get(k) ?? "null") } catch { return null } }
+        setTurnState({ selector: json("selector"), deck: json("deck") })
         const by: Record<string, string[]> = {}
         for (const r of (rows.data ?? []) as { movie_id: number; member: string }[]) (by[String(r.movie_id)] ||= []).push(r.member)
         setSeal({ ready: true, shared: true, publicKey: get("seal_public_key"), lockedKey: get("seal_locked_key"), openMovie: get("seal_open"), sealedBy: by })
@@ -372,6 +391,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
     setCountries(lsGet("country-local-v1", {}))
+    setTurnState(lsGet("turn-local-v1", { selector: null, deck: null }))
+    setCandidatesState(lsGet("candidates-local-v1", {}))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -404,6 +425,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (cipher == null) localStorage.removeItem(`plan-local:${member}`)
     else localStorage.setItem(`plan-local:${member}`, cipher)
   }, [])
+
+  const currentTurn = () => Math.max(0, ...movRef.current.map(m => m.seq)) + 1
+  const putTurn = async (k: "selector" | "deck", value: object | null) => {
+    setTurnState(t => {
+      const next = { ...t, [k]: value }
+      if (!sealRef.current.shared) lsSet("turn-local-v1", next)
+      return next
+    })
+    if (sealRef.current.shared && sb) fail((value == null ? await sb.from("club_settings").delete().eq("key", k) : await sb.from("club_settings").upsert({ key: k, value: JSON.stringify(value) })).error)
+  }
+  const setCandidates = useCallback(async (member: string, value: { add: { t: string; y?: number }[]; hide: string[] }) => {
+    setCandidatesState(all => {
+      const next = { ...all }
+      if (value.add.length || value.hide.length) next[member] = value
+      else delete next[member]
+      if (!sealRef.current.shared) lsSet("candidates-local-v1", next)
+      return next
+    })
+    if (sealRef.current.shared && sb) {
+      const empty = !value.add.length && !value.hide.length
+      fail((empty ? await sb.from("club_settings").delete().eq("key", `cand:${member}`) : await sb.from("club_settings").upsert({ key: `cand:${member}`, value: JSON.stringify(value) })).error)
+    }
+  }, [])
+  const setSelector = useCallback(async (name: string | null) => { await putTurn("selector", name ? { name, turn: currentTurn() } : null) }, [])
+  const setDeck = useCallback(async (d: { drawn: string[]; used: string[] }) => { await putTurn("deck", { turn: currentTurn(), ...d }) }, [])
 
   const setCountry = useCallback(async (m: Movie, country: string) => {
     const c = country.trim(), k = String(m.id)
@@ -617,8 +663,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   const members = useMemo(() => membersOf(movies, watchlist, me ? [...extra, me] : extra), [movies, watchlist, me, extra])
 
+  const turnNow = Math.max(0, ...movies.map(m => m.seq)) + 1
+  const selector = turnState.selector && turnState.selector.turn === turnNow ? turnState.selector.name : null
+  const canDesignate = !seal.publicKey || (!!hostKey && !!seal.publicKey)
+  const canPick = !selector || me === selector
+  const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: turnState.deck.used } : { drawn: [], used: turnState.deck ? [...turnState.deck.used, ...turnState.deck.drawn] : [] }
+
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
