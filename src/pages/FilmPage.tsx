@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
 import { DatePicker } from "@/components/DatePicker"
+import { DiscussionQuestions } from "@/components/DiscussionQuestions"
 import { Lightbox } from "@/components/Lightbox"
 import { mainCountry } from "@/lib/useFilmTags"
 import { useFilmImages } from "@/lib/useStills"
@@ -166,6 +167,7 @@ export default function FilmPage({ id }: { id: string }) {
           )) : undefined}
         />
       )}
+      <DiscussionQuestions movie={m} />
       <section>
         <h3 className="mb-2 text-xl font-bold">Recap</h3>
         <Card className="gap-2 px-4">

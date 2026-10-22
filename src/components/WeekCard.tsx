@@ -4,6 +4,7 @@ import { fmt, groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { buttonVariants } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { DiscussionQuestions } from "./DiscussionQuestions"
 import { SealedPanel } from "./SealedPanel"
 import { StarRating } from "./StarRating"
 
@@ -69,6 +70,7 @@ export function WeekCard() {
         </div>
       )}
       <SealedPanel m={m} />
+      <DiscussionQuestions movie={m} />
       {/* while scores are being sealed for this film, the open rating row would give them away */}
       {seal.openMovie === String(m.id) ? null : me ? (
         <div className="-mx-4 flex min-h-14 flex-wrap items-center gap-x-3 border-t-2 border-dashed border-border px-4 pt-3">
