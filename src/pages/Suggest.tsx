@@ -1,3 +1,4 @@
+import { CardSkeletons } from "@/components/Skeleton"
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
 import { FactsLine, PickControls, useMyServices, usePickPrefs } from "@/components/PickControls"
@@ -118,8 +119,8 @@ export default function Suggest() {
     <div className="stagger flex flex-col gap-6">
       <ImportNudge />
       <form onSubmit={submit} className="flex flex-wrap gap-2">
-        <FilmSearch name="title" placeholder="Start typing a film to suggest" required value={title} onChange={setTitle} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : "") }} />
-        <Input name="year" type="number" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
+        <FilmSearch name="title" aria-label="Film to suggest" placeholder="Start typing a film to suggest" required value={title} onChange={setTitle} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : "") }} />
+        <Input name="year" type="number" aria-label="Year" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
         <Button type="submit" className="h-10 px-4">Suggest</Button>
       </form>
       <section>
@@ -160,7 +161,7 @@ export default function Suggest() {
         {!hasTmdb() ? (
           <p className="text-muted-foreground">Add a TMDB key to config.js to get recommendations here.</p>
         ) : recs === null ? (
-          <p className="text-muted-foreground">Loading…</p>
+          <CardSkeletons />
         ) : (
           <ul className="grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4">
             {visible.map(r => {

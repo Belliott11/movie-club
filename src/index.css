@@ -22,11 +22,11 @@
   --destructive: #9f1d1d;
   --border: #ddd4c0;
   --input: #ddd4c0;
-  --ring: #0f7b86;
+  --ring: #0b6e78;
   /* meaning colors stay fixed */
-  --us: #d1432a;
-  --world: #0f7b86;
-  --pos: #4a8a1f;
+  --us: #b83621;
+  --world: #0b6e78;
+  --pos: #3a7016;
   --gold: #8a5a00; /* yellow for text */
   --sun: #f2b01e; /* yellow for fills */
 }

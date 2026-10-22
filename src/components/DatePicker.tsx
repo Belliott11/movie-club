@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"
 import { fromIso, monthGrid, niceDate, toIso } from "@/lib/calendar"
 
@@ -14,14 +14,18 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
   className?: string
 }) {
   const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const box = useRef<HTMLDivElement>(null)
   const now = new Date()
   const start = fromIso(value) ?? { y: now.getFullYear(), m: now.getMonth(), d: 0 }
   const [view, setView] = useState({ y: start.y, m: start.m })
   useEffect(() => {
     if (!open) return
+    box.current?.focus() // move into the calendar, and back to the button when it closes
+    const t = trigger.current
     const f = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
     addEventListener("keydown", f)
-    return () => removeEventListener("keydown", f)
+    return () => { removeEventListener("keydown", f); t?.focus() }
   }, [open])
   const show = () => { const s = fromIso(value) ?? { y: now.getFullYear(), m: now.getMonth() }; setView({ y: s.y, m: s.m }); setOpen(true) }
   const step = (n: number) => setView(v => { const d = new Date(v.y, v.m + n, 1); return { y: d.getFullYear(), m: d.getMonth() } })
@@ -31,14 +35,14 @@ export function DatePicker({ value, onChange, label, placeholder = "Pick a date"
 
   return (
     <>
-      <button type="button" onClick={show} aria-label={`${label}: ${value ? niceDate(value) : "no date"}. Open calendar`} aria-haspopup="dialog"
+      <button ref={trigger} type="button" onClick={show} aria-label={`${label}: ${value ? niceDate(value) : "no date"}. Open calendar`} aria-haspopup="dialog"
         className={`flex h-11 items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm ${className}`}>
         <CalendarDays className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <span className={value ? "" : "text-muted-foreground"}>{value ? niceDate(value) : placeholder}</span>
       </button>
       {open && (
         <div role="dialog" aria-modal="true" aria-label={label} className="fixed inset-0 z-[95] flex items-center justify-center bg-black/55 p-4" onClick={() => setOpen(false)}>
-          <div className="w-full max-w-72 rounded-2xl bg-card p-3 shadow-2xl ring-1 ring-foreground/10" onClick={e => e.stopPropagation()}>
+          <div ref={box} tabIndex={-1} className="w-full max-w-72 rounded-2xl bg-card p-3 shadow-2xl ring-1 ring-foreground/10 outline-none" onClick={e => e.stopPropagation()}>
             <div className="mb-2 flex items-center justify-between gap-1">
               <button type="button" aria-label="Previous month" onClick={() => step(-1)} className="flex size-11 items-center justify-center rounded-full hover:bg-muted"><ChevronLeft className="size-5" /></button>
               <div className="flex items-center gap-1">

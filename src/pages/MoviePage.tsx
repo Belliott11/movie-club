@@ -1,3 +1,4 @@
+import { TextSkeleton } from "@/components/Skeleton"
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
@@ -53,7 +54,7 @@ export default function MoviePage({ title, year }: { title: string; year: number
           <h2 className="font-display text-4xl leading-none font-extrabold tracking-tight">{title} <small className="font-sans text-base font-medium text-muted-foreground">{y || ""}</small></h2>
           {d && <p className="text-muted-foreground">{[d.runtime && `${d.runtime} min`, (d.genres || []).map((g: any) => g.name).join(", "), d.vote_average ? `TMDB ${fmt(d.vote_average, 1)}/10` : ""].filter(Boolean).join(" · ")}</p>}
           {d?.tagline && <p className="font-display text-lg font-medium">{d.tagline}</p>}
-          {d === undefined && hasTmdb() && <p className="text-muted-foreground">Loading details…</p>}
+          {d === undefined && hasTmdb() && <TextSkeleton />}
           {d === null && <p className="text-muted-foreground">No match found on TMDB.</p>}
           {d && <p className="max-w-[62ch] leading-relaxed">{d.overview || "No synopsis available."}</p>}
           {rows.some(r => r[1].length) && (
