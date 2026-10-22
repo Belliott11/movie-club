@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
+import { PickStyles } from "@/components/PickStyles"
 import { Timeline } from "@/components/Timeline"
 import { WatchDates } from "@/components/WatchDates"
 import { PersonAtlas } from "@/components/PersonAtlas"
@@ -118,6 +119,8 @@ export default function Stats() {
       </section>
 
       <Timeline movies={rated} />
+
+      <PickStyles movies={rated} />
 
       <Breakdown movies={rated} />
 
