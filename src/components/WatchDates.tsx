@@ -1,3 +1,4 @@
+import { Collapse } from "@/components/Collapse"
 import { useState } from "react"
 import { DatePicker } from "@/components/DatePicker"
 import { Button } from "@/components/ui/button"
@@ -20,8 +21,7 @@ export function WatchDates() {
     setBusy(false)
   }
   return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">Watch dates</h3>
+    <Collapse id="watchdates" title="Watch dates" defaultOpen={false}>
       <p className="mb-3 text-sm text-muted-foreground">{missing ? `${missing} of ${films.length} films have no date.` : "Every film has a date."} Dates let Club Wrapped show a single year.</p>
       {missing > 0 && (
         <div className="mb-3 flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
@@ -48,6 +48,6 @@ export function WatchDates() {
           </li>
         ))}
       </ul>
-    </section>
+    </Collapse>
   )
 }

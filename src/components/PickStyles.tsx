@@ -1,3 +1,4 @@
+import { Collapse } from "@/components/Collapse"
 import { useMemo } from "react"
 import { Avatar } from "@/components/Avatar"
 import { HeatChip } from "@/components/HeatChip"
@@ -15,8 +16,7 @@ export function PickStyles({ movies }: { movies: Movie[] }) {
   const rows = styles.map(s => ({ ...s, label: styleLabel(s, styles) }))
   const gambler = [...styles].sort((a, b) => b.risk - a.risk)[0]
   return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">How people pick</h3>
+    <Collapse id="pickstyles" title="How people pick" source="club">
       <p className="mb-3 text-sm text-muted-foreground">
         Risk is how much a pick splits the room. A gambler's films are loved by some of you and hated by others. A hit is a pick that beat the club's overall average of {fmt(clubAverage, 1)}.
       </p>
@@ -37,6 +37,6 @@ export function PickStyles({ movies }: { movies: Movie[] }) {
         {rows.map(r => <li key={r.n}><b>{r.n}</b>: {r.label.toLowerCase()}. Boldest pick <a className="underline" href={filmHref(r.boldest)}>{r.boldest.title}</a>, best pick <a className="underline" href={filmHref(r.best)}>{r.best.title}</a>.</li>)}
       </ul>
       {gambler && <p className="mt-2 text-sm text-muted-foreground">{gambler.n} picks the films that divide you most.</p>}
-    </section>
+    </Collapse>
   )
 }

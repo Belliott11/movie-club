@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
+import { Collapse, setAllPanels } from "@/components/Collapse"
 import { PickStyles } from "@/components/PickStyles"
 import { Timeline } from "@/components/Timeline"
 import { WatchDates } from "@/components/WatchDates"
@@ -25,6 +26,7 @@ import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ra
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
+const PANELS = ["awards", "top", "trend", "timeline", "pickstyles", "breakdown", "world", "people", "divisive", "gap", "lb", "manage", "watchdates", "download"]
 const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
@@ -61,6 +63,14 @@ export default function Stats() {
     <div className="stagger flex flex-col gap-8">
       <a href="#/wrapped" className="flex min-h-11 items-center justify-between gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-foreground/10 hover:bg-muted/60"><span><b className="font-display text-lg">Club Wrapped</b><span className="block text-sm text-muted-foreground">The club's story so far, one card at a time</span></span><span aria-hidden>Open</span></a>
 
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="max-w-[44ch] text-xs text-muted-foreground">Each panel is tagged with where its numbers come from: your own ratings, or imported Letterboxd histories (teal).</p>
+        <div className="flex">
+          <Button variant="ghost" className="h-9 px-2 text-xs" onClick={() => setAllPanels(PANELS, true)}>Open all</Button>
+          <Button variant="ghost" className="h-9 px-2 text-xs" onClick={() => setAllPanels(PANELS, false)}>Close all</Button>
+        </div>
+      </div>
+
       <section aria-label="Summary" className="flex flex-col gap-4">
         <div className="grid grid-cols-3 divide-x divide-border border-y-2 border-foreground py-4">
           <Stat label="Films" n={sum.films} />
@@ -79,8 +89,7 @@ export default function Stats() {
         )}
       </section>
 
-      <section>
-        <h3 className="text-xl font-bold">Awards</h3>
+      <Collapse id="awards" title="Awards" source="club">
         <p className="mb-3 text-sm text-muted-foreground">Critic awards count people with at least 5 films rated.</p>
         <div className="grid grid-cols-2 gap-3">
           {awards.map(a => (
@@ -91,10 +100,9 @@ export default function Stats() {
             </Card>
           ))}
         </div>
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Top films</h3>
+      <Collapse id="top" title="Top films" source="club">
         <ol className="flex flex-col gap-2.5">
           {top.map((m, i) => (
             <li key={m.id}>
@@ -111,12 +119,11 @@ export default function Stats() {
             </li>
           ))}
         </ol>
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Group average over time</h3>
+      <Collapse id="trend" title="Group average over time" source="club">
         <TrendChart points={trend(rated)} average={sum.average} />
-      </section>
+      </Collapse>
 
       <Timeline movies={rated} />
 
@@ -124,10 +131,9 @@ export default function Stats() {
 
       <Breakdown movies={rated} />
 
-      {club.length > 0 && <PersonAtlas name="the club" history={club} group />}
+      {club.length > 0 && <Collapse id="world" title="World tour, decades and genres" source="mixed" defaultOpen={false}><PersonAtlas name="the club" history={club} group /></Collapse>}
 
-      <section>
-        <h3 className="mb-2 text-xl font-bold">People</h3>
+      <Collapse id="people" title="People" source="club">
         <div data-no-swipe>
           <SortTable
             rows={people}
@@ -157,10 +163,9 @@ export default function Stats() {
             ]}
           />
         </div>
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="mb-1 text-xl font-bold">Most divisive</h3>
+      <Collapse id="divisive" title="Most divisive" source="club">
         <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-label="Who each dot is">
           {[...new Set(divisive.flatMap(m => Object.keys(m.ratings)))].sort().map(n => <li key={n} className="flex items-center gap-1.5"><Avatar name={n} size="xs" />{n}</li>)}
         </ul>
@@ -172,10 +177,9 @@ export default function Stats() {
             </li>
           ))}
         </ul>
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="mb-1 text-xl font-bold">Biggest gap with outside ratings</h3>
+      <Collapse id="gap" title="Biggest gap with outside ratings" source="outside">
         <p className="mb-3 text-sm text-muted-foreground"><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Us <i className="mr-1.5 ml-3 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside</p>
         {gap.length ? (
           <ul className="flex flex-col gap-3">
@@ -187,10 +191,9 @@ export default function Stats() {
             ))}
           </ul>
         ) : <p className="text-muted-foreground">Outside ratings are still loading.</p>}
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="text-xl font-bold">From Letterboxd</h3>
+      <Collapse id="lb" title="From Letterboxd" source="letterboxd">
         <p className="mb-4 text-sm text-muted-foreground">Built from everyone's imported history, so it gets sharper with every export. {imported.length} {imported.length === 1 ? "person has" : "people have"} imported so far.</p>
         {imported.length < 2 ? (
           <Card className="px-4"><p className="text-sm">These need at least two people to import. <a className="underline" href="#/watch">Import your Letterboxd history</a>.</p></Card>
@@ -236,20 +239,18 @@ export default function Stats() {
             )}
           </div>
         )}
-      </section>
+      </Collapse>
 
-      <section>
-        <h3 className="text-xl font-bold">Manage people</h3>
+      <Collapse id="manage" title="Manage people" defaultOpen={false}>
         <p className="mb-2 text-sm text-muted-foreground">Rename someone, or type an existing name to merge two spellings. Ratings, picks, watchlists and votes move over.</p>
         <Card className="gap-0 py-1">
           {members.map(n => <PersonRow key={n} name={n} unused={isUnused(n, movies, watchlist, suggestions)} onRename={to => renameMember(n, to)} onRemove={() => removeMember(n)} />)}
         </Card>
-      </section>
+      </Collapse>
 
       <WatchDates />
 
-      <section>
-        <h3 className="text-xl font-bold">Download your data</h3>
+      <Collapse id="download" title="Download your data" defaultOpen={false}>
         <p className="mb-2 text-sm text-muted-foreground">A copy of everything, in case you want it somewhere else.</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-ratings.csv", ratingsCsv(movies, members))}>Ratings spreadsheet (.csv)</Button>
@@ -257,7 +258,7 @@ export default function Stats() {
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-backup.json", JSON.stringify({ exported: new Date().toISOString(), movies, watchlist, suggestions }, null, 2), "application/json")}>Full backup (.json)</Button>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">To use the Letterboxd list: Letterboxd, then Lists, New list, Import.</p>
-      </section>
+      </Collapse>
     </div>
   )
 }
