@@ -7,12 +7,13 @@ import { key } from "@/lib/stats"
  */
 const FILMS: [string, number, string[]][] = [
   ["The Beyond", 1981, [
-    "Fulci doesn't care about plot logic. What does the film do instead to create dread?",
-    "Do you read the hotel as a literal gateway to hell, or as an allegory for something?",
-    "The ending in the corridor of eternal nothing: what did you make of it?",
-    "Where do the gore effects serve the film, and where do they feel excessive?",
-    "Whom do you want to survive, and does the film care?",
-    "What does it mean for a horror film to refuse to explain itself?"]],
+    "The film never explains what's happening and doesn't seem to care. Is it scarier when you can't make sense of it, or does that just make it easier to stop caring?",
+    "If you found out the hotel you'd just inherited sat on a door to hell, would you leave, or would some part of you want to see what's behind it?",
+    "The ending leaves everyone on an endless gray plain of the dead. Is that a punishment, or just what's left when there's nothing more to explain?",
+    "Does gore at this level make you feel the characters' pain, or does it turn them into props? Where was your line?",
+    "Nobody here is really good or bad, they just get picked off. Did you care who made it? Does horror need you to?",
+    "Some films are a story you follow, and some are more like a bad dream you sit inside. Which was this, and do you prefer one?",
+    "Fulci's hell is an empty plain with no one explaining anything. What would a hell that actually frightened you look like?"]],
 ]
 
 const BY_KEY = new Map(FILMS.map(([t, y, q]) => [key(t, y), q]))

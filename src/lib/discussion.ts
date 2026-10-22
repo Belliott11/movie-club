@@ -12,135 +12,137 @@ export type Theme = {
 /** Themes and the questions that go with them. A film gets the few that its TMDB keywords, genres and synopsis point at. */
 export const THEMES: Theme[] = [
   { id: "justice", label: "Justice and the law", match: ["justice", "trial", "court", "lawyer", "judge", "crime", "murder", "detective", "police", "prison", "law", "investigation", "serial killer"], questions: [
-    "Does this film believe justice is possible, or only revenge and punishment? Which scene settles that for you?",
-    "Who is held accountable in this story, and who escapes it? Is that fair, or just how the world works?",
-    "If you were on the jury for the central act, what would you decide, and what would you need to know first?"] },
+    "Is there such a thing as justice in this story, or just whoever ends up holding the power?",
+    "Who here gets away with something, and who pays for something they didn't do? Does that feel like how the world actually works?",
+    "If it were up to you what happens to the person at the center of this, what would you want to know first?"] },
   { id: "revenge", label: "Revenge", match: ["revenge", "vengeance", "retribution", "vigilante", "payback"], questions: [
-    "Does revenge give the character what they want? What does it cost them?",
-    "At what point does the avenger become the thing they hate?",
-    "Is there a version of this story where forgiveness is the braver choice? Would it make a better film?"] },
+    "Did getting even give them anything back? What did they actually need instead?",
+    "Where's the point where someone chasing a wrong turns into the thing they're chasing?",
+    "Would forgiving have taken more courage than what they did? Could you?"] },
   { id: "war", label: "War and violence", match: ["war", "soldier", "battle", "military", "combat", "army", "violence", "world war ii", "vietnam war", "samurai", "massacre"], questions: [
-    "Does the film make war look glorious, pointless, or necessary? Which choices in the filming tell you?",
-    "Which character do you judge hardest for what they do under orders or pressure? Would you have done differently?",
-    "What does the film say about the people who survive compared with the people who die?"] },
+    "Does anything here make war look worth it? What would someone on the other side say?",
+    "Think of the person you judged hardest for what they did under pressure. What would you have done, honestly?",
+    "What do the people who make it out carry that the ones who don't never have to?"] },
   { id: "identity", label: "Identity", match: ["identity", "doppelganger", "double", "amnesia", "transformation", "self-discovery", "identity crisis", "impostor", "disguise"], questions: [
-    "Who is the main character at the start, and who are they at the end? What actually changed: them, or what they know about themselves?",
-    "How much of who we are comes from our choices, and how much from how others see us?",
-    "If the character could swap lives with someone else in the film, who, and what would they find?"] },
+    "Is the person at the start of the film the same person at the end? What changed, them or what they know?",
+    "How much of who you are is your choices, and how much is how other people see you?",
+    "If you could swap places with someone in this film for a week, who, and what would you find out?"] },
   { id: "memory", label: "Memory and time", match: ["memory", "time travel", "dream", "flashback", "nostalgia", "past", "time loop", "dementia", "memories"], questions: [
-    "Can we trust the way this story is told? Which moments might be remembered or imagined, not real?",
-    "What does the character most want to keep, or forget, and what does the film think of that wish?",
-    "Does looking back heal anyone in this film, or trap them?"] },
+    "Do you trust how this story is being told to you? Which parts might be a memory, a dream, or a lie?",
+    "What would you least want to forget, and what would you pay to forget? Does the film sit with either?",
+    "Does looking back heal anyone here, or keep them stuck?"] },
   { id: "class", label: "Class and money", match: ["poverty", "wealth", "class", "rich", "poor", "money", "capitalism", "inequality", "social class", "class differences", "working class", "debt"], questions: [
-    "Who has power in this film, and where does it come from: money, family, law, force?",
-    "Does the film sympathize with the rich, the poor, or no one? How can you tell?",
-    "What would these characters do differently with each other's resources?"] },
+    "Who has power here, and where did it come from? Did they earn it?",
+    "Whose side did you end up on, the rich, the poor, or no one? When did you decide?",
+    "What would these people do if they swapped bank accounts for a year?"] },
   { id: "faith", label: "Faith and meaning", match: ["religion", "god", "faith", "priest", "church", "spirituality", "christianity", "buddhism", "monk", "nun", "religious", "afterlife", "devil"], questions: [
-    "Is faith a comfort, a trap, or a test in this story? Does the film take a side?",
-    "What does the film suggest about how people find meaning when nothing explains their suffering?",
-    "Which character acts most like they truly believe something, and is it religion?"] },
+    "Is believing in something a comfort or a trap for these people? Did the film tell you what it thinks?",
+    "When nothing explains why people suffer, what do they reach for? Is it enough?",
+    "Who here acts like they truly believe something, and is it what they say they believe?"] },
   { id: "death", label: "Death and grief", match: ["death", "dying", "grief", "funeral", "terminal illness", "mortality", "suicide", "loss of loved one", "cancer", "widow"], questions: [
-    "How does knowing about death change what each character does? Who lives more fully because of it?",
-    "What does the film do with grief: heal it, honor it, or refuse to resolve it?",
-    "Does the film suggest a good way to die, and what would that say about how to live?"] },
+    "Does knowing time runs out change how anyone here lives? Who lives more because of it?",
+    "How would you want to be grieved, or not grieved? Does the film offer a way that feels right?",
+    "Is there a good way to die, and what would it say about how to live?"] },
   { id: "love", label: "Love and relationships", match: ["love", "romance", "marriage", "affair", "relationship", "couple", "wedding", "infidelity", "love triangle", "divorce", "romantic"], questions: [
-    "What kind of love is this film about: need, habit, passion, duty? Which one lasts?",
-    "Who gives more in the central relationship, and does it matter?",
-    "Did the leads belong together? What would have to be different?"] },
+    "What kind of love is this: need, habit, passion, duty? Which one lasts?",
+    "Who gives more in this relationship, and does it have to be even?",
+    "Do these two belong together, or did they just show up at the same time?"] },
   { id: "family", label: "Family", match: ["family", "father", "mother", "sibling", "parent", "son", "daughter", "brother", "sister", "generation", "father son relationship", "mother daughter relationship", "family relationships"], questions: [
-    "What does this family owe each other, and who is failing at it?",
-    "What do the children inherit that nobody meant to give them?",
-    "Which family member do you understand best by the end, and which do you understand less than the film wants you to?"] },
+    "What do these people owe each other just for being family? Who's failing at it?",
+    "What gets handed down here that nobody meant to give?",
+    "Which relative do you understand best by the end, and which one do you still not get?"] },
   { id: "power", label: "Power and corruption", match: ["corruption", "politics", "power", "dictator", "government", "conspiracy", "political", "mafia", "gangster", "organized crime", "gang", "crime boss", "assassination"], questions: [
-    "How does power change the people who get it? Is there a moment where you can see it happen?",
-    "Does anyone in the film stay honest, and what does it cost them?",
-    "What would it take for the system in this film to work fairly?"] },
+    "What does having power do to a person? Can you point to when it started?",
+    "Does anyone stay honest here? What did it cost them?",
+    "If you were handed this much power, how long before you were doing the same thing?"] },
   { id: "art", label: "Art and creativity", match: ["artist", "painter", "music", "musician", "writer", "filmmaking", "art", "creativity", "poet", "theater", "film director", "singer", "band", "actor"], questions: [
-    "What does this film say art is for: expression, escape, a living, a record?",
-    "Does genius excuse bad behavior in this story? Does the film think so?",
-    "Which scene is the film proudest of, as filmmaking, and why?"] },
+    "What do you think art is for: telling the truth, escaping, making a living, being remembered?",
+    "Does someone's talent excuse how they treat people? Does the film seem to think so?",
+    "Which moment felt like the filmmakers were showing off, in a good way?"] },
   { id: "obsession", label: "Obsession and madness", match: ["obsession", "madness", "insanity", "paranoia", "stalker", "psychological", "delusion", "mental illness", "psychosis", "psychological thriller"], questions: [
-    "When does determination turn into obsession for the main character? Is there a line?",
-    "Who around them could have stopped it, and didn't?",
-    "Does the film want you to understand the obsession, share it, or fear it?"] },
+    "When does wanting something badly turn into something else? Is there a line?",
+    "Who could have stopped them, and why didn't they?",
+    "Did you understand the obsession, feel it, or just fear it?"] },
   { id: "freedom", label: "Freedom and rebellion", match: ["freedom", "rebellion", "escape", "prison escape", "revolution", "resistance", "oppression", "slavery", "dictatorship", "uprising", "totalitarianism"], questions: [
-    "What does freedom mean to each character, and who actually gets it?",
-    "Is rebelling in this film brave, naive, or both?",
-    "What would you give up to be free in the way this film imagines?"] },
+    "What does freedom mean to each person here, and who actually gets it?",
+    "Is fighting back brave here, naive, or both?",
+    "What would you give up to be free the way these people imagine it?"] },
   { id: "technology", label: "Technology and the future", match: ["artificial intelligence", "robot", "technology", "computer", "cyberpunk", "android", "surveillance", "virtual reality", "science fiction", "dystopia", "future", "space", "alien", "post-apocalyptic"], questions: [
-    "What does the film think technology changes about being human, and what stays the same?",
-    "Who benefits from the future shown here, and who pays?",
-    "Is this world a warning, a prediction, or a mirror of today?"] },
+    "What does this technology change about being a person, and what does it leave alone?",
+    "Who benefits from this future, and who's paying for it?",
+    "Is this world a warning, a prediction, or just ours a little further along?"] },
   { id: "nature", label: "Nature and survival", match: ["nature", "animal", "environment", "wilderness", "forest", "ocean", "survival", "island", "desert", "mountain", "sea", "shark", "storm"], questions: [
-    "How does the setting act like a character? What does it do to the people in it?",
-    "Is nature indifferent, hostile, or sacred here? Which shots give it away?",
-    "What does survival strip away from the characters?"] },
+    "Is the place working against these people, or is it just indifferent? Which is worse?",
+    "What does having to survive take away from a person?",
+    "Is nature sacred here, hostile, or just there? What gives it away?"] },
   { id: "race", label: "Race, colonialism and prejudice", match: ["colonialism", "racism", "race", "segregation", "immigration", "apartheid", "civil rights", "discrimination", "prejudice", "slum", "favela"], questions: [
-    "Whose point of view are we given, and whose is missing?",
-    "How does the film show prejudice: in big acts or small habits? Which is harder to watch?",
-    "What would repair or justice look like for the people in this story?"] },
+    "Whose story are we being told, and whose are we missing?",
+    "Is prejudice shown in big dramatic acts or small everyday ones? Which is harder to watch?",
+    "What would making things right look like for these people, and could it?"] },
   { id: "gender", label: "Gender and sexuality", match: ["feminism", "gender", "lgbt", "queer", "women", "sexuality", "patriarchy", "gay", "lesbian", "transgender", "sexism"], questions: [
-    "What expectations does the film put on its characters because of gender, and who pushes against them?",
-    "How would this story change if the main character were a different gender?",
-    "Does the film let its characters be complicated, or does it use them as symbols?"] },
+    "What does everyone expect of these characters because of who they are, and who pushes against it?",
+    "Would you tell this story differently if the main character were a different gender?",
+    "Do these characters get to be complicated people, or do they carry an idea?"] },
   { id: "loneliness", label: "Loneliness", match: ["loneliness", "isolation", "solitude", "alienation", "hermit", "outsider", "exile", "lonely"], questions: [
-    "Is the character alone by choice, by circumstance, or by their own doing? Does the film blame anyone?",
-    "Which small moments of connection matter most?",
-    "What does the film think loneliness is for: protection, punishment, or the start of something?"] },
+    "Is this person alone by choice, by luck, or by their own doing? Does anyone get blamed?",
+    "Which small moment of connection mattered most?",
+    "What is loneliness for: protecting yourself, punishing yourself, or the start of something?"] },
   { id: "ambition", label: "Ambition and greed", match: ["ambition", "success", "fame", "career", "sports", "competition", "boxing", "gambling", "greed", "boxer", "rise to power", "wall street"], questions: [
-    "What does winning cost the main character? Was it worth it?",
-    "Is the ambition admirable, empty, or both?",
+    "What did winning cost them? Was it worth it?",
+    "Is the drive here admirable, empty, or both?",
     "Who gets used or left behind on the way up?"] },
   { id: "truth", label: "Truth and perception", match: ["truth", "lies", "deception", "unreliable narrator", "mystery", "conspiracy", "secret", "twist", "whodunit", "con artist", "scam", "heist"], questions: [
-    "Whose version of events do you believe, and what makes you trust them?",
-    "What does the film suggest about whether we can ever know what really happened?",
-    "After the reveal, which earlier scene did you re-read?"] },
+    "Whose version of events do you believe, and why theirs?",
+    "Can anyone ever really know what happened? What does this story suggest?",
+    "After the reveal, which earlier scene did you go back over in your head?"] },
   { id: "guilt", label: "Guilt and redemption", match: ["guilt", "moral dilemma", "redemption", "sin", "betrayal", "conscience", "forgiveness", "thief", "criminal", "ex-convict"], questions: [
-    "What is the central wrong in this film, and who carries the guilt?",
-    "Is redemption possible here? Do the characters earn it?",
-    "Whose choices do you excuse that you probably shouldn't? Why?"] },
+    "What's the thing that can't be undone here, and who is carrying it?",
+    "Can someone earn redemption, or can they only hope for it?",
+    "Whose choices did you excuse that you probably shouldn't have?"] },
   { id: "fate", label: "Fate and choice", match: ["fate", "destiny", "prophecy", "tragedy", "free will", "coincidence", "chance", "doomed"], questions: [
-    "Do the characters have a real choice, or is the ending set from the start?",
-    "Which decision, if changed, would have changed everything?",
+    "Do these people have a real choice, or was it always going to end this way?",
+    "Which single decision, if it had gone the other way, would have changed everything?",
     "Is this a world where trying matters?"] },
   { id: "youth", label: "Childhood and growing up", match: ["childhood", "children", "coming of age", "school", "teenager", "orphan", "innocence", "growing up", "boy", "girl", "child", "teen"], questions: [
-    "What does the film think is lost when someone grows up? What is gained?",
-    "How do the adults look from the child's point of view?",
-    "What is the film's most honest moment about being young?"] },
+    "What does growing up cost, and what does it give? Did anyone here get the trade right?",
+    "How do the adults look from a kid's seat in this film?",
+    "What's the most honest thing this film says about being young?"] },
   { id: "satire", label: "Satire and absurdity", match: ["absurd", "satire", "parody", "black comedy", "slapstick", "comedy", "dark comedy", "spoof", "mockumentary"], questions: [
-    "What is the film making fun of, and is it fair?",
-    "Where does the joke turn serious, and does it still work?",
-    "What here is funny that probably wouldn't be made today, or would be made differently?"] },
+    "What's the film laughing at, and is it fair?",
+    "Where does the joke stop being a joke, and does it still work after that?",
+    "Is anything here funny that wouldn't get made today? Should it?"] },
   { id: "fear", label: "Fear and horror", match: ["horror", "fear", "monster", "ghost", "supernatural", "haunted", "slasher", "zombie", "vampire", "demon", "occult", "gore", "terror"], questions: [
-    "What is the real fear underneath the monster or ghost: loss, shame, change, the body, other people?",
-    "Did the film scare you with what it showed or what it held back?",
-    "Who survives, and what does the film say about why?"] },
+    "What's the real fear under the monster: losing someone, shame, change, other people?",
+    "Were you scared by what you saw, or by what you were never shown?",
+    "Who makes it out, and does the film think they deserved it?"] },
   { id: "place", label: "Place and journey", match: ["city", "small town", "rural", "journey", "road trip", "travel", "road movie", "village", "new york city", "paris, france", "tokyo, japan", "los angeles"], questions: [
-    "How does the place shape these people? Could this story happen anywhere else?",
-    "What does the journey change for the characters, and what does it leave the same?",
-    "Which location do you remember most, and what did it make you feel?"] },
+    "Could this have happened anywhere else, or does this place make these people who they are?",
+    "What did the trip change for the characters, and what did it leave exactly as it was?",
+    "Which place in the film do you still see, and what did it make you feel?"] },
   { id: "loyalty", label: "Friendship and loyalty", match: ["friendship", "loyalty", "brotherhood", "buddy", "partner", "team", "best friend", "friends"], questions: [
-    "What does each friend owe the other, and where does loyalty break?",
-    "Who is the better friend, and who thinks they are?",
-    "What would you forgive a friend for that these characters can't?"] },
+    "What does a friend owe a friend here, and where does that break?",
+    "Who's the better friend, and who thinks they are?",
+    "What would you forgive a friend that these people can't?"] },
   { id: "history", label: "History and how it's told", match: ["historical", "based on true story", "biography", "holocaust", "cold war", "history", "period drama", "feudal", "ancient", "world war i", "biopic", "true story"], questions: [
-    "What does the film choose to emphasize, or leave out, of the history it tells?",
-    "How much do we owe the real people in a story like this, versus the story?",
-    "What present-day situation does this past remind you of?"] },
+    "What gets left out when real history is told as a story?",
+    "How much do we owe the actual people when we turn their lives into a movie?",
+    "What's happening now that this makes you think of?"] },
 ]
 
 /** Questions that fit almost any film, for the craft and for what it leaves with you. */
 export const GENERAL = [
-  "What is this film about underneath what happens in it? Try saying it in one sentence.",
-  "Which scene would you show someone to explain why this film is good, or why it isn't?",
-  "How did the ending leave you: satisfied, unsettled, cheated? What would you change?",
-  "What did the director want you to feel in the first shot and in the last?",
-  "Which performance carried the film, and what did that actor do that the others didn't?",
-  "What would you cut, and what do you wish had more time?",
-  "Did the film change how you see something? What?",
-  "Who is the real main character, even if it isn't the lead?",
-  "What does the title mean by the end that it didn't at the start?",
-  "How do the music, or the silence, shape what you feel?",
+  "Say what it's about in one sentence, without describing the plot. Does anyone at the table say something different?",
+  "Which scene would you show someone to prove it's great, or to prove it isn't?",
+  "How did the ending leave you: full, uneasy, cheated? What would you have wanted instead?",
+  "What do you think the first shot and the last shot are trying to do to you?",
+  "Whose performance did you believe most, and what were they doing differently?",
+  "What would you cut, and what do you wish had gotten more time?",
+  "Did it change how you think about anything, even a little?",
+  "Who is the real main character, even if they aren't the lead?",
+  "Does the title mean something different by the end than it did at the start?",
+  "What did the music, or the silence, do to you, and when?",
+  "If you could ask the filmmaker one thing, what would it be?",
+  "What would you argue about with a friend who loved this, or one who hated it?",
 ]
 
 export type Film = { keywords: string[]; genres: string[]; overview: string }
@@ -185,9 +187,9 @@ export function questionsFor(f: Film, club: string[] = [], shuffle = 0): { theme
 export function clubQuestions(m: Movie): string[] {
   const out: string[] = []
   const r = Object.entries(m.ratings).sort((a, b) => b[1] - a[1])
-  if (r.length >= 3 && spread(m) >= 1.2) out.push(`${r[0][0]} gave this ${r[0][1]} and ${r[r.length - 1][0]} gave it ${r[r.length - 1][1]}. Each of you: make the case for the other's rating.`)
+  if (r.length >= 3 && spread(m) >= 1.2) out.push(`${r[0][0]} gave this ${r[0][1]} and ${r[r.length - 1][0]} gave it ${r[r.length - 1][1]}. Can you each make the case for the other's score?`)
   const o = outsideAvg(m), g = groupAvg(m)
-  if (o != null && g != null && Math.abs(g - o) >= 0.8) out.push(`Outside ratings average ${fmt(o, 1)} and the club gave ${fmt(g, 1)}. What did you see, or miss, that everyone else didn't?`)
-  if (m.pick) out.push(`${m.pick} picked this one. What did you hope we'd get out of it, and did it land?`)
+  if (o != null && g != null && Math.abs(g - o) >= 0.8) out.push(`Outside ratings average ${fmt(o, 1)} and we gave it ${fmt(g, 1)}. Did we see something everyone else missed, or miss something everyone else saw?`)
+  if (m.pick) out.push(`${m.pick} chose this one. What were you hoping we'd get out of it, and did we?`)
   return out
 }

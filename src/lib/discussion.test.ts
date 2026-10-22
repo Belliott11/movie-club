@@ -31,6 +31,6 @@ test("club questions come from a split, a gap with the outside world, and who pi
   const q = clubQuestions(m)
   expect(q[0]).toContain("Ann gave this 5 and Bo gave it 1")
   expect(q.some(x => x.includes("Outside ratings average"))).toBe(true)
-  expect(q.at(-1)).toContain("Ann picked this one")
+  expect(q.at(-1)).toContain("Ann chose this one")
   expect(clubQuestions({ ...m, pick: "", imdb: null, ratings: { Ann: 3 } })).toEqual([])
 })
