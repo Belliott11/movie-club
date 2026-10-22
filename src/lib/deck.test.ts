@@ -1,14 +1,14 @@
 import { expect, test } from "vitest"
 import { CARDS, deal, fitting, untouchedMovementKeys, type Cand, type Ctx } from "./deck"
 
-const ctx: Ctx = { thisYear: 2026, countries: new Set(["US", "JP"]), movementKeys: new Set(["breathless"]) }
+const ctx: Ctx = { thisYear: 2026, countries: new Set(["US", "JP"]), continents: new Set(["North America", "Asia"]), movementKeys: new Set(["breathless"]) }
 const c = (title: string, year: number, o: Partial<Cand> = {}): Cand => ({ title, year, wantedBy: 1, ...o })
 const card = (id: string) => CARDS.find(x => x.id === id)!
 
 test("every card has a unique id and a rule, and says undefined (not false) when the facts aren't known yet", () => {
   expect(new Set(CARDS.map(x => x.id)).size).toBe(CARDS.length)
   expect(CARDS.every(x => x.title && x.rule)).toBe(true)
-  for (const id of ["foreign", "short", "haul", "newCountry", "doc", "animation", "western", "horror", "romance", "war", "scifi"]) expect(card(id).fits(c("X", 2000), ctx), id).toBeUndefined()
+  for (const id of ["foreign", "short", "haul", "newCountry", "doc", "animation", "western", "horror", "romance", "war", "scifi", "newContinent", "asia", "africa", "southAmerica", "oceania"]) expect(card(id).fits(c("X", 2000), ctx), id).toBeUndefined()
 })
 
 test("cards judge a film by its year, length, language, country, genres and title", () => {
@@ -22,6 +22,11 @@ test("cards judge a film by its year, length, language, country, genres and titl
   expect(card("haul").fits(c("A", 2000, { runtime: 150 }), ctx)).toBe(true)
   expect(card("newCountry").fits(c("A", 2000, { country: "BR" }), ctx)).toBe(true)
   expect(card("newCountry").fits(c("A", 2000, { country: "JP" }), ctx)).toBe(false)
+  expect(card("asia").fits(c("A", 2000, { continent: "Asia" }), ctx)).toBe(true)
+  expect(card("africa").fits(c("A", 2000, { continent: "Asia" }), ctx)).toBe(false)
+  expect(card("southAmerica").fits(c("A", 2000, { continent: "South America" }), ctx)).toBe(true)
+  expect(card("newContinent").fits(c("A", 2000, { continent: "Africa" }), ctx)).toBe(true)
+  expect(card("newContinent").fits(c("A", 2000, { continent: "Asia" }), ctx)).toBe(false)
   expect(card("movement").fits(c("Breathless", 1960), ctx)).toBe(true)
   expect(card("doc").fits(c("A", 2000, { genres: ["Documentary"] }), ctx)).toBe(true)
   expect(card("word").fits(c("Alien", 1979), ctx)).toBe(true)

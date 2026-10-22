@@ -1,10 +1,11 @@
 import { MOVEMENTS } from "./atlas"
+import type { Continent } from "./continents"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; genres?: string[]; wantedBy: number }
+export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; genres?: string[]; wantedBy: number }
 /** What the club has already done, so cards can ask for something new. */
-export type Ctx = { thisYear: number; countries: Set<string>; movementKeys: Set<string> }
+export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; movementKeys: Set<string> }
 
 export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined }
 
@@ -18,6 +19,11 @@ export const CARDS: Card[] = [
   { id: "short", title: "Under 90 minutes", rule: "A film you could watch before the second pizza arrives.", fits: f => known(f.runtime, r => r > 0 && r < 90) },
   { id: "haul", title: "The long haul", rule: "Two and a half hours or more. Bring snacks.", fits: f => known(f.runtime, r => r >= 150) },
   { id: "newCountry", title: "A new country", rule: "From a country the club has never watched a film from.", fits: (f, c) => known(f.country, k => !c.countries.has(k)) },
+  { id: "newContinent", title: "A new continent", rule: "From a continent the club hasn't watched anything from yet.", fits: (f, c) => known(f.continent, k => !c.continents.has(k)) },
+  { id: "asia", title: "Made in Asia", rule: "A film from anywhere in Asia.", fits: f => known(f.continent, k => k === "Asia") },
+  { id: "africa", title: "Made in Africa", rule: "A film from anywhere in Africa.", fits: f => known(f.continent, k => k === "Africa") },
+  { id: "southAmerica", title: "Made in South America", rule: "A film from anywhere in South America.", fits: f => known(f.continent, k => k === "South America") },
+  { id: "oceania", title: "Made in Oceania", rule: "A film from Australia, New Zealand or the Pacific.", fits: f => known(f.continent, k => k === "Oceania") },
   { id: "movement", title: "Start a movement", rule: "A landmark film from a movement the club hasn't touched.", fits: (f, c) => c.movementKeys.has(key(f.title, 0).split("|")[0]) },
   { id: "doc", title: "Real life", rule: "A documentary.", fits: f => known(f.genres, g => g.includes("Documentary")) },
   { id: "animation", title: "Drawn, not filmed", rule: "An animated film.", fits: f => known(f.genres, g => g.includes("Animation")) },
