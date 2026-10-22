@@ -37,7 +37,7 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
 
   return (
     <Card className="rise gap-0 py-0">
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="grid w-full grid-cols-[52px_1fr_auto] gap-x-4 px-4 py-3.5 text-left">
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="grid w-full grid-cols-[52px_minmax(0,1fr)_auto] gap-x-3 px-3 py-3.5 text-left sm:gap-x-4 sm:px-4">
         {info?.p ? (
           <img src={`${IMG}w154${info.p}`} alt="" loading="lazy" className="row-span-5 aspect-[2/3] w-[52px] rounded-md object-cover" />
         ) : (

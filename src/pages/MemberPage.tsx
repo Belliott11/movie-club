@@ -95,7 +95,7 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
             </section>
           )}
 
-          <section className="grid gap-6 sm:grid-cols-2">
+          <section className="grid grid-cols-[minmax(0,1fr)] gap-6 sm:grid-cols-2">
             <Strip title="Favorites" films={sorted.slice(0, 3)} rating={m => m.ratings[name]} />
             <Strip title="Least favorite" films={[...sorted].reverse().slice(0, 3)} rating={m => m.ratings[name]} />
           </section>
@@ -184,9 +184,9 @@ function Strip({ title, films, rating }: { title: string; films: Movie[]; rating
   return (
     <div>
       <h3 className="mb-3 text-xl font-bold">{title}</h3>
-      <ol className="flex gap-4">
+      <ol className="flex gap-3 sm:gap-4">
         {films.map(m => (
-          <li key={m.id} className="w-20 min-w-0">
+          <li key={m.id} className="w-20 min-w-0 shrink">
             <a href={filmHref(m)} className="flex flex-col gap-1.5">
               <PosterThumb title={m.title} year={m.year} className="w-full" badge={rating(m)} gold={title === "Favorites" && rating(m) >= 4.5} />
               <span className="line-clamp-2 text-xs leading-tight font-medium">{m.title}</span>
