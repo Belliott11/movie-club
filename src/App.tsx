@@ -8,7 +8,8 @@ import { getClubCode, setClubCode, StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
 import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, Search } from "lucide-react"
+import { SearchOverlay } from "@/components/SearchOverlay"
 import { pickHeroFilm } from "@/lib/hero"
 import { favoritesOf } from "@/lib/lbstats"
 import { useStills } from "@/lib/useStills"
@@ -91,6 +92,12 @@ function Shell() {
     return () => clearTimeout(t)
   }, [ready])
   useEffect(() => { const t = setTimeout(() => sessionStorage.removeItem("chunk-reload"), 15000); return () => clearTimeout(t) }, [])
+  const [searching, setSearching] = useState(false)
+  useEffect(() => {
+    const f = (e: KeyboardEvent) => { if (e.key === "/" && !/^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) { e.preventDefault(); setSearching(true) } }
+    addEventListener("keydown", f)
+    return () => removeEventListener("keydown", f)
+  }, [])
   const firstTab = useRef(true)
   useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)
@@ -163,6 +170,7 @@ function Shell() {
         }
         controls={
           <div className="flex flex-wrap items-end gap-3">
+            <button type="button" aria-label="Search films and people" onClick={() => setSearching(true)} className="flex size-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60"><Search className="size-5" aria-hidden /></button>
             <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
               You are
               <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
@@ -174,6 +182,7 @@ function Shell() {
           </div>
         }
       />
+      {searching && <SearchOverlay onClose={() => setSearching(false)} />}
       {offline && <p role="status" className="mb-3 rounded-lg bg-card px-3 py-2 text-sm">No connection. Showing the last data saved on this device; edits won't save until you're back online.</p>}
       {adding && (
         <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl bg-card p-3">
