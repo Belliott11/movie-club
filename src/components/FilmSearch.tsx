@@ -1,4 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { hasTmdb, IMG, tmdb } from "@/lib/api"
 import { Input } from "@/components/ui/input"
 
@@ -15,6 +16,22 @@ export function FilmSearch({ value, onChange, onPick, ...rest }: {
   const [active, setActive] = useState(-1)
   const picked = useRef("")
   const listId = useId()
+  const box = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState<{ left: number; top: number; width: number; flip: boolean } | null>(null)
+
+  // The list is drawn on the page itself, not inside the card around the field, so nothing can cover it or clip it. It follows the field and closes when the page scrolls away.
+  useLayoutEffect(() => {
+    if (!open || !hits.length) return
+    const place = () => {
+      const r = box.current?.getBoundingClientRect()
+      if (!r) return
+      const flip = innerHeight - r.bottom < 220 && r.top > innerHeight - r.bottom
+      setPos({ left: Math.max(8, r.left), top: flip ? r.top : r.bottom, width: Math.min(r.width, innerWidth - 16), flip })
+    }
+    place()
+    addEventListener("resize", place); addEventListener("scroll", place, true)
+    return () => { removeEventListener("resize", place); removeEventListener("scroll", place, true) }
+  }, [open, hits.length])
 
   useEffect(() => {
     const q = value.trim()
@@ -39,7 +56,7 @@ export function FilmSearch({ value, onChange, onPick, ...rest }: {
   }
 
   return (
-    <div className="relative min-w-48 flex-1">
+    <div ref={box} className="relative min-w-48 flex-1">
       <Input
         {...rest}
         value={value}
@@ -60,8 +77,8 @@ export function FilmSearch({ value, onChange, onPick, ...rest }: {
           else if (e.key === "Escape") setOpen(false)
         }}
       />
-      {open && hits.length > 0 && (
-        <ul id={listId} role="listbox" className="absolute inset-x-0 top-full z-30 mt-1 max-h-80 overflow-auto rounded-xl bg-card p-1 shadow-xl ring-1 ring-border">
+      {open && hits.length > 0 && pos && createPortal(
+        <ul id={listId} role="listbox" style={{ left: pos.left, top: pos.top, width: pos.width, transform: pos.flip ? "translateY(calc(-100% - 4px))" : "translateY(4px)" }} className="fixed z-[95] max-h-60 overflow-auto rounded-xl bg-card p-1 text-card-foreground shadow-xl ring-1 ring-border">
           {hits.map((h, i) => (
             <li
               key={h.id}
@@ -75,8 +92,7 @@ export function FilmSearch({ value, onChange, onPick, ...rest }: {
               <span>{h.title} <small className="text-muted-foreground">{h.year ?? ""}</small></span>
             </li>
           ))}
-        </ul>
-      )}
+        </ul>, document.body)}
     </div>
   )
 }

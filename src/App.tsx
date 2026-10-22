@@ -10,6 +10,7 @@ import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
 import { ChartColumn, Film, Lightbulb, RefreshCw, Search, User, Users, Bookmark } from "lucide-react"
 import { SearchOverlay } from "@/components/SearchOverlay"
+import { ThemeMenu } from "@/components/ThemeMenu"
 import { pickHeroFilm } from "@/lib/hero"
 import { favoritesOf } from "@/lib/lbstats"
 import { useStills } from "@/lib/useStills"
@@ -172,6 +173,7 @@ function Shell() {
         controls={
           <div className="flex flex-wrap items-end gap-3">
             <button type="button" aria-label="Search films and people" onClick={() => setSearching(true)} className="flex size-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60"><Search className="size-5" aria-hidden /></button>
+            <ThemeMenu />
             <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
               You are
               <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>

@@ -12,10 +12,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <script>
-  // follow the device's light/dark setting
+  // palette and light/dark: the Theme menu's choice, else the device's setting
   const m = matchMedia("(prefers-color-scheme: dark)");
-  const apply = () => document.documentElement.classList.toggle("dark", m.matches);
-  apply(); m.addEventListener("change", apply);
+  const pref = k => { try { return JSON.parse(localStorage.getItem(k)) } catch { return null } };
+  const apply = (theme = pref("theme-v1"), mode = pref("mode-v1")) => {
+    const h = document.documentElement;
+    if (theme && theme !== "cinema") h.dataset.theme = theme; else delete h.dataset.theme;
+    h.classList.toggle("dark", mode === "dark" || (mode !== "light" && m.matches));
+  };
+  window.__applyTheme = apply; apply(); m.addEventListener("change", () => apply());
 </script>
 <script src="config.js"></script>
 </head>
