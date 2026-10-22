@@ -90,6 +90,24 @@
   body { @apply bg-background text-foreground font-sans antialiased; }
   h1, h2, h3 { font-family: var(--font-display); }
   :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
+
+  /* Native bits follow the theme too: with color-scheme set, the browser draws dropdown lists, date and number fields,
+     and page scrollbars in light or dark to match. */
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
+  * { accent-color: var(--world); }
+  ::selection { background: color-mix(in oklab, var(--sun) 60%, transparent); color: var(--foreground); }
+  select option, select optgroup { background: var(--card); color: var(--card-foreground); }
+  summary::marker { color: var(--muted-foreground); }
+
+  /* Scrollbars: thin, rounded, tinted from the page text color, teal on hover. Firefox and current Chrome use the two standard lines;
+     the pseudo-elements cover Safari. */
+  * { scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--foreground) 32%, transparent) transparent; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 32%, transparent); border: 3px solid transparent; background-clip: content-box; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--world) 75%, transparent); background-clip: content-box; }
 }
 
 /* ---- motion ----

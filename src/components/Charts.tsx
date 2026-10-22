@@ -11,16 +11,17 @@ export const scale = (t: number) => t < 0.5
   : `color-mix(in oklab, var(--world) ${(t - 0.5) * 200}%, var(--sun))`
 
 export function Histogram({ bins, label, average, median }: { bins: { v: number; n: number }[]; label: string; average?: number | null; median?: number | null }) {
+  const [hot, setHot] = useState<{ v: number; n: number } | null>(null)
   const max = Math.max(1, ...bins.map(b => b.n))
   const at = (v: number) => `${((v * 2 - 1 + 0.5) / 10) * 100}%` // centre of that half-star's column
   const top = Math.max(2, max) // the tallest bar fills the plot, gridlines sit at quarter steps of it
   return (
-    <figure data-no-swipe>
+    <figure data-no-swipe onPointerLeave={e => { if (e.pointerType === "mouse") setHot(null) }}>
       <div className="relative pt-7">
         <div role="img" aria-label={label} className="relative flex h-32 items-end gap-1.5 border-b border-foreground/40">
           {[0.5, 1].map(f => <span key={f} aria-hidden className="absolute inset-x-0 border-t border-dashed border-border" style={{ bottom: `${f * 100}%` }} />)}
           {bins.map((b, i) => (
-            <div key={b.v} className="relative z-10 flex h-full flex-1 flex-col items-center justify-end">
+            <div key={b.v} onPointerEnter={() => setHot(b)} onPointerDown={() => setHot(b)} className={`relative z-10 flex h-full flex-1 flex-col items-center justify-end rounded-t-md ${hot?.v === b.v ? "bg-foreground/10" : ""}`}>
               <span className="fade-in mb-1 text-xs leading-none font-semibold" style={{ "--d": `${300 + i * 50}ms` } as CSSProperties}>{b.n || ""}</span>
               <span
                 className="grow-y w-full rounded-t-md"
@@ -41,7 +42,8 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
           {bins.map(b => <span key={b.v} className="flex-1 text-center text-[11px] text-muted-foreground">{b.v % 1 ? "" : b.v}</span>)}
         </div>
       </div>
-      {median != null && <figcaption className="mt-1 text-xs text-muted-foreground">Middle rating {fmt(median, 1)}</figcaption>}
+      <p className="mt-1 min-h-6 text-sm" aria-hidden>{hot ? <><b>{hot.v} stars</b>: {hot.n} {hot.n === 1 ? "rating" : "ratings"}</> : <span className="text-muted-foreground">Point at a bar for its count.</span>}</p>
+      {median != null && <figcaption className="text-xs text-muted-foreground">Middle rating {fmt(median, 1)}</figcaption>}
       <ul className="sr-only">{bins.map(b => <li key={b.v}>{b.v} stars: {b.n}</li>)}</ul>
     </figure>
   )

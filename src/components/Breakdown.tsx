@@ -11,7 +11,7 @@ export function Bars({ rows }: { rows: Group[] }) {
   return (
     <ul className="flex flex-col gap-2">
       {rows.map(r => (
-        <li key={r.name} className="grid grid-cols-[5.5rem_1fr_auto] items-center gap-2 text-sm">
+        <li key={r.name} title={`${r.name}: ${r.n} ${r.n === 1 ? "film" : "films"}, average ${fmt(r.avg)}`} className="-mx-1.5 grid grid-cols-[5.5rem_1fr_auto] items-center gap-2 rounded-md px-1.5 py-0.5 text-sm hover:bg-muted/70">
           <span className="truncate font-medium">{r.name}</span>
           <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(r.avg / 5) * 100}%` }} /></span>
           <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{fmt(r.avg)}</b> · {r.n} {r.n === 1 ? "film" : "films"}</span>
@@ -50,11 +50,11 @@ function Years({ movies }: { movies: Movie[] }) {
   const span = Math.max(1, years.length - 1)
   const picked = on != null ? films(on) : []
   return (
-    <figure data-no-swipe>
+    <figure data-no-swipe onPointerLeave={e => { if (e.pointerType === "mouse") setOn(null) }}>
       <div className="relative flex h-28 items-end gap-px border-b border-foreground/40">
         {[0.5, 1].map(f => <span key={f} aria-hidden className="absolute inset-x-0 border-t border-dashed border-border" style={{ bottom: `${f * 100}%` }} />)}
         {years.map(y => (
-          <button key={y.year} type="button" disabled={!y.n} aria-label={`${y.year}: ${y.n} ${y.n === 1 ? "film" : "films"}`} aria-pressed={on === y.year} onClick={() => setOn(on === y.year ? null : y.year)} className="relative z-10 flex h-full min-w-px flex-1 items-end disabled:cursor-default">
+          <button key={y.year} type="button" disabled={!y.n} aria-label={`${y.year}: ${y.n} ${y.n === 1 ? "film" : "films"}`} aria-pressed={on === y.year} onPointerEnter={e => { if (e.pointerType === "mouse") setOn(y.year) }} onFocus={() => setOn(y.year)} onClick={() => setOn(on === y.year ? null : y.year)} className="relative z-10 flex h-full min-w-px flex-1 items-end disabled:cursor-default">
             <span className="grow-y block w-full rounded-t-sm" style={{ height: y.n ? `${(y.n / max) * 100}%` : 0, minHeight: y.n ? 4 : 0, background: scale(((avgOf(y.year) ?? 2.5) - 0.5) / 4.5), outline: on === y.year ? "2px solid var(--foreground)" : undefined }} />
           </button>
         ))}
@@ -63,7 +63,7 @@ function Years({ movies }: { movies: Movie[] }) {
         {ticks.map(t => <span key={t.year} className="absolute -translate-x-1/2 first:translate-x-0 last:translate-x-[-100%]" style={{ left: `${((t.year - first) / span) * 100}%` }}>{t.year}</span>)}
       </div>
       <p className="mt-1 min-h-10 text-sm" aria-live="polite">
-        {on == null ? <span className="text-muted-foreground">Bars are colored by the club's average for that year, red low to teal high. Tap one to see the films.</span> : <><b>{on}</b>: {picked.map(m => `${m.title} ${fmt(groupAvg(m), 1)}`).join(", ")}</>}
+        {on == null ? <span className="text-muted-foreground">Bars are colored by the club's average for that year, red low to teal high. Point at one to see the films.</span> : <><b>{on}</b>: {picked.map(m => `${m.title} ${fmt(groupAvg(m), 1)}`).join(", ")}</>}
       </p>
       <p className="sr-only">{years.filter(y => y.n).map(y => `${y.year}: ${y.n}`).join(", ")}</p>
     </figure>
