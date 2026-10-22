@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Eye, EyeOff, X } from "lucide-react"
+import { FactsLine, PickControls, useMyServices, usePickPrefs } from "@/components/PickControls"
+import { passesFilters, useFacts } from "@/lib/filmFacts"
 import { movieHref } from "@/lib/movieLink"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
@@ -96,7 +98,10 @@ export default function Suggest() {
   // everyone sees the watchlist films they haven't marked seen or not interested
   const myFlag = (id: number) => flags.find(f => f.member === me && f.tmdb_id === id)?.kind
   const onLb = (r: Rec) => !!(me && findEntry(lb[me], r.title, r.year)) // already watched on Letterboxd
-  const visible = (recs ?? []).filter(r => !myFlag(r.id) && !onLb(r))
+  const [prefs] = usePickPrefs()
+  const [mine] = useMyServices()
+  const facts = useFacts((recs ?? []).map(r => ({ title: r.title, year: r.year })))
+  const visible = (recs ?? []).filter(r => !myFlag(r.id) && !onLb(r) && passesFilters(facts[key(r.title, r.year)], prefs, mine))
   const hidden = (recs ?? []).filter(r => myFlag(r.id) || onLb(r))
   const crowd = crowdPicks(lb, movies, { minRaters: 1, maxSeen: 1 }).slice(0, 8)
   const importedCount = Object.values(lb).filter(h => h.length).length
@@ -151,6 +156,7 @@ export default function Suggest() {
       <section>
         <h3 className="mb-1 text-xl font-bold">From your watchlists</h3>
         <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
+        <PickControls />
         {!hasTmdb() ? (
           <p className="text-muted-foreground">Add a TMDB key to config.js to get recommendations here.</p>
         ) : recs === null ? (
@@ -167,6 +173,7 @@ export default function Suggest() {
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <h4 className="font-display text-base leading-tight font-bold"><a href={movieHref(r.title, r.year)} className="hover:underline">{r.title}</a> <small className="font-sans text-xs font-medium text-muted-foreground">{r.year || ""}</small></h4>
                       <p className="text-xs text-muted-foreground">{r.score ? `TMDB ${+r.score.toFixed(1)}/10 · ` : ""}{r.because ? `because you liked ${r.because}` : `wanted by ${r.wantedBy.join(", ")}`}</p>
+                      <FactsLine facts={facts[key(r.title, r.year)]} />
                       <p className="line-clamp-3 text-xs leading-snug">{r.overview || "No synopsis available."}</p>
                       {seenByNames.length > 0 && <p className="text-xs text-muted-foreground">Seen by {seenByNames.join(", ")}</p>}
                       <div className="mt-auto flex flex-col gap-1.5 pt-1">

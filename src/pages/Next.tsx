@@ -1,5 +1,7 @@
 import { movieHref } from "@/lib/movieLink"
 import { AddPerson } from "@/components/AddPerson"
+import { PickControls, FactsLine, useMyServices, usePickPrefs } from "@/components/PickControls"
+import { passesFilters, useFacts } from "@/lib/filmFacts"
 import { ClubShortlist } from "@/components/ClubShortlist"
 import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
@@ -14,7 +16,11 @@ import { useStore } from "@/lib/store"
 export default function Next() {
   const { movies, members, attending, toggleAttend, watchlist, lb, loadLb, suggestions, suggest } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
-  const ranked = useMemo(() => rankForGroup(attending, lb, watchlist, movies, 6), [attending, lb, watchlist, movies])
+  const pool = useMemo(() => rankForGroup(attending, lb, watchlist, movies, 16), [attending, lb, watchlist, movies])
+  const [prefs] = usePickPrefs()
+  const [mine] = useMyServices()
+  const facts = useFacts(pool)
+  const ranked = pool.filter(r => passesFilters(facts[key(r.title, r.year)], prefs, mine)).slice(0, 6)
   const order = pickOrder(movies, attending)
   const watched = new Set(movies.map(m => key(m.title, m.year)))
   const hits = new Map<string, { t: string; y: number; who: string[] }>()
@@ -49,6 +55,7 @@ export default function Next() {
       <section>
         <h3 className="mb-1 text-xl font-bold">Best picks for tonight</h3>
         <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped.</p>
+        <PickControls />
         {!attending.length ? (
           <p className="text-muted-foreground">Switch on whoever is coming and the best picks show up here.</p>
         ) : ranked.length ? (
@@ -59,6 +66,7 @@ export default function Next() {
                   title={r.title}
                   year={r.year}
                   lines={r.reasons}
+                  extra={<FactsLine facts={facts[key(r.title, r.year)]} />}
                   done={suggestions.some(x => key(x.title, x.year) === key(r.title, r.year))}
                   onSuggest={() => suggest(r.title, r.year)}
                 />
