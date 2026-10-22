@@ -1,11 +1,11 @@
 import { MOVEMENTS } from "./atlas"
-import type { Continent } from "./continents"
+import type { Continent, Region } from "./continents"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; genres?: string[]; wantedBy: number }
+export type Cand = { title: string; year: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number }
 /** What the club has already done, so cards can ask for something new. */
-export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; movementKeys: Set<string> }
+export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }
 
 export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined }
 
@@ -20,6 +20,15 @@ export const CARDS: Card[] = [
   { id: "haul", title: "The long haul", rule: "Two and a half hours or more. Bring snacks.", fits: f => known(f.runtime, r => r >= 150) },
   { id: "newCountry", title: "A new country", rule: "From a country the club has never watched a film from.", fits: (f, c) => known(f.country, k => !c.countries.has(k)) },
   { id: "newContinent", title: "A new continent", rule: "From a continent the club hasn't watched anything from yet.", fits: (f, c) => known(f.continent, k => !c.continents.has(k)) },
+  { id: "newRegion", title: "A new region", rule: "From a part of the world the club hasn't watched anything from: East Asia, the Nordics, Latin America and so on.", fits: (f, c) => known(f.region, r => !c.regions.has(r)) },
+  { id: "eastAsia", title: "East Asia", rule: "Japan, Korea, China, Taiwan or Hong Kong.", fits: f => known(f.region, r => r === "East Asia") },
+  { id: "southAsia", title: "South Asia", rule: "India, Pakistan, Bangladesh, Sri Lanka or Nepal.", fits: f => known(f.region, r => r === "South Asia") },
+  { id: "seAsia", title: "Southeast Asia", rule: "Thailand, Vietnam, the Philippines, Indonesia and neighbors.", fits: f => known(f.region, r => r === "Southeast Asia") },
+  { id: "middleEast", title: "Middle East and beyond", rule: "Iran, Turkey, Israel, the Arab world or Central Asia.", fits: f => known(f.region, r => r === "Middle East and Central Asia") },
+  { id: "nordic", title: "The Nordics", rule: "Denmark, Sweden, Norway, Finland or Iceland.", fits: f => known(f.region, r => r === "Nordic countries") },
+  { id: "southernEurope", title: "Southern Europe", rule: "Spain, Portugal, Italy or Greece.", fits: f => known(f.region, r => r === "Southern Europe") },
+  { id: "easternEurope", title: "Eastern Europe", rule: "Russia, Poland, Hungary, the Balkans and neighbors.", fits: f => known(f.region, r => r === "Eastern Europe and the Balkans") },
+  { id: "latam", title: "Latin America", rule: "Mexico, Central or South America, or the Caribbean.", fits: f => known(f.region, r => r === "Latin America and the Caribbean") },
   { id: "asia", title: "Made in Asia", rule: "A film from anywhere in Asia.", fits: f => known(f.continent, k => k === "Asia") },
   { id: "africa", title: "Made in Africa", rule: "A film from anywhere in Africa.", fits: f => known(f.continent, k => k === "Africa") },
   { id: "southAmerica", title: "Made in South America", rule: "A film from anywhere in South America.", fits: f => known(f.continent, k => k === "South America") },

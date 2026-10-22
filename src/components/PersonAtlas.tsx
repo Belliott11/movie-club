@@ -3,7 +3,7 @@ import { WorldMap } from "@/components/WorldMap"
 import { Button } from "@/components/ui/button"
 import { movieHref } from "@/lib/movieLink"
 import { Bars, Tags } from "@/components/Breakdown"
-import { continentOfCode } from "@/lib/continents"
+import { continentOfCode, regionOfCode } from "@/lib/continents"
 import { blindspots, decadeOf, entryKey, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
 import { loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type CountryCache, type GenreCache } from "@/lib/lbCountries"
 import type { LbEntry } from "@/lib/letterboxd"
@@ -25,6 +25,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
   const counts = useMemo(() => tallyCountries(history, e => cache[entryKey(e)] || undefined), [history, cache])
   const spots = useMemo(() => blindspots(counts), [counts])
   const continents = useMemo(() => tallyBy(history, e => { const c = continentOfCode(cache[entryKey(e)]); return c ? [c] : [] }).filter(c => c.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
+  const regions = useMemo(() => tallyBy(history, e => { const r = regionOfCode(cache[entryKey(e)]); return r ? [r] : [] }).filter(r => r.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
   const decades = useMemo(() => tallyBy(history, e => (e[1] ? [decadeOf(e[1])] : [])).filter(d => d.rated > 0).sort((a, b) => a.name.localeCompare(b.name)), [history])
   const genres = useMemo(() => tallyBy(history, e => genreCache[entryKey(e)] ?? []), [history, genreCache])
   const moves = useMemo(() => movementBlindspots(history).slice(0, 5), [history])
@@ -74,6 +75,14 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
           <h3 className="text-xl font-bold">{group ? "Films by continent" : `${name}'s continents`}</h3>
           <Bars rows={continents.map(c => ({ name: c.name, n: c.n, avg: c.avg }))} />
           <p className="text-xs text-muted-foreground">Russia counts as Europe and Turkey as Asia.</p>
+        </div>
+      )}
+
+      {regions.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-bold">{group ? "Films by region" : `${name}'s regions`}</h3>
+          <Bars rows={regions.map(r => ({ name: r.name, n: r.n, avg: r.avg }))} />
+          <p className="text-xs text-muted-foreground">Regions are slices of the world smaller than a continent, like East Asia or the Nordic countries.</p>
         </div>
       )}
 

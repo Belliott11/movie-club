@@ -3,7 +3,7 @@ import { Layers } from "lucide-react"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Button } from "@/components/ui/button"
 import { CARDS, deal, fitting, untouchedMovementKeys, type Card, type Cand, type Ctx } from "@/lib/deck"
-import { continentOfCode, continentOfName } from "@/lib/continents"
+import { continentOfCode, continentOfName, regionOfCode, regionOfName } from "@/lib/continents"
 import { useFacts } from "@/lib/filmFacts"
 import { seenBy } from "@/lib/letterboxd"
 import { movieHref } from "@/lib/movieLink"
@@ -62,6 +62,7 @@ export function ConstraintDeck() {
     thisYear: new Date().getFullYear(),
     countries: new Set(movies.flatMap(m => (fixed[String(m.id)] ? [fixed[String(m.id)]] : tags[String(m.id)]?.countries ?? []))),
     continents: new Set(movies.flatMap(m => { const c = continentOfName(fixed[String(m.id)] ?? tags[String(m.id)]?.countries?.[0]); return c ? [c] : [] })),
+    regions: new Set(movies.flatMap(m => { const r = regionOfName(fixed[String(m.id)] ?? tags[String(m.id)]?.countries?.[0]); return r ? [r] : [] })),
     movementKeys: untouchedMovementKeys(new Set(movies.map(m => key(m.title, 0).split("|")[0]))),
   }), [movies, tags, fixed])
 
@@ -73,7 +74,7 @@ export function ConstraintDeck() {
   const cands: Cand[] = sample.map(c => {
     const f = facts[key(c.title, c.year)]
     const name = f?.country ? (f.country === "US" ? "USA" : (() => { try { return regions.of(f.country!) ?? f.country } catch { return f.country } })()) : undefined
-    return { ...c, runtime: f?.runtime, lang: f?.lang, country: name, continent: continentOfCode(f?.country), genres: f?.genres }
+    return { ...c, runtime: f?.runtime, lang: f?.lang, country: name, continent: continentOfCode(f?.country), region: regionOfCode(f?.country), genres: f?.genres }
   })
   const asked = new Set(suggestions.map(s => key(s.title, s.year)))
   const fits = card && stage === "face-up" ? fitting(card, cands, ctx, 6) : []
