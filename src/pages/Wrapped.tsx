@@ -10,12 +10,16 @@ import { useFilmTags } from "@/lib/useFilmTags"
 export default function Wrapped() {
   const { movies, members, countries: fixed, loadSeal } = useStore()
   useEffect(() => { loadSeal() }, [loadSeal])
-  const rated = useMemo(() => movies.filter(m => Object.keys(m.ratings).length), [movies])
+  const [year, setYear] = useState("") // "" is all time
+  const years = useMemo(() => [...new Set(movies.map(m => m.watched_on?.slice(0, 4)).filter((y): y is string => !!y))].sort().reverse(), [movies])
+  const scoped = useMemo(() => (year ? movies.filter(m => m.watched_on?.startsWith(year)) : movies), [movies, year])
+  const rated = useMemo(() => scoped.filter(m => Object.keys(m.ratings).length), [scoped])
   const tags = useFilmTags(rated)
   const places = useMemo(() => [...new Set(rated.flatMap(m => (fixed[String(m.id)] ? [fixed[String(m.id)]] : tags[String(m.id)]?.countries ?? [])))], [rated, tags, fixed])
-  const slides = useMemo(() => wrappedSlides(movies, members, places), [movies, members, places])
+  const slides = useMemo(() => wrappedSlides(scoped, members, places, year ? `The club in ${year}` : "The club so far"), [scoped, members, places, year])
   const [i, setI] = useState(0)
   const [copied, setCopied] = useState(false)
+  useEffect(() => setI(0), [year])
   const last = slides.length // one extra card after the slides: the wrap-up
   const go = (d: number) => setI(x => Math.max(0, Math.min(last, x + d)))
   useEffect(() => {
@@ -35,6 +39,11 @@ export default function Wrapped() {
   return (
     <div className="flex flex-col gap-4">
       {back}
+      {years.length > 0 && (
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Year">
+          {["", ...years].map(y => <button key={y || "all"} type="button" aria-pressed={year === y} onClick={() => setYear(y)} className={`min-h-11 rounded-full px-3.5 text-sm ring-1 ${year === y ? "bg-foreground font-medium text-background ring-foreground" : "bg-card ring-foreground/15"}`}>{y || "All time"}</button>)}
+        </div>
+      )}
       <div role="progressbar" aria-valuemin={1} aria-valuemax={last + 1} aria-valuenow={i + 1} aria-label="Slide" className="flex gap-1">
         {Array.from({ length: last + 1 }, (_, n) => <span key={n} className={`h-1 flex-1 rounded-full ${n <= i ? "bg-us" : "bg-muted"}`} />)}
       </div>

@@ -15,6 +15,8 @@ export const setClubCode = (c: string) => { if (c) localStorage.setItem(CODE_KEY
 const sb = CONFIG.SUPABASE_URL ? createDb({ url: CONFIG.SUPABASE_URL, key: CONFIG.SUPABASE_KEY, code: getClubCode }) : null
 
 const LS = "movieclub-v1"
+const WATCHED = "watched-local-v1" // dates kept on this device when the database has no watched_on column yet
+const today = () => new Date().toLocaleDateString("en-CA")
 const SNAP = "snapshot-v1"
 const lsGet = <T,>(k: string, d: T): T => {
   try { return JSON.parse(localStorage.getItem(k) || "") ?? d } catch { return d }
@@ -91,6 +93,8 @@ type Store = {
   /** Marks a recommendation as seen or not interesting for the signed-in person; null clears it. */
   setFlag: (tmdbId: number, title: string, kind: RecFlag["kind"] | null) => Promise<void>
   patchMovie: (m: Movie, f: Partial<Movie>) => Promise<void>
+  /** The day the club watched a film, as YYYY-MM-DD, or null to clear it. */
+  setWatched: (m: Movie, date: string | null) => Promise<void>
   deleteMovie: (m: Movie) => Promise<void>
   seed: () => Promise<void>
   importWatchlist: (items: WatchItem[]) => Promise<void>
@@ -160,7 +164,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const [m, r, w, s, mem, tk, fl] = await Promise.all(["movies", "ratings", "watchlist", "suggestions", "members", "takes", "rec_flags"].map(t => sb.from(t).select("*")))
       const bad = [m, r, w, s].find(x => x.error)
       if (bad) throw bad.error
-      const ms: Movie[] = (m.data as any[]).sort((a, b) => a.seq - b.seq).map(x => ({ ...x, ratings: {} }))
+      const localDates = lsGet<Record<string, string>>(WATCHED, {})
+      const ms: Movie[] = (m.data as any[]).sort((a, b) => a.seq - b.seq).map(x => ({ ...x, ratings: {}, watched_on: x.watched_on ?? localDates[x.id] ?? null }))
       const byId = new Map(ms.map(x => [x.id, x]))
       for (const x of r.data as any[]) {
         const mv = byId.get(x.movie_id)
@@ -222,11 +227,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => { dead = true }
   }, [ready, offline, patchMovie])
 
+  /** Sets the day the club watched a film (null clears it). Falls back to this device when the database has no watched_on column yet. */
+  const setWatched = useCallback(async (m: Movie, date: string | null) => {
+    setMovies(ms => ms.map(x => (x.id === m.id ? { ...x, watched_on: date } : x)))
+    const keep = () => { const l = lsGet<Record<string, string>>(WATCHED, {}); if (date) l[String(m.id)] = date; else delete l[String(m.id)]; lsSet(WATCHED, l) }
+    if (!sb) return
+    const { error } = await sb.from("movies").update({ watched_on: date }).eq("id", m.id)
+    if (!error) return
+    if (/watched_on|column|schema cache/i.test(error.message)) keep()
+    else fail(error)
+  }, [])
+
   /** Inserts a whole film (used by add, and by undoing a delete). */
   const insertMovie = useCallback(async (m: Omit<Movie, "id">): Promise<Movie | null> => {
     let id: Id = Date.now() + Math.random()
     if (sb) {
-      const { ratings, ...row } = m
+      const { ratings, watched_on: _date, ...row } = m // the date is saved separately, so a database without that column still takes the film
       const { data, error } = await sb.from("movies").insert(row).select().single()
       if (error) { fail(error); return null }
       id = data.id
@@ -235,12 +251,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     const full = { ...m, id }
     setMovies(ms => [...ms, full].sort((a, b) => a.seq - b.seq))
+    if (m.watched_on) setWatched(full, m.watched_on)
     return full
   }, [])
 
   const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
     const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
-    await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId })
+    await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId, watched_on: today() })
   }, [insertMovie])
 
   const deleteMovie = useCallback(async (m: Movie) => {
@@ -602,7 +619,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value: Store = {
     ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
-    refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, deleteMovie, seed,
+    refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

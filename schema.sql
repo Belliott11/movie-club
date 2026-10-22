@@ -19,6 +19,9 @@ create table if not exists suggestions (
   title text not null, year int, by text, votes text[] default '{}'
 );
 
+-- When the club watched each film (optional: without it the app keeps dates on each device).
+alter table movies add column if not exists watched_on date;
+
 -- People who haven't rated anything yet (so they can be added to a meetup right away).
 create table if not exists members (name text primary key);
 

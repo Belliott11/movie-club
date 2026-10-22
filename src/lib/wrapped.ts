@@ -20,14 +20,14 @@ const films = (n: number, word = "film") => `${n} ${word}${n === 1 ? "" : "s"}`
  * The club's story so far as a short run of slides: the numbers, the best and worst film, the one you argued over, where you
  * parted from everyone else, the awards, and who rates alike. Slides with nothing to say (no divisive film yet, no award winner) are left out.
  */
-export function wrappedSlides(movies: Movie[], members: string[], countries?: string[]): Slide[] {
+export function wrappedSlides(movies: Movie[], members: string[], countries?: string[], label = "The club so far"): Slide[] {
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   if (!rated.length) return []
   const sum = overview(movies)
   const people = members.filter(n => rated.some(m => m.ratings[n] != null))
   const byAvg = [...rated].sort((a, b) => groupAvg(b)! - groupAvg(a)! || a.title.localeCompare(b.title))
   const slides: Slide[] = [{
-    id: "numbers", kicker: "The club so far", big: films(sum.films),
+    id: "numbers", kicker: label, big: films(sum.films),
     text: `${sum.ratings} ratings from ${people.length} ${people.length === 1 ? "person" : "people"}, averaging ${fmt(sum.average, 1)} out of 5.`,
   }]
 

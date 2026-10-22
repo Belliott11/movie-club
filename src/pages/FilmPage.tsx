@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
+  const { setWatched, countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
   const [view, setView] = useState<{ kind: "still" | "poster"; i: number } | null>(null)
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   const [editCountry, setEditCountry] = useState(false)
@@ -86,6 +86,10 @@ export default function FilmPage({ id }: { id: string }) {
               ))}
             </dl>
           )}
+          <label className="flex w-fit items-center gap-2 text-sm">
+            <span className="text-muted-foreground">Watched on</span>
+            <input type="date" value={m.watched_on ?? ""} onChange={e => setWatched(m, e.target.value || null)} className="h-10 rounded-lg border border-input bg-card px-2" />
+          </label>
           {m && d && (
             <p className="text-sm">
               <span className="text-muted-foreground">Main country (for Stats): </span>
