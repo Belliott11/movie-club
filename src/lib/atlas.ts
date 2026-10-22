@@ -49,6 +49,11 @@ export const MOVEMENTS: { name: string; years: string; films: Film[] }[] = [
   { name: "Romanian New Wave", years: "2005 to 2015", films: [["The Death of Mr. Lazarescu", 2005], ["12:08 East of Bucharest", 2006], ["4 Months, 3 Weeks and 2 Days", 2007], ["Police, Adjective", 2009], ["Aferim!", 2015]] },
   { name: "New Argentine Cinema", years: "1998 to 2008", films: [["Pizza, Beer, and Cigarettes", 1998, "Pizza, birra, faso"], ["Nine Queens", 2000], ["La Ciénaga", 2001], ["The Holy Girl", 2004], ["The Headless Woman", 2008]] },
   { name: "West African cinema", years: "1966 to 1992", films: [["Black Girl", 1966], ["Touki Bouki", 1973], ["Xala", 1975], ["Yeelen", 1987], ["Hyenas", 1992]] },
+  { name: "Italian comedy", years: "1958 to 1974", films: [["Big Deal on Madonna Street", 1958], ["Divorce Italian Style", 1961], ["Il Sorpasso", 1962, "The Easy Life"], ["Seduced and Abandoned", 1964], ["We All Loved Each Other So Much", 1974], ["Bread and Chocolate", 1974]] },
+  { name: "American independent", years: "1984 to 1994", films: [["Stranger Than Paradise", 1984], ["Blood Simple", 1984], ["She's Gotta Have It", 1986], ["sex, lies, and videotape", 1989], ["Slacker", 1990], ["Reservoir Dogs", 1992], ["Clerks", 1994]] },
+  { name: "New Queer Cinema", years: "1990 to 1996", films: [["Paris Is Burning", 1990], ["Poison", 1991], ["My Own Private Idaho", 1991], ["The Living End", 1992], ["Go Fish", 1994], ["The Watermelon Woman", 1996]] },
+  { name: "Soviet and Eastern bloc cinema", years: "1957 to 1985", films: [["The Cranes Are Flying", 1957], ["Ballad of a Soldier", 1959], ["Ivan's Childhood", 1962], ["Andrei Rublev", 1966], ["Stalker", 1979], ["Come and See", 1985]] },
+  { name: "Hollywood musical", years: "1935 to 1972", films: [["Top Hat", 1935], ["Meet Me in St. Louis", 1944], ["An American in Paris", 1951], ["Singin' in the Rain", 1952], ["The Band Wagon", 1953], ["West Side Story", 1961], ["Cabaret", 1972]] },
   { name: "Iranian cinema", years: "1969 to 2011", films: [["The Cow", 1969], ["Where Is the Friend's House?", 1987], ["Close-Up", 1990], ["Through the Olive Trees", 1994], ["The White Balloon", 1995], ["Taste of Cherry", 1997], ["A Separation", 2011]] },
 ]
 

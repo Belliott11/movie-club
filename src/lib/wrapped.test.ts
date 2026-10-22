@@ -32,3 +32,15 @@ test("no ratings means no slides, and the text version has one line per slide", 
   expect(s.at(-1)!.big).toBe("3 countries")
   expect(wrappedText(s).split("\n")).toHaveLength(s.length + 1)
 })
+
+test("with watch dates it adds the busiest month, the longest run and the longest break", () => {
+  const dated = [
+    m(1, "A", 2000, "X", { X: 4 }, { watched_on: "2026-01-04" }), m(2, "B", 2000, "X", { X: 4 }, { watched_on: "2026-01-11" }),
+    m(3, "C", 2000, "X", { X: 4 }, { watched_on: "2026-01-18" }), m(4, "D", 2000, "X", { X: 4 }, { watched_on: "2026-04-05" }),
+  ]
+  const s = wrappedSlides(dated, ["X"])
+  expect(s.find(x => x.id === "busiest")).toMatchObject({ big: "January 2026" })
+  expect(s.find(x => x.id === "streak")!.big).toBe("3 screenings in a row")
+  expect(s.find(x => x.id === "break")!.big).toBe("11 weeks")
+  expect(wrappedSlides(movies, ["Ann", "Bo", "Cy"]).some(x => x.id === "busiest")).toBe(false) // no dates, no time cards
+})

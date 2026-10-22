@@ -1,4 +1,6 @@
 import { avg, awardWinners, fmt, groupAvg, outsideAvg, overview, spread, tasteOverlap } from "./stats"
+import { niceDate } from "./calendar"
+import { busiestMonth, longestBreak, longestStreak } from "./timeline"
 import type { Movie } from "./types"
 
 export type Slide = {
@@ -47,6 +49,14 @@ export function wrappedSlides(movies: Movie[], members: string[], countries?: st
     const d = groupAvg(gap)! - outsideAvg(gap)!
     slides.push({ id: "gap", kicker: "Where you parted from everyone else", big: gap.title, text: `The club gave it ${fmt(groupAvg(gap), 1)}; IMDb, Rotten Tomatoes, Metacritic and Letterboxd average ${fmt(outsideAvg(gap), 1)}. You liked it ${stars(Math.abs(d))} ${d > 0 ? "more" : "less"}.`, film: gap })
   }
+
+  // time: needs watch dates on the films
+  const busy = busiestMonth(rated)
+  if (busy && busy.films.length >= 2) slides.push({ id: "busiest", kicker: "Busiest month", big: busy.label, text: `${films(busy.films.length)}: ${busy.films.map(f => f.title).join(", ")}.` })
+  const run = longestStreak(rated)
+  if (run && run.films >= 3) slides.push({ id: "streak", kicker: "Longest run without missing a week", big: `${run.films} screenings in a row`, text: `From ${niceDate(run.from)} to ${niceDate(run.to)}.` })
+  const brk = longestBreak(rated)
+  if (brk && brk.days >= 14) slides.push({ id: "break", kicker: "Longest break", big: `${Math.round(brk.days / 7)} weeks`, text: `Between ${brk.from.title} and ${brk.to.title}.` })
 
   const a = awardWinners(movies, members)
   if (a.picker) slides.push({ id: "picker", kicker: "Best picker", big: a.picker.n, text: `Their picks average ${fmt(a.picker.pickAvg, 1)}.` })

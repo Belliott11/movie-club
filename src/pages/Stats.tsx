@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
+import { Timeline } from "@/components/Timeline"
 import { WatchDates } from "@/components/WatchDates"
 import { PersonAtlas } from "@/components/PersonAtlas"
 import { Avatar } from "@/components/Avatar"
@@ -115,6 +116,8 @@ export default function Stats() {
         <h3 className="mb-2 text-xl font-bold">Group average over time</h3>
         <TrendChart points={trend(rated)} average={sum.average} />
       </section>
+
+      <Timeline movies={rated} />
 
       <Breakdown movies={rated} />
 
