@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 
 export default function FilmPage({ id }: { id: string }) {
-  const { setWatched, countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
+  const { questions, setWatched, countries, setCountry, loadSeal, movies, patchMovie, takes, setTake, me, lb, loadLb, setRating, mini, setPoster } = useStore()
   const [view, setView] = useState<{ kind: "still" | "poster"; i: number } | null>(null)
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   const [editCountry, setEditCountry] = useState(false)
@@ -167,7 +167,7 @@ export default function FilmPage({ id }: { id: string }) {
           )) : undefined}
         />
       )}
-      <DiscussionQuestions movie={m} />
+      {(m.seq === Math.max(...movies.map(x => x.seq)) || (questions[String(m.id)]?.length ?? 0) > 0) && <DiscussionQuestions movie={m} />}
       <section>
         <h3 className="mb-2 text-xl font-bold">Recap</h3>
         <Card className="gap-2 px-4">
