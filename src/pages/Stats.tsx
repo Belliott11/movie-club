@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
+import { WatchDates } from "@/components/WatchDates"
 import { PersonAtlas } from "@/components/PersonAtlas"
 import { Avatar } from "@/components/Avatar"
 import { CountUp } from "@/components/CountUp"
@@ -238,6 +239,8 @@ export default function Stats() {
           {members.map(n => <PersonRow key={n} name={n} unused={isUnused(n, movies, watchlist, suggestions)} onRename={to => renameMember(n, to)} onRemove={() => removeMember(n)} />)}
         </Card>
       </section>
+
+      <WatchDates />
 
       <section>
         <h3 className="text-xl font-bold">Download your data</h3>

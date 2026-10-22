@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { ArrowLeft } from "lucide-react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
+import { DatePicker } from "@/components/DatePicker"
 import { Lightbox } from "@/components/Lightbox"
 import { mainCountry } from "@/lib/useFilmTags"
 import { useFilmImages } from "@/lib/useStills"
@@ -86,10 +87,10 @@ export default function FilmPage({ id }: { id: string }) {
               ))}
             </dl>
           )}
-          <label className="flex w-fit items-center gap-2 text-sm">
+          <div className="flex w-fit items-center gap-2 text-sm">
             <span className="text-muted-foreground">Watched on</span>
-            <input type="date" value={m.watched_on ?? ""} onChange={e => setWatched(m, e.target.value || null)} className="h-10 rounded-lg border border-input bg-card px-2" />
-          </label>
+            <DatePicker value={m.watched_on ?? ""} onChange={v => setWatched(m, v || null)} label="Watched on" placeholder="Add date" />
+          </div>
           {m && d && (
             <p className="text-sm">
               <span className="text-muted-foreground">Main country (for Stats): </span>
