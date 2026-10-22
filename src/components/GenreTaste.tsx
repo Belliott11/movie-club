@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { Collapse } from "@/components/Collapse"
 import { byTag } from "@/lib/breakdown"
 import { avg, fmt } from "@/lib/stats"
 import { useFilmTags } from "@/lib/useFilmTags"
@@ -19,8 +20,7 @@ export function GenreTaste({ movies, name }: { movies: Movie[]; name: string }) 
   if (mean == null || rows.length < 3) return null
   const reach = Math.max(0.5, ...rows.map(r => Math.abs(r.avg - mean)))
   return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">{name}'s taste by genre</h3>
+    <Collapse id="me-genres" title={`${name}\'s taste by genre`}>
       <p className="mb-3 text-sm text-muted-foreground">Compared with {name}'s own average of {fmt(mean, 1)}. Genres with at least two films.</p>
       <ul className="flex flex-col gap-2.5">
         {rows.map(r => {
@@ -38,6 +38,6 @@ export function GenreTaste({ movies, name }: { movies: Movie[]; name: string }) 
         })}
       </ul>
       <ul className="sr-only">{rows.map(r => <li key={r.name}>{r.name}: {fmt(r.avg, 1)} across {r.n} films, {r.avg >= mean ? "above" : "below"} their average</li>)}</ul>
-    </section>
+    </Collapse>
   )
 }

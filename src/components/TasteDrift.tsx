@@ -1,4 +1,5 @@
 import { useMemo } from "react"
+import { Collapse } from "@/components/Collapse"
 import { entryKey } from "@/lib/atlas"
 import { driftByYear, driftSummary, hasDates } from "@/lib/drift"
 import { loadGenreCache } from "@/lib/lbCountries"
@@ -13,16 +14,14 @@ export function TasteDrift({ name, history, own }: { name: string; history: LbEn
   }, [history])
   if (!history.length) return null
   if (!hasDates(history)) return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">How {name}'s taste changed</h3>
+    <Collapse id="me-drift" title={`How ${name}\'s taste changed`}>
       <p className="text-sm text-muted-foreground">{own ? "Your Letterboxd import doesn't include dates yet. Upload your export again on the Watchlists tab and this fills in." : `${name}'s Letterboxd import doesn't include dates yet, so there's no year-by-year picture.`}</p>
-    </section>
+    </Collapse>
   )
   if (rows.length < 2) return null
   const summary = driftSummary(rows)
   return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">How {name}'s taste changed</h3>
+    <Collapse id="me-drift" title={`How ${name}\'s taste changed`}>
       <p className="mb-3 text-sm text-muted-foreground">{summary ?? "Year by year, from the days films were logged on Letterboxd."}</p>
       <ol className="flex flex-col gap-2">
         {rows.map(r => (
@@ -37,6 +36,6 @@ export function TasteDrift({ name, history, own }: { name: string; history: LbEn
           </li>
         ))}
       </ol>
-    </section>
+    </Collapse>
   )
 }

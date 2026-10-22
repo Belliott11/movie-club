@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Wand2 } from "lucide-react"
+import { Collapse } from "@/components/Collapse"
 import { PlanList } from "@/components/PlanList"
 import { Button } from "@/components/ui/button"
 import { entryKey } from "@/lib/atlas"
@@ -58,11 +58,9 @@ export function AutoPlan({ name, history }: { name: string; history: LbEntry[] |
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h3 className="flex items-center gap-1.5 text-xl font-bold"><Wand2 className="size-4" aria-hidden />Plan from my watchlist</h3>
+    <Collapse id="me-autoplan" title="Plan from my watchlist">
+    <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">Built from the {mine.length} films on your watchlist, grouped by movement, director, country and genre, with the kinds of film you rate highest first and the best-reviewed in each group first. It redraws itself when your watchlist or Letterboxd history changes.</p>
-      </div>
       {!mine.length ? (
         <p className="text-sm text-muted-foreground">Upload your Letterboxd watchlist on the Watchlists tab and your plan appears here.</p>
       ) : (
@@ -77,6 +75,7 @@ export function AutoPlan({ name, history }: { name: string; history: LbEntry[] |
           {plan && <PlanList plan={plan} seen={seen} overrides={overrides} onSeen={setSeen} onSuggest={f => suggest(f.title, f.year ?? null)} />}
         </>
       )}
-    </section>
+    </div>
+    </Collapse>
   )
 }

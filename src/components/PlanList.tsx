@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Collapse } from "@/components/Collapse"
 import { movieHref } from "@/lib/movieLink"
 import { MiniFilm } from "@/components/MiniFilm"
 import { Button } from "@/components/ui/button"
@@ -21,13 +22,16 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
     <>
       <p><b className="font-display text-2xl">{done}</b> <span className="text-muted-foreground">of {all.length} films seen, going by your Letterboxd history</span></p>
       {next && (
+        <Collapse id="plan-next" title="Up next">
         <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10">
           <p className="text-sm text-muted-foreground">Up next: group {next.group.n}, {shout(next.group.title).toLowerCase()}</p>
           <ul className="mt-2 flex flex-col gap-3">
             {next.films.map(f => <li key={f.title}><MiniFilm title={f.title} year={f.year} note={plan.long.includes(f.title) ? "long, save for a weekend" : undefined} /></li>)}
           </ul>
         </div>
+        </Collapse>
       )}
+      <Collapse id="plan-groups" title="All groups">
       <ul className="flex flex-col divide-y divide-border border-y border-border">
         {plan.groups.map(g => {
           const p = groupProgress(g, seen), isOpen = openGroup === g.n
@@ -63,6 +67,7 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
           )
         })}
       </ul>
+      </Collapse>
     </>
   )
 }

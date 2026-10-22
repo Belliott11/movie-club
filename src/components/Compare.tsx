@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Collapse } from "@/components/Collapse"
 import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { headToHead, type Head2Head } from "@/lib/compare"
@@ -40,16 +41,15 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
   useEffect(() => { setRecs(null) }, [name, who])
   if (!lb[name]?.length) return null
   if (!others.length) return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">Compare with a friend</h3>
+    <Collapse id="me-compare" title="Compare with a friend">
       <p className="text-sm text-muted-foreground">This unlocks when someone else imports their Letterboxd history on the Watchlists tab.</p>
-    </section>
+    </Collapse>
   )
   const h: Head2Head = headToHead(lb, name, who)
   return (
-    <section className="flex flex-col gap-4">
+    <Collapse id="me-compare" title={`${name} and ${who}`}>
+    <div className="flex flex-col gap-4">
       <div>
-        <h3 className="mb-1 text-xl font-bold">{name} and {who}</h3>
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           Compare with
           <select value={who} onChange={e => setPick(e.target.value)} className="h-11 rounded-lg border border-input bg-card px-3 text-foreground">
@@ -90,6 +90,7 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
         ) : <p className="text-sm text-muted-foreground">Nothing new to recommend: they've seen the obvious ones.</p>}
         <p className="mt-1 text-xs text-muted-foreground">Films TMDB recommends alongside what both loved and each person's favorites, leaving out anything either has watched.</p>
       </div>
-    </section>
+    </div>
+    </Collapse>
   )
 }

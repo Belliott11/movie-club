@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Lock } from "lucide-react"
+import { Collapse } from "@/components/Collapse"
 import { PlanList } from "@/components/PlanList"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -32,11 +32,9 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
   )
 
   return (
-    <section className="flex flex-col gap-4">
-      <div>
-        <h3 className="flex items-center gap-1.5 text-xl font-bold"><Lock className="size-4" aria-hidden />My watch plan</h3>
+    <Collapse id="me-plan" title="My watch plan">
+    <div className="flex flex-col gap-4">
         <p className="text-sm text-muted-foreground">Only you can see this.</p>
-      </div>
 
       {status === "none" && form}
 
@@ -60,6 +58,7 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
           )}
         </>
       )}
-    </section>
+    </div>
+    </Collapse>
   )
 }

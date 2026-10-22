@@ -98,18 +98,16 @@ export default function Watch() {
   return (
     <div className="stagger flex flex-col gap-6">
       {me && (
-        <Card className="gap-3 px-5">
-          <h3 className="text-xl font-bold">Sync from your Letterboxd profile</h3>
+        <Collapse id="watch-sync" title="Sync from your Letterboxd profile"><Card className="gap-3 px-5">
           <p className="text-sm text-muted-foreground">Enter your Letterboxd username (your profile must be public). It adds your latest diary entries and ratings, and checks again about every 6 hours. For your full history, upload the export below once.</p>
           <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); sync(user) }}>
             <Input value={user} onChange={e => setUser(e.target.value)} placeholder="Letterboxd username" aria-label="Letterboxd username" autoCapitalize="none" autoCorrect="off" className="h-11 min-w-48 flex-1" />
             <Button type="submit" className="h-11 px-4" disabled={syncing || !user.trim()}>{syncing ? "Syncing…" : "Sync now"}</Button>
           </form>
-        </Card>
+        </Card></Collapse>
       )}
 
-      <Card className="gap-3 px-5">
-        <h3 className="text-xl font-bold">Import from Letterboxd</h3>
+      <Collapse id="watch-import" title="Import from Letterboxd"><Card className="gap-3 px-5">
         <ol className="list-decimal pl-5 text-sm leading-relaxed">
           <li>On letterboxd.com, open Settings, then Import &amp; Export, then Export your data.</li>
           <li>Upload the zip you get here. You don't need to unzip it.</li>
@@ -124,11 +122,10 @@ export default function Watch() {
           <p className="font-medium">Pick your name at the top first.</p>
         )}
         {msg && <p role="status" className="text-sm">{msg}</p>}
-      </Card>
+      </Card></Collapse>
 
       {me && mine && (
-        <Card className="gap-3 px-5">
-          <h3 className="text-xl font-bold">{me}'s Letterboxd history</h3>
+        <Collapse id="watch-history" title={`${me}'s Letterboxd history`}><Card className="gap-3 px-5">
           <p className="text-sm text-muted-foreground">{mine.length} films watched, {mine.filter(e => e[2] != null).length} rated. Films you've seen are hidden from your recommendations.</p>
           {missing.length > 0 ? (
             <>
@@ -142,7 +139,7 @@ export default function Watch() {
             <p className="text-sm">Nothing to add: every club film you rated on Letterboxd is already rated here.</p>
           )}
           {seenUnrated > 0 && <p className="text-sm text-muted-foreground">You've also watched {seenUnrated} club {seenUnrated === 1 ? "film" : "films"} without rating {seenUnrated === 1 ? "it" : "them"} on Letterboxd.</p>}
-        </Card>
+        </Card></Collapse>
       )}
 
       <Collapse id="watch-imported" title="Who has imported">
