@@ -9,6 +9,7 @@ import { DeviationChart } from "@/components/DeviationChart"
 import { AutoPlan } from "@/components/AutoPlan"
 import { MyPlan } from "@/components/MyPlan"
 import { PersonAtlas } from "@/components/PersonAtlas"
+import { TasteDrift } from "@/components/TasteDrift"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
 import { clubVsHome, favoritesOf } from "@/lib/lbstats"
@@ -132,6 +133,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
       {signedIn === name && <AutoPlan name={name} history={lb[name]} />}
 
       <Compare name={name} lb={lb} />
+
+      {(lb[name]?.length ?? 0) > 0 && <TasteDrift name={name} history={lb[name]} own={signedIn === name} />}
 
       {(lb[name]?.length ?? 0) > 0 && <PersonAtlas name={name} history={lb[name]} />}
 

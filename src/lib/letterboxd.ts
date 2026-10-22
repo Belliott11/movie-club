@@ -1,8 +1,8 @@
 import { parseCsv } from "./csv"
 import { key } from "./stats"
 
-/** One film from someone's Letterboxd history: [title, year, rating or null when watched without rating]. */
-export type LbEntry = [string, number, number | null]
+/** One film from someone's Letterboxd history: [title, year, rating or null when watched without rating, the day it was logged (YYYY-MM-DD) when the export has one]. */
+export type LbEntry = [string, number, number | null, string?]
 export type LbHistory = Record<string, LbEntry[]>
 
 const decode = (b: Uint8Array) => new TextDecoder("utf-8").decode(b)
@@ -46,14 +46,17 @@ export function parseExports(files: { name: string; text: string }[]): LbEntry[]
   const sorted = files.filter(f => COUNTED.has(base(f.name))).sort((a, b) => order.indexOf(base(a.name)) - order.indexOf(base(b.name)))
   for (const f of sorted) {
     const rows = parseCsv(f.text), h = (rows[0] || []).map(x => x.trim())
-    const ni = h.indexOf("Name"), yi = h.indexOf("Year"), ri = h.indexOf("Rating")
+    const ni = h.indexOf("Name"), yi = h.indexOf("Year"), ri = h.indexOf("Rating"), wi = h.indexOf("Watched Date"), di = h.indexOf("Date")
     if (ni < 0 || yi < 0) continue
     for (const r of rows.slice(1)) {
       const title = r[ni]?.trim(), year = +r[yi]
       if (!title || !year) continue
       const rating = ri >= 0 && r[ri] ? +r[ri] : null
       const k = key(title, year), had = films.get(k)
-      films.set(k, [title, year, rating && rating >= 0.5 && rating <= 5 ? rating : had?.[2] ?? null])
+      // the day it was logged: the diary's watched date when there is one, otherwise the date on that row
+      const day = [wi >= 0 ? r[wi] : "", di >= 0 ? r[di] : ""].map(x => (x ?? "").trim()).find(x => /^\d{4}-\d{2}-\d{2}$/.test(x)) ?? had?.[3]
+      const rated = rating && rating >= 0.5 && rating <= 5 ? rating : had?.[2] ?? null
+      films.set(k, day ? [title, year, rated, day] : [title, year, rated])
     }
   }
   return [...films.values()]

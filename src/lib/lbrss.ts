@@ -11,7 +11,9 @@ export function parseRss(xml: string): LbEntry[] {
     const title = tag(item, "filmTitle"), year = parseInt(tag(item, "filmYear") ?? "")
     if (!title || !year) continue
     const r = parseFloat(tag(item, "memberRating") ?? "")
-    out.push([unescape(title), year, r >= 0.5 && r <= 5 ? r : null])
+    const day = tag(item, "watchedDate")
+    const rating = r >= 0.5 && r <= 5 ? r : null
+    out.push(day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? [unescape(title), year, rating, day] : [unescape(title), year, rating])
   }
   return out
 }
@@ -21,7 +23,8 @@ export function mergeHistory(old: LbEntry[], fresh: LbEntry[]): LbEntry[] {
   const m = new Map(old.map(e => [key(e[0], e[1]), e] as const))
   for (const e of fresh) {
     const had = m.get(key(e[0], e[1]))
-    m.set(key(e[0], e[1]), [e[0], e[1], e[2] ?? had?.[2] ?? null])
+    const day = e[3] ?? had?.[3]
+    m.set(key(e[0], e[1]), day ? [e[0], e[1], e[2] ?? had?.[2] ?? null, day] : [e[0], e[1], e[2] ?? had?.[2] ?? null])
   }
   return [...m.values()]
 }

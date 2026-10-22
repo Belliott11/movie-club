@@ -10,8 +10,8 @@ const watchlist = "Date,Name,Year,Letterboxd URI\n2024-01-01,Alien,1979,x\n"
 test("exports merge: watched adds unrated films, ratings win, watchlist is ignored", () => {
   const e = parseExports([{ name: "watched.csv", text: watched }, { name: "ratings.csv", text: ratings }, { name: "watchlist.csv", text: watchlist }])
   const by = Object.fromEntries(e.map(x => [x[0], x]))
-  expect(by["Jaws"]).toEqual(["Jaws", 1975, 4.5])
-  expect(by["Heat"]).toEqual(["Heat", 1995, null])
+  expect(by["Jaws"]).toEqual(["Jaws", 1975, 4.5, "2024-01-01"])
+  expect(by["Heat"]).toEqual(["Heat", 1995, null, "2024-01-03"])
   expect(by["Parasite, The"][2]).toBe(3)
   expect(by["Alien"]).toBeUndefined()
 })
@@ -46,4 +46,11 @@ test("reads stored and deflated csvs (including the watchlist) from a zip and sk
   expect(files.map(f => f.name).sort()).toEqual(["ratings.csv", "watched.csv", "watchlist.csv"])
   expect(parseExports(files).length).toBe(3) // the watchlist never counts as seen
   await expect(readZip(new ArrayBuffer(10))).rejects.toThrow("zip")
+})
+
+test("the diary's watched date beats the date a film was added or rated, and films without any date stay three long", () => {
+  const diary = "Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date\n2024-05-01,Heat,1995,x,4,,,2023-12-24\n"
+  const e = parseExports([{ name: "watched.csv", text: "Date,Name,Year,Letterboxd URI\n2024-01-03,Heat,1995,x\n" }, { name: "diary.csv", text: diary }])
+  expect(e).toEqual([["Heat", 1995, 4, "2023-12-24"]])
+  expect(parseExports([{ name: "watched.csv", text: "Name,Year\nAlien,1979\n" }])).toEqual([["Alien", 1979, null]])
 })
