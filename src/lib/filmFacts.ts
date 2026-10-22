@@ -3,9 +3,9 @@ import { searchFilm, tmdb } from "./api"
 import { key, fold } from "./stats"
 
 /** What helps decide whether to watch a film tonight: how long it is and where it streams (US). */
-export type Facts = { runtime: number | null; stream: string[]; rent: string[]; t: number }
+export type Facts = { runtime: number | null; stream: string[]; rent: string[]; t: number; lang?: string; country?: string; genres?: string[] }
 
-const KEY = "film-facts-v1"
+const KEY = "film-facts-v2"
 const DAY = 864e5
 const memory = new Map<number, Promise<Facts | null>>()
 const stored = (): Record<string, Facts> => { try { return JSON.parse(localStorage.getItem(KEY) ?? "{}") } catch { return {} } }
@@ -19,7 +19,10 @@ export function filmFacts(id: number): Promise<Facts | null> {
       if (!d?.id) { memory.delete(id); return null }
       const us = d["watch/providers"]?.results?.US ?? {}
       const names = (...lists: any[][]) => [...new Set(lists.flatMap(l => (l ?? []).map((p: any) => p.provider_name as string)))]
-      const facts: Facts = { runtime: d.runtime || null, stream: names(us.flatrate, us.free, us.ads), rent: names(us.rent, us.buy), t: Date.now() }
+      const facts: Facts = {
+        runtime: d.runtime || null, stream: names(us.flatrate, us.free, us.ads), rent: names(us.rent, us.buy), t: Date.now(),
+        lang: d.original_language, country: d.origin_country?.[0] ?? d.production_countries?.[0]?.iso_3166_1, genres: (d.genres ?? []).map((g: any) => g.name as string),
+      }
       try { localStorage.setItem(KEY, JSON.stringify({ ...stored(), [id]: facts })) } catch { /* full: looked up again next time */ }
       return facts
     }))

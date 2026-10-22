@@ -2,6 +2,7 @@ import { movieHref } from "@/lib/movieLink"
 import { AddPerson } from "@/components/AddPerson"
 import { PickControls, FactsLine, useMyServices, usePickPrefs } from "@/components/PickControls"
 import { passesFilters, useFacts } from "@/lib/filmFacts"
+import { ConstraintDeck } from "@/components/ConstraintDeck"
 import { ClubShortlist } from "@/components/ClubShortlist"
 import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
@@ -38,6 +39,7 @@ export default function Next() {
     <div className="stagger flex flex-col gap-6">
       <ImportNudge />
       <ClubShortlist />
+      <ConstraintDeck />
       <section>
         <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>
         <div className="flex flex-wrap gap-2">
