@@ -1,4 +1,5 @@
-import { movieHref } from "@/lib/movieLink"
+import { Collapse } from "@/components/Collapse"
+import { MiniFilm } from "@/components/MiniFilm"
 import { AddPerson } from "@/components/AddPerson"
 import { PickControls, FactsLine, useMyServices, usePickPrefs } from "@/components/PickControls"
 import { passesFilters, useFacts } from "@/lib/filmFacts"
@@ -42,8 +43,7 @@ export default function Next() {
       <ClubShortlist />
       <SelectorPanel />
       <ConstraintDeck />
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Who's here this week?</h3>
+      <Collapse id="next-here" title="Who's here this week?">
         <div className="flex flex-wrap gap-2">
           {members.map(n => (
             <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-full bg-card py-1.5 pr-4 pl-3">
@@ -55,9 +55,8 @@ export default function Next() {
         <div className="mt-3">
           <AddPerson label="Add and switch on" onAdded={n => { if (!attending.includes(n)) toggleAttend(n) }} />
         </div>
-      </section>
-      <section>
-        <h3 className="mb-1 text-xl font-bold">Best picks for tonight</h3>
+      </Collapse>
+      <Collapse id="next-picks" title="Best picks for tonight">
         <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped.</p>
         <PickControls />
         {!attending.length ? (
@@ -80,9 +79,8 @@ export default function Next() {
         ) : (
           <p className="text-muted-foreground">No clear pick yet. Ask the room to add watchlists or import Letterboxd and this fills in.</p>
         )}
-      </section>
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Pick order</h3>
+      </Collapse>
+      <Collapse id="next-order" title="Pick order">
         {order.length ? (
           <Card className="gap-0 py-2">
             {order.map((x, i) => (
@@ -95,19 +93,18 @@ export default function Next() {
         ) : (
           <p className="text-muted-foreground">Switch on whoever is coming and the seats fill up.</p>
         )}
-      </section>
-      <section>
-        <h3 className="mb-2 text-xl font-bold">On the attendees' watchlists</h3>
+      </Collapse>
+      <Collapse id="next-watchlists" title="On the attendees' watchlists">
         {top.length ? (
-          <ul className="flex flex-col gap-1.5">
+          <ul className="flex flex-col gap-3">
             {top.map(h => (
-              <li key={h.t + h.y}><a href={movieHref(h.t, h.y)} className="hover:underline">{h.t}</a> <small className="text-muted-foreground">{h.y || ""}</small> · {h.who.length} of {attending.length}: {h.who.join(", ")}{seenAmong(h).length > 0 && <span className="text-muted-foreground"> · already seen by {seenAmong(h).join(", ")}</span>}</li>
+              <li key={h.t + h.y}><MiniFilm title={h.t} year={h.y} note={<>{h.who.length} of {attending.length}: {h.who.join(", ")}{seenAmong(h).length > 0 && <> · already seen by {seenAmong(h).join(", ")}</>}</>} /></li>
             ))}
           </ul>
         ) : (
           <p className="text-muted-foreground">Upload watchlists on the Watchlists tab, then switch on who's here.</p>
         )}
-      </section>
+      </Collapse>
     </div>
   )
 }

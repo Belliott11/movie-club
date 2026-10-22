@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { movieHref } from "@/lib/movieLink"
+import { MiniFilm } from "@/components/MiniFilm"
 import { Button } from "@/components/ui/button"
 import { filmKey, groupProgress, upNext, type Plan, type PlanFilm } from "@/lib/plan"
 
@@ -22,8 +23,8 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
       {next && (
         <div className="rounded-xl bg-card p-3 ring-1 ring-foreground/10">
           <p className="text-sm text-muted-foreground">Up next: group {next.group.n}, {shout(next.group.title).toLowerCase()}</p>
-          <ul className="mt-1 flex flex-col gap-1">
-            {next.films.map(f => <li key={f.title} className="flex items-center justify-between gap-2"><a href={movieHref(f.title, f.year)} className="min-w-0 truncate font-medium hover:underline">{f.title}{f.year ? ` (${f.year})` : ""}</a>{plan.long.includes(f.title) && <span className="shrink-0 text-xs text-muted-foreground">long, save for a weekend</span>}</li>)}
+          <ul className="mt-2 flex flex-col gap-3">
+            {next.films.map(f => <li key={f.title}><MiniFilm title={f.title} year={f.year} note={plan.long.includes(f.title) ? "long, save for a weekend" : undefined} /></li>)}
           </ul>
         </div>
       )}

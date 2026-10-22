@@ -17,6 +17,7 @@ import { FilmSearch } from "@/components/FilmSearch"
 import { ImportNudge } from "@/components/ImportNudge"
 import { PickCard } from "@/components/PickCard"
 import { Card } from "@/components/ui/card"
+import { Collapse } from "@/components/Collapse"
 import { Input } from "@/components/ui/input"
 
 function SuggestionCard({ s }: { s: Suggestion }) {
@@ -123,8 +124,7 @@ export default function Suggest() {
         <Input name="year" type="number" aria-label="Year" placeholder="Year" value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
         <Button type="submit" className="h-10 px-4">Suggest</Button>
       </form>
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Suggested by the club</h3>
+      <Collapse id="sug-club" title="Suggested by the club">
         {sorted.length ? (
           <ul className="grid grid-cols-2 gap-3">
             {sorted.map(s => <li key={s.id}><SuggestionCard s={s} /></li>)}
@@ -132,9 +132,8 @@ export default function Suggest() {
         ) : (
           <p className="text-muted-foreground">No suggestions yet. The projector is warmed up: add a film above and everyone can vote on it.</p>
         )}
-      </section>
-      <section>
-        <h3 className="mb-1 text-xl font-bold">One of you loved it</h3>
+      </Collapse>
+      <Collapse id="sug-loved" title="One of you loved it">
         <p className="mb-3 text-sm text-muted-foreground">Films one of you rated 4 or higher on Letterboxd that nobody else has seen, so the rest of you can see it fresh.</p>
         {crowd.length ? (
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -153,9 +152,8 @@ export default function Suggest() {
         ) : (
           <p className="text-muted-foreground">{importedCount < 2 ? "This fills in once two or more people have imported their Letterboxd history." : "No film is loved by just one of you and unseen by the rest yet."}</p>
         )}
-      </section>
-      <section>
-        <h3 className="mb-1 text-xl font-bold">From your watchlists</h3>
+      </Collapse>
+      <Collapse id="sug-watchlists" title="From your watchlists">
         <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
         <PickControls />
         {!hasTmdb() ? (
@@ -204,7 +202,7 @@ export default function Suggest() {
             </ul>
           </details>
         )}
-      </section>
+      </Collapse>
     </div>
   )
 }

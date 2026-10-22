@@ -2,7 +2,8 @@ import { useState } from "react"
 import { X } from "lucide-react"
 import { FilmSearch } from "@/components/FilmSearch"
 import { Button } from "@/components/ui/button"
-import { movieHref } from "@/lib/movieLink"
+import { Collapse } from "@/components/Collapse"
+import { MiniFilm } from "@/components/MiniFilm"
 import { seenMatcher } from "@/lib/plan"
 import { useStore } from "@/lib/store"
 import { usePlan } from "@/lib/usePlan"
@@ -40,16 +41,18 @@ export function ClubShortlist() {
   }
 
   return (
-    <section>
-      <h3 className="mb-1 text-xl font-bold">Your club candidates</h3>
+    <Collapse id="next-candidates" title="Your club candidates">
       <p className="mb-2 text-sm text-muted-foreground">Films you'd like to bring to the club, {me}. Add your own or take any off; the ones you've seen or the club has played drop off by themselves.</p>
       {left.length > 0 ? (
-        <ul className="mb-2 flex flex-col gap-1">
+        <ul className="mb-3 flex flex-col gap-2">
           {left.map(i => (
-            <li key={i.t} className="flex items-center gap-1 rounded-lg bg-card py-1 pr-1 pl-3 ring-1 ring-foreground/10">
-              <a href={movieHref(i.t, i.y)} className="min-w-0 flex-1 truncate font-medium hover:underline">{i.t}{i.y ? <span className="font-normal text-muted-foreground"> {i.y}</span> : null}</a>
-              <Button variant="outline" className="h-10 shrink-0 px-3" disabled={asked.has(i.t.toLowerCase())} onClick={() => suggest(i.t, i.y ?? null)}>{asked.has(i.t.toLowerCase()) ? "Suggested" : "Suggest it"}</Button>
-              <button type="button" aria-label={`Take ${i.t} off your list`} onClick={() => remove(i)} className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"><X className="size-4" /></button>
+            <li key={i.t} className="rounded-lg bg-card p-2 ring-1 ring-foreground/10">
+              <MiniFilm title={i.t} year={i.y} action={
+                <span className="flex shrink-0 flex-col items-end">
+                  <button type="button" aria-label={`Take ${i.t} off your list`} onClick={() => remove(i)} className="-mt-1 -mr-1 flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"><X className="size-4" /></button>
+                  <Button variant="outline" className="-mt-2 h-9 px-3 text-xs" disabled={asked.has(i.t.toLowerCase())} onClick={() => suggest(i.t, i.y ?? null)}>{asked.has(i.t.toLowerCase()) ? "Suggested" : "Suggest it"}</Button>
+                </span>
+              } />
             </li>
           ))}
         </ul>
@@ -60,6 +63,6 @@ export function ClubShortlist() {
         <FilmSearch name="candidate" aria-label="Add a film to your club candidates" placeholder="Add a film to your list" value={title} onChange={t => { setTitle(t); setYear(null) }} onPick={h => { setTitle(h.title); setYear(h.year) }} />
         <Button type="submit" variant="outline" className="h-10 px-4" disabled={!title.trim()}>Add</Button>
       </form>
-    </section>
+    </Collapse>
   )
 }

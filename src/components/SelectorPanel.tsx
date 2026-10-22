@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { UserCheck } from "lucide-react"
+import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { fieldCls } from "@/components/field"
 import { useStore } from "@/lib/store"
@@ -11,8 +11,7 @@ export function SelectorPanel() {
   useEffect(() => { setName(selector ?? "") }, [selector])
   const turn = Math.max(0, ...movies.map(m => m.seq)) + 1
   return (
-    <section aria-label="This week's selector">
-      <h3 className="mb-1 flex items-center gap-1.5 text-xl font-bold"><UserCheck className="size-4" aria-hidden />Who picks this week</h3>
+    <Collapse id="next-selector" title="Who picks this week">
       <p className="mb-2 text-sm text-muted-foreground">
         {selector
           ? <><b className="text-foreground">{selector}</b>{me === selector ? " (you)" : ""} can set film number {turn} and deal the pick cards. Everyone else can watch.</>
@@ -30,6 +29,6 @@ export function SelectorPanel() {
       ) : (
         <p className="text-sm text-muted-foreground">Only the host (who set up sealed ratings) can change this.</p>
       )}
-    </section>
+    </Collapse>
   )
 }

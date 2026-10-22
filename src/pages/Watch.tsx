@@ -7,6 +7,8 @@ import { fetchFeed, mergeHistory } from "@/lib/lbrss"
 import { parseWatchlist } from "@/lib/csv"
 import { findEntry, parseExports, readZip } from "@/lib/letterboxd"
 import { fmt, key } from "@/lib/stats"
+import { Collapse } from "@/components/Collapse"
+import { MiniFilm } from "@/components/MiniFilm"
 import { useStore } from "@/lib/store"
 
 export default function Watch() {
@@ -143,8 +145,7 @@ export default function Watch() {
         </Card>
       )}
 
-      <section>
-        <h3 className="mb-2 text-xl font-bold">Who has imported</h3>
+      <Collapse id="watch-imported" title="Who has imported">
         {counts.size || Object.keys(lb).length ? (
           <ul className="flex flex-col gap-2">
             {[...new Set([...counts.keys(), ...Object.keys(lb)])].sort().map(n => (
@@ -155,11 +156,10 @@ export default function Watch() {
             ))}
           </ul>
         ) : <p className="text-muted-foreground">Nobody has imported yet. Upload an export to get the reels rolling.</p>}
-      </section>
-      <section>
-        <h3 className="mb-2 text-xl font-bold">On more than one watchlist (not watched yet)</h3>
-        {both.length ? <ul>{both.map(x => <li key={x.t + x.y}>{x.t} <small className="text-muted-foreground">{x.y || ""}</small> · {x.n} people</li>)}</ul> : <p className="text-muted-foreground">No overlaps yet.</p>}
-      </section>
+      </Collapse>
+      <Collapse id="watch-overlap" title="On more than one watchlist (not watched yet)">
+        {both.length ? <ul className="flex flex-col gap-3">{both.map(x => <li key={x.t + x.y}><MiniFilm title={x.t} year={x.y} note={`${x.n} people`} /></li>)}</ul> : <p className="text-muted-foreground">No overlaps yet.</p>}
+      </Collapse>
     </div>
   )
 }
