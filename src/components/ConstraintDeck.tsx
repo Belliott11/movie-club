@@ -60,13 +60,12 @@ export function ConstraintDeck() {
   const ctx: Ctx = useMemo(() => ({
     thisYear: new Date().getFullYear(),
     countries: new Set(movies.flatMap(m => (fixed[String(m.id)] ? [fixed[String(m.id)]] : tags[String(m.id)]?.countries ?? []))),
-    decades: new Set(movies.map(m => Math.floor(m.year / 10) * 10)),
     movementKeys: untouchedMovementKeys(new Set(movies.map(m => key(m.title, 0).split("|")[0]))),
   }), [movies, tags, fixed])
 
   // cards that need facts (length, language, country, genres) look the films up; only the most-wanted ones, to keep it light
   const sample = useMemo(() => [...pool].sort((a, b) => b.wantedBy - a.wantedBy || a.title.localeCompare(b.title)).slice(0, 60), [pool])
-  const needsFacts = !!card && !["old", "recent", "unseen", "lonely", "movement", "word", "decade"].includes(card.id)
+  const needsFacts = !!card && !["old", "recent", "movement", "word"].includes(card.id)
   const facts = useFacts(needsFacts && stage === "face-up" ? sample : [])
   const regions = useMemo(() => new Intl.DisplayNames(["en"], { type: "region" }), [])
   const cands: Cand[] = sample.map(c => {
