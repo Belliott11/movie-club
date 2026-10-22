@@ -1,0 +1,180 @@
+import { key } from "@/lib/stats"
+
+/**
+ * Discussion questions written for one film each, with spoilers: they assume you have seen it.
+ * Looked up by title and year. Films without an entry get the theme questions instead.
+ */
+const FILMS: [string, number, string[]][] = [
+  ["Princess Mononoke", 1997, [
+    "Ashitaka is cursed by hatred he never chose. What does the film say about whether you can carry hatred without being ruled by it?",
+    "Lady Eboshi frees lepers and women from brothels, and also destroys the forest. Is she a hero or a villain, and does the film's answer match yours?",
+    "San and Eboshi never reconcile. Why does the film refuse to pick a side between the forest and the ironworks?",
+    "The forest god is beheaded, and green returns to a changed land. What does the film think is lost when the wild is tamed, and does that ending feel like a win?",
+    "Ashitaka tells both sides to live. Is that a real answer, or a way of avoiding the choice?",
+    "Which side did you sympathize with at the start, and did that change?",
+    "What does the animation do here that live action couldn't: the tatarigami, the Shishigami at night, the kodama?"]],
+  ["Apocalypse Now", 1979, [
+    "Willard is sent to kill Kurtz for going rogue, but the army that sent him is doing worse in daylight. What is the film saying about who gets called insane?",
+    "Kilgore loves the smell of napalm and then wants to surf. Is the film mocking him, admiring him, or both? What does the playful tone do to the horror?",
+    "What do you make of Kurtz's \"the horror\"? Is he a prophet, a broken man, or a fraud?",
+    "The river trip moves from order into chaos. At which stop did you stop believing the war made sense, and what took you there?",
+    "Willard kills Kurtz, then doesn't take his place. Why not, and what is the ending saying about his journey?",
+    "How does the film treat the Vietnamese? Does a film about Vietnam made this way owe them more screen time?",
+    "Which version did you watch, and what do you think was gained or lost by that cut?"]],
+  ["Munich", 2005, [
+    "Avner starts as a believer and ends isolated and sleepless. At what point did the mission start costing him more than it gave?",
+    "The film lets the targets talk about home and family before they die. Did that make you question the mission, or the film?",
+    "Louis and his family sell information to anyone. What is the film saying about who profits from the cycle of revenge?",
+    "The film cuts the massacre against Avner's most private moments. What does Spielberg want us to think about violence and intimacy?",
+    "The last shot holds on the New York skyline. What is it asking you to feel, and is that fair?",
+    "Is the film too even-handed to be useful, or too sympathetic to the targets? Did you leave with an opinion on that?"]],
+  ["The Hunt", 2012, [
+    "Klara's lie is small and childlike, and it destroys Lucas. At what moment could it have been stopped, and by whom?",
+    "The adults believe the child without checking. Is the film arguing against that principle, or against how this town applies it?",
+    "Lucas holds back until the church on Christmas Eve. Why does the film wait, and what does that scene do?",
+    "The last scene: a shot in the woods that misses him. Did it end the story or reopen it?",
+    "How much of the town's cruelty came from fear, and how much from enjoying having a villain?",
+    "Theo, Klara's father and Lucas's best friend, has to choose whom to believe. What would you have done in his place?",
+    "The film keeps Klara sympathetic too. How do you hold her honesty about her feelings together with the damage?"]],
+  ["Jaws", 1975, [
+    "The shark is barely seen in the first half. What does holding it back do to your fear, and which scenes work best because of it?",
+    "Mayor Vaughn won't close the beaches. Is he a villain, or a recognizable person making a bad decision under pressure?",
+    "Quint's USS Indianapolis speech is the quietest scene in a monster movie. What does it add to him, and to the film?",
+    "Brody is afraid of the water and ends up killing the shark. What is the film's idea of heroism?",
+    "A cop, a scientist and a sailor each know something and each get something wrong. What?",
+    "How much of the film's power is two notes of John Williams? Imagine it without the score.",
+    "Is there a real villain here, or is the shark just nature? Does that change the message?"]],
+  ["Inception", 2010, [
+    "Does the film want you to know whether the top falls? Does your answer change what the ending means?",
+    "Mal is Cobb's guilt made into a monster. What is the film saying about grief and what happens when we won't let go?",
+    "Is Fischer's emotional breakthrough a manipulation or a gift? Does closure still count if it was planted?",
+    "The film treats an idea as something alive that can be planted. Is that how ideas work in real life?",
+    "Which dream level felt most like a dream, and which felt most like an action set piece?",
+    "Cobb walks away from certainty to be with his kids. Would you?",
+    "Is the plot the point, or just a way to carry the emotional story? Where do you land?"]],
+  ["City of God", 2002, [
+    "Li'l Zé and Rocket grow up in the same place. What is the film saying about choice, luck and environment?",
+    "The camera rushes and spins. How does that style make violence feel different from a film that watches from a distance?",
+    "Rocket narrates and takes the photographs but stays on the edge. Is his survival a triumph, an escape, or a compromise?",
+    "Benny seems like the one who could have saved everyone. What does his death say about hope in the favela?",
+    "The final image is a new generation of kids with guns. Is the cycle inevitable, or is the film trying to make you angry at the system?",
+    "The film is based on real people and events. Does that change how you judge the way it makes violence exciting?",
+    "How did the story jumping between decades change how you read its characters?"]],
+  ["Lost Highway", 1997, [
+    "Fred becomes Pete, then tries to be Fred again. What do you think happens: a psychogenic fugue, a supernatural event, or a dream?",
+    "The Mystery Man is in two places at once. What is he, and what does he do?",
+    "Renee and Alice are the same woman, in two roles. What is the film saying about desire and fantasy?",
+    "The film loops back on itself like a Möbius strip. Does having no solvable answer make it better or worse for you?",
+    "The videotapes arrive as an intrusion into a home. What does that say about surveillance and guilt?",
+    "How does the sound carry the dread? Which scene made you most uncomfortable?",
+    "Do we need to solve a film like this, or is it enough to feel it?"]],
+  ["A Clockwork Orange", 1971, [
+    "Alex is a monster who is also our narrator, and we enjoy his voice. Why does the film let us like him, and what does that do to us?",
+    "The Ludovico technique takes away his ability to choose violence. If goodness is forced, is it goodness at all?",
+    "In the end Alex is \"cured\" back into himself. Is the film arguing against Alex or against the people who treat him?",
+    "The state uses Alex as a weapon both ways. What is the film saying about politics and individuals?",
+    "Kubrick leaves out the book's last chapter, where Alex grows out of it. Is the film more cynical without it?",
+    "Is it dangerous to make violence this stylish, or is that exactly the point?"]],
+  ["The Conversation", 1974, [
+    "Harry Caul claims no responsibility for what his recordings lead to, and is haunted by it. What is the film saying about technicians and morality?",
+    "He mishears a line, and one emphasis changes everything. How much of the film is about hearing what we want to hear?",
+    "At the end he tears his apartment apart and plays saxophone in the wreckage. What has he lost, and what has he found?",
+    "Is Harry's paranoia a flaw, or the only sane response to what he knows?",
+    "How does the film make surveillance feel intimate rather than technical?",
+    "It came out around Watergate. Does it play more like a thriller or a portrait of one man?"]],
+  ["Clue", 1985, [
+    "The film has several endings. Which did you like best, and does a fixed ending matter in a mystery?",
+    "Every guest is being blackmailed in the shadow of 1950s paranoia. Is the joke about paranoia, or hypocrisy?",
+    "When you think back over the clues, how well does the puzzle hold up?",
+    "Why does the chaos (the singing telegram, the cop, the body count) work better in a mystery comedy than a tidy whodunit?",
+    "Which character made you laugh most, and which joke?",
+    "It's a film made from a board game. What does it do to be a film and not an ad?",
+    "How would this land if it were set today?"]],
+  ["Harold & Kumar Go to White Castle", 2004, [
+    "It's a stoner comedy and also a film about racial stereotypes. Which scenes handle that best, and which feel cheap?",
+    "Harold is the Asian American nerd and Kumar the Indian American slacker. How does the film play with and against those roles?",
+    "The cops and the rednecks are villains, but so is the casual racism of the \"nice\" characters. Who is the film actually aiming at?",
+    "Neil Patrick Harris playing himself as a reckless maniac became a big part of its legacy. Why did that work?",
+    "Is a quest for burgers a good enough story? What does the film say about wanting something silly badly enough?",
+    "Does the comedy hold up twenty years later, and is anything here that wouldn't be made today?"]],
+  ["RRR", 2022, [
+    "The film makes the friendship of two men its central love story. Does it work as romance, and what does it say about devotion?",
+    "Bheem and Raju serve opposing causes with different reasons. Whose sacrifice is bigger?",
+    "These were real revolutionaries who never met. Does it matter that the film invents their friendship?",
+    "How does the over-the-top action serve the politics? Is it empty spectacle or earned catharsis?",
+    "The British are cartoon villains. Does that undercut the anti-colonial message or sharpen it?",
+    "Which musical number or fight made you most joyful, and what did it do?",
+    "Why do we cheer for violence here when we might not elsewhere?"]],
+  ["Perfect Days", 2023, [
+    "Hirayama repeats the same day. Is his life contentment, avoidance, or both?",
+    "We learn almost nothing about his past, only hints of a rift with his family. How much does the film owe us an explanation?",
+    "His niece, his coworker Takashi, the woman at the bar: what does each relationship disturb or confirm in his routine?",
+    "He photographs light through leaves. What does he see in it, and what do you see in his looking?",
+    "The final shot holds on his face, crying and smiling. What is he feeling?",
+    "Is this a film about being content, or about the privilege of watching someone else be content?",
+    "How do the cassettes work as memory and as character?"]],
+  ["Z", 1969, [
+    "The film opens by saying any resemblance to real events is deliberate. What does that do to how you watch?",
+    "The magistrate pursues the truth against the whole system. Does the film think that is possible?",
+    "The ending says what happened to the characters afterward. Does it leave you hopeful or crushed?",
+    "How does the film use thriller pacing to make a political point?",
+    "Is a political film more effective when it plays like a thriller, or like a lecture?",
+    "The closing titles list what the regime banned. What does that list tell you about how authoritarians think?"]],
+  ["Vitalina Varela", 2019, [
+    "Vitalina arrives in Lisbon three days after her husband's funeral. What does the film say about arriving too late for what matters?",
+    "The film is almost entirely in darkness. What did that do to how you watched: meditative, or exhausting?",
+    "Pedro Costa casts non-actors in versions of their own lives. Does that make it feel truer, or more staged?",
+    "She waited decades for the ticket. What does the film say about waiting, migration, and the people left behind?",
+    "Is the story about discovering her husband's secret life, or about deciding who she is without him?",
+    "Is slow cinema a gift or a barrier here? What would make you recommend this, or not?",
+    "Which shot looked most like a painting to you?"]],
+  ["Heroic Times", 1983, [
+    "The hero has inhuman strength and a fierce temper. Is that strength a gift or a curse in this story?",
+    "He runs as a murderer and finds a new life as a knight. Does a new identity wipe out the old crime?",
+    "He wants noble knighthood and ends up with disillusionment. What does the film say about ideals of chivalry?",
+    "The film shows the horrors of war and ugly human vices. Who exploits the hero, and why does he let them?",
+    "How do the film's look and music shape how you take its violence?",
+    "What was it like to watch a Hungarian film from 1983 without much context? What helped, and what was missing?"]],
+  ["Pan's Labyrinth", 2006, [
+    "Ofelia's tasks and Captain Vidal's cruelty run side by side. Which world is more real, and which does the film want you to trust?",
+    "Ofelia refuses to spill her brother's blood and so passes the final test. What is the film saying about obedience and disobedience?",
+    "Is the fantasy an escape from fascism, or a way of facing it?",
+    "Vidal is a monster who is also afraid of dying and of being a father. What does he want, and what does the film say about men with power?",
+    "Mercedes and the doctor choose resistance quietly. How does the film compare their courage to Ofelia's?",
+    "Is Ofelia's ending happy or tragic? Does the film leave room for both?",
+    "Which creature scared or moved you most, the Pale Man or the faun?"]],
+  ["Dogville", 2003, [
+    "The stage-like set with chalk outlines removes the walls. What does seeing everything do to how you judge the town?",
+    "Grace's presence turns the town's kindness into exploitation step by step. At what point did you turn on them?",
+    "Tom is the film's moral voice and also the first to betray her. What is the film saying about intellectuals and good intentions?",
+    "At the end Grace has the power and uses it. Is that justice, revenge, or something worse?",
+    "The closing montage plays Bowie's \"Young Americans\" over Depression-era photographs. What is von Trier saying about America?",
+    "Was the town always bad, or did they become bad because they could?",
+    "Is Grace's forgiveness at the start a virtue, a pride, or a trap?"]],
+  ["First Blood", 1982, [
+    "Rambo is hunted by a small-town sheriff. Who starts the conflict, and could it have been avoided?",
+    "Trautman says he created a killing machine. What does the film say about soldiers coming home?",
+    "In the last scene Rambo breaks down and tells his story. Does that redeem the film's violence?",
+    "This film is much quieter and sadder than its sequels. Does it feel like an action film or a tragedy?",
+    "How does the film treat Teasle: villain, victim, or a man out of his depth?",
+    "How much of the film's power is Stallone's performance of exhaustion?"]],
+  ["On Her Majesty's Secret Service", 1969, [
+    "George Lazenby played Bond only once. Does the film make this Bond different from the others, and does it work?",
+    "Bond actually falls in love and marries Tracy. Does the film make you believe it?",
+    "The ending is the franchise's darkest moment. Why did this film dare, and why didn't later ones follow?",
+    "The ski chase, the bobsled, the mountain base: which action scenes hold up best?",
+    "Bond poses as a genealogist and wears a kilt. How does the film play with the series' own formula?",
+    "Is this the best Bond film or an underrated oddity?"]],
+  ["The Beyond", 1981, [
+    "Fulci doesn't care about plot logic. What does the film do instead to create dread?",
+    "Do you read the hotel as a literal gateway to hell, or as an allegory for something?",
+    "The ending in the corridor of eternal nothing: what did you make of it?",
+    "Where do the gore effects serve the film, and where do they feel excessive?",
+    "Whom do you want to survive, and does the film care?",
+    "What does it mean for a horror film to refuse to explain itself?"]],
+]
+
+const BY_KEY = new Map(FILMS.map(([t, y, q]) => [key(t, y), q]))
+
+/** Questions written for this exact film, if there are any. */
+export const curatedQuestions = (title: string, year: number) => BY_KEY.get(key(title, year)) ?? BY_KEY.get(key(title, year + 1)) ?? BY_KEY.get(key(title, year - 1))
