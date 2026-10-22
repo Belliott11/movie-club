@@ -96,3 +96,8 @@ export function favoritesOf(lb: LbHistory, name: string, n = 4): { title: string
     .sort((a, b) => b.rating - a.rating || seen(b.title, b.year) - seen(a.title, a.year) || a.title.localeCompare(b.title))
     .slice(0, n)
 }
+
+/** The four films a person chose as their favorites, in their order, each with their Letterboxd rating when they have one (0 when not). Empty when they haven't chosen. */
+export function chosenFavorites(chosen: { t: string; y: number }[] | undefined, lb: LbHistory, name: string): { title: string; year: number; rating: number }[] {
+  return (chosen ?? []).map(c => ({ title: c.t, year: c.y, rating: findEntry(lb[name], c.t, c.y)?.[2] ?? 0 }))
+}

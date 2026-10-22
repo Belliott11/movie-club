@@ -13,7 +13,8 @@ import { PersonAtlas } from "@/components/PersonAtlas"
 import { TasteDrift } from "@/components/TasteDrift"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
-import { clubVsHome, favoritesOf } from "@/lib/lbstats"
+import { FavoritesEditor } from "@/components/FavoritesEditor"
+import { chosenFavorites, clubVsHome, favoritesOf } from "@/lib/lbstats"
 import { avg, awardWinners, deviations, fmt, groupAvg, histogram, median, memberStats, tasteOverlap, tilt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
@@ -22,8 +23,8 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function MemberPage({ name, own = false }: { name: string; own?: boolean }) {
-  const { movies, members, lb, loadLb, me: signedIn } = useStore()
-  useEffect(() => { loadLb() }, [loadLb])
+  const { movies, members, lb, loadLb, loadSeal, favs, me: signedIn } = useStore()
+  useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   const back = own ? null : (
     <a href="#/stats" className={buttonVariants({ variant: "ghost", className: "-ml-2 h-10 w-fit gap-1 px-2" })}><ArrowLeft /> Stats</a>
   )
@@ -42,7 +43,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
   const dev = deviations(movies, name).slice(0, 8)
   const me = memberStats(movies, members).find(p => p.n === name)
   const w = awardWinners(movies, members)
-  const lbFavs = favoritesOf(lb, name, 4)
+  const picked = chosenFavorites(favs[name], lb, name)
+  const lbFavs = picked.length ? picked : favoritesOf(lb, name, 4)
   const home = clubVsHome(movies, lb, name)
 
   const tags = [
@@ -104,8 +106,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
       {(lbFavs.length > 0 || home.count >= 3) && (
         <section className="flex flex-col gap-6">
           {lbFavs.length > 0 && (
-            <Collapse id="mp-lbfavs" title="Letterboxd favorites">
-              <p className="mb-3 text-sm text-muted-foreground">{name}'s highest-rated films on Letterboxd.</p>
+            <Collapse id="mp-lbfavs" title={picked.length ? `${name}'s four favorites` : "Letterboxd favorites"}>
+              <p className="mb-3 text-sm text-muted-foreground">{picked.length ? `Chosen by ${name}, in order, with their Letterboxd rating.` : `${name}'s highest-rated films on Letterboxd.`}</p>
               <ul className="grid grid-cols-2 gap-3">
                 {lbFavs.map(f => <li key={f.title + f.year}><FavoriteStill {...f} /></li>)}
               </ul>
@@ -124,6 +126,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
           )}
         </section>
       )}
+
+      {signedIn === name && <FavoritesEditor name={name} />}
 
       {signedIn === name && <MyPlan name={name} history={lb[name]} />}
 

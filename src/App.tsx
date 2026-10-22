@@ -12,7 +12,7 @@ import { ChartColumn, Film, Lightbulb, RefreshCw, Search, User, Users, Bookmark 
 import { SearchOverlay } from "@/components/SearchOverlay"
 import { ThemeMenu } from "@/components/ThemeMenu"
 import { pickHeroFilm } from "@/lib/hero"
-import { favoritesOf } from "@/lib/lbstats"
+import { chosenFavorites, favoritesOf } from "@/lib/lbstats"
 import { useStills } from "@/lib/useStills"
 import { useFilmInfo } from "@/lib/useFilmInfo"
 import { key, pickOrder } from "@/lib/stats"
@@ -67,7 +67,7 @@ function ClubCode() {
 }
 
 function Shell() {
-  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini, lb, loadLb } = useStore()
+  const { ready, error, offline, movies, members, me, setMe, attending, refresh, toast, dismissToast, mini, lb, loadLb, loadSeal, favs } = useStore()
   const { pull, busy, ready: willRefresh } = usePull(refresh)
   const [adding, setAdding] = useState(false)
   // easter egg: five quick taps on the title bring up a clapperboard
@@ -104,11 +104,11 @@ function Shell() {
   useEffect(() => { if (firstTab.current) { firstTab.current = false; return } setSpin(s => s + 1) }, [tab])
   const heroFilm = pickHeroFilm(movies, m => !!stillOf(m), [page, sub ?? ""].filter(Boolean), new Date(), spin)
   // a person's page opens on their own favorite from Letterboxd when they have imported, otherwise on their favorite club film
-  useEffect(() => { if (page === "people") loadLb() }, [page, loadLb])
-  const lbFav = useMemo(() => (page === "people" && sub ? favoritesOf(lb, sub, 1)[0] : undefined), [page, sub, lb])
+  useEffect(() => { if (page === "people") { loadLb(); loadSeal() } }, [page, loadLb, loadSeal])
+  const lbFav = useMemo(() => (page === "people" && sub ? (chosenFavorites(favs[sub], lb, sub)[0] ?? favoritesOf(lb, sub, 1)[0]) : undefined), [page, sub, lb, favs])
   const favInfo = useFilmInfo(lbFav?.title ?? "", lbFav?.year ?? null)
   const subject = lbFav
-    ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: `${sub}'s favorite on Letterboxd` }
+    ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: favs[sub!]?.length ? `${sub}'s favorite` : `${sub}'s favorite on Letterboxd` }
     : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
   const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject, spin)
   const active = tab === "people" ? (sub === me ? "me" : "stats") : tab // member pages live under Stats, yours under Me

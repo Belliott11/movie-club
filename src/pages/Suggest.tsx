@@ -6,7 +6,7 @@ import { passesFilters, useFacts } from "@/lib/filmFacts"
 import { movieHref } from "@/lib/movieLink"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
-import { favoritesOf } from "@/lib/lbstats"
+import { chosenFavorites, favoritesOf } from "@/lib/lbstats"
 import { crowdPicks } from "@/lib/picks"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -49,7 +49,7 @@ const writeRecs = (sig: string, recs: Rec[]) => { try { localStorage.setItem(REC
 type Rec = { id: number; title: string; year: number; because: string; wantedBy: string[]; poster: string | null; overview: string; score: number }
 
 export default function Suggest() {
-  const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb, watchlist } = useStore()
+  const { movies, suggestions, suggest, flags, me, setFlag, lb, loadLb, watchlist, favs } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   // the same inputs give the same answer, so a repeat visit shows it at once (and for a day, skips the lookups)
   const sig = [movies.length, watchlist.length, me, Object.values(lb).reduce((t, h) => t + h.length, 0)].join("|")
@@ -74,7 +74,7 @@ export default function Suggest() {
       }
       const cands = [...pool.values()].filter(c => seenBy(lb, c.title, c.year).length < 2)
       // seeds: your own Letterboxd favorites first (films the club hasn't watched), then the club's highest-rated films
-      const mine = me ? favoritesOf(lb, me, 5).filter(f => !played.has(key(f.title, f.year))) : []
+      const mine = me ? [...chosenFavorites(favs[me], lb, me), ...favoritesOf(lb, me, 5)].filter(f => !played.has(key(f.title, f.year))) : []
       const seeds: { id: number; title: string }[] = []
       for (const [f, hit] of await Promise.all(mine.map(async f => [f, await searchFilm(f.title, f.year)] as const))) if (hit?.id) seeds.push({ id: hit.id, title: f.title })
       seeds.push(...[...movies].filter(m => m.tmdb_id && (groupAvg(m) ?? 0) >= 3.5).sort((a, b) => (groupAvg(b) ?? 0) - (groupAvg(a) ?? 0)).slice(0, 10).map(m => ({ id: m.tmdb_id!, title: m.title })))
