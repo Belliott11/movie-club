@@ -35,3 +35,26 @@ export async function fetchFeed(username: string): Promise<LbEntry[]> {
   if (!res.ok) throw new Error("Couldn't reach Letterboxd. Check the lb-rss function is deployed in Supabase.")
   return parseRss(await res.text())
 }
+
+/** Films on one page of a public Letterboxd watchlist, read from the page's poster markup ("Title (2024)"). Films without a year are skipped. */
+export function parseWatchlistPage(html: string): { title: string; year: number }[] {
+  const out: { title: string; year: number }[] = []
+  for (const m of html.matchAll(/data-item-name="([^"]*)"/g)) {
+    const t = unescape(m[1].replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))).match(/^(.*) \((\d{4})\)$/)
+    if (t) out.push({ title: t[1], year: +t[2] })
+  }
+  return out
+}
+
+/** A person's whole public watchlist, one page at a time (28 films each), stopping at the first empty page. */
+export async function fetchWatchlist(username: string): Promise<{ title: string; year: number }[]> {
+  const all = new Map<string, { title: string; year: number }>()
+  for (let page = 1; page <= 40; page++) {
+    const res = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/lb-rss?u=${encodeURIComponent(username.trim())}&watchlist=${page}`, { headers: { apikey: CONFIG.SUPABASE_KEY, Authorization: `Bearer ${CONFIG.SUPABASE_KEY}` } })
+    if (!res.ok) throw new Error("Couldn't read your Letterboxd watchlist.")
+    const films = parseWatchlistPage(await res.text())
+    if (!films.length) break
+    for (const f of films) all.set(key(f.title, f.year), f)
+  }
+  return [...all.values()]
+}

@@ -3,7 +3,7 @@ import { Avatar } from "@/components/Avatar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { fetchFeed, mergeHistory } from "@/lib/lbrss"
+import { fetchFeed, fetchWatchlist, mergeHistory } from "@/lib/lbrss"
 import { parseWatchlist } from "@/lib/csv"
 import { findEntry, parseExports, readZip } from "@/lib/letterboxd"
 import { fmt, key } from "@/lib/stats"
@@ -30,8 +30,11 @@ export default function Watch() {
     try {
       const fresh = await fetchFeed(name)
       await importLb(mergeHistory(lb[me] ?? [], fresh))
+      // the watchlist is replaced by Letterboxd's current one; an empty or failed read leaves yours alone
+      const wl = await fetchWatchlist(name).catch(() => [])
+      if (wl.length) await importWatchlist(wl.map(w => ({ member: me, ...w })))
       localStorage.setItem(userKey, name.trim()); localStorage.setItem(`${userKey}:at`, String(Date.now()))
-      if (!quiet) setMsg(`Synced ${fresh.length} recent ${fresh.length === 1 ? "film" : "films"} from Letterboxd for ${me}.`)
+      if (!quiet) setMsg(`Synced ${fresh.length} recent ${fresh.length === 1 ? "film" : "films"}${wl.length ? ` and ${wl.length} on your watchlist` : ", but not your watchlist (deploy the updated lb-rss function, and check the watchlist is public)"} for ${me}.`)
     } catch (err) {
       if (!quiet) setMsg((err as Error).message)
     } finally {
@@ -99,7 +102,7 @@ export default function Watch() {
     <div className="stagger flex flex-col gap-6">
       {me && (
         <Collapse id="watch-sync" title="Sync from your Letterboxd profile"><Card className="gap-3 px-5">
-          <p className="text-sm text-muted-foreground">Enter your Letterboxd username (your profile must be public). It adds your latest diary entries and ratings, and checks again about every 6 hours. For your full history, upload the export below once.</p>
+          <p className="text-sm text-muted-foreground">Enter your Letterboxd username (your profile must be public). It adds your latest diary entries and ratings and replaces your watchlist with your current Letterboxd one, and checks again about every 6 hours. For your full history, upload the export below once.</p>
           <form className="flex flex-wrap gap-2" onSubmit={e => { e.preventDefault(); sync(user) }}>
             <Input value={user} onChange={e => setUser(e.target.value)} placeholder="Letterboxd username" aria-label="Letterboxd username" autoCapitalize="none" autoCorrect="off" className="h-11 min-w-48 flex-1" />
             <Button type="submit" className="h-11 px-4" disabled={syncing || !user.trim()}>{syncing ? "Syncing…" : "Sync now"}</Button>

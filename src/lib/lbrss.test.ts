@@ -16,3 +16,10 @@ test("the feed updates ratings and adds films, but an unrated entry keeps the ol
   expect(merged).toEqual(expect.arrayContaining([["Heat", 1995, 4], ["Alien", 1979, 5], ["Tom & Jerry", 2021, 2]]))
   expect(merged).toHaveLength(3)
 })
+
+import { parseWatchlistPage } from "./lbrss"
+import { expect as ex, it as t } from "vitest"
+t("reads film names and years off a watchlist page", () => {
+  const html = '<div data-item-name="Big World (2024)"></div><div data-item-name="Amélie &amp; Co (2001)"></div><div data-item-name="No Year"></div>'
+  ex(parseWatchlistPage(html)).toEqual([{ title: "Big World", year: 2024 }, { title: "Amélie & Co", year: 2001 }])
+})
