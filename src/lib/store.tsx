@@ -69,6 +69,9 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
+  /** People who don't use Letterboxd, so the site stops asking them to import. Loads with loadSeal. */
+  noLb: string[]
+  setNoLb: (member: string, on: boolean) => Promise<void>
   /** The four films each player has picked as their favorites, in order. Loads with loadSeal. */
   favs: Record<string, { t: string; y: number }[]>
   setFavs: (member: string, list: { t: string; y: number }[]) => Promise<void>
@@ -136,6 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   sealRef.current = seal
   const sealLoaded = useRef(false)
   const [countries, setCountries] = useState<Record<string, string>>({})
+  const [noLb, setNoLbState] = useState<string[]>([])
   const [favs, setFavsState] = useState<Record<string, { t: string; y: number }[]>>({})
   const [candidates, setCandidatesState] = useState<Record<string, { add: { t: string; y?: number }[]; hide: string[] }>>({})
   // who picks this week and the cards dealt, both tied to the number of the film being chosen so they lapse once it's added
@@ -387,6 +391,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setCountries(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("country:")).map(r => [r.key.slice(8), r.value])))
         setCandidatesState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("cand:")).flatMap(r => { try { return [[r.key.slice(5), JSON.parse(r.value)] as const] } catch { return [] } })))
         setFavsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("favs:")).flatMap(r => { try { return [[r.key.slice(5), JSON.parse(r.value)] as const] } catch { return [] } })))
+        setNoLbState((s.data as { key: string }[]).filter(r => r.key.startsWith("nolb:")).map(r => r.key.slice(5)))
         const json = (k: string) => { try { return JSON.parse(get(k) ?? "null") } catch { return null } }
         setTurnState({ selector: json("selector"), deck: json("deck") })
         const by: Record<string, string[]> = {}
@@ -399,6 +404,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setTurnState(lsGet("turn-local-v1", { selector: null, deck: null }))
     setCandidatesState(lsGet("candidates-local-v1", {}))
     setFavsState(lsGet("favs-local-v1", {}))
+    setNoLbState(lsGet("nolb-local-v1", []))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -462,6 +468,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return next
     })
     if (sealRef.current.shared && sb) fail((list.length ? await sb.from("club_settings").upsert({ key: `favs:${member}`, value: JSON.stringify(list) }) : await sb.from("club_settings").delete().eq("key", `favs:${member}`)).error)
+  }, [])
+  const setNoLb = useCallback(async (member: string, on: boolean) => {
+    setNoLbState(all => {
+      const next = on ? [...new Set([...all, member])] : all.filter(n => n !== member)
+      if (!sealRef.current.shared) lsSet("nolb-local-v1", next)
+      return next
+    })
+    if (sealRef.current.shared && sb) fail((on ? await sb.from("club_settings").upsert({ key: `nolb:${member}`, value: "1" }) : await sb.from("club_settings").delete().eq("key", `nolb:${member}`)).error)
   }, [])
   const setSelector = useCallback(async (name: string | null) => { await putTurn("selector", name ? { name, turn: currentTurn() } : null) }, [])
   const setDeck = useCallback(async (d: { drawn: string[]; used: string[] }) => { await putTurn("deck", { turn: currentTurn(), ...d }) }, [])
@@ -685,7 +699,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: turnState.deck.used } : { drawn: [], used: turnState.deck ? [...turnState.deck.used, ...turnState.deck.drawn] : [] }
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }
