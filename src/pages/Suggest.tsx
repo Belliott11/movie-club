@@ -14,7 +14,6 @@ import type { Suggestion } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { FilmSearch } from "@/components/FilmSearch"
 import { ImportNudge } from "@/components/ImportNudge"
-import { LovedByOne } from "@/components/LovedByOne"
 import { Card } from "@/components/ui/card"
 import { Collapse } from "@/components/Collapse"
 import { Input } from "@/components/ui/input"
@@ -128,10 +127,6 @@ export default function Suggest() {
         ) : (
           <p className="text-muted-foreground">No suggestions yet. The projector is warmed up: add a film above and everyone can vote on it.</p>
         )}
-      </Collapse>
-      <Collapse id="sug-loved" title="One of you loved it">
-        <p className="mb-3 text-sm text-muted-foreground">Films one of you rated 4 or higher on Letterboxd that nobody else has seen, so the rest of you can see it fresh.</p>
-        <LovedByOne />
       </Collapse>
       <Collapse id="sug-watchlists" title="From your watchlists">
         <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
