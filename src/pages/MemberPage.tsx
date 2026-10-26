@@ -201,7 +201,7 @@ function Partner({ label, o, name, other }: { label: string; o: { diff: number; 
   const closeness = Math.max(0, 1 - o.diff / 1.5)
   return (
     <a href={personHref(other)} className="flex items-center gap-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10 hover:bg-muted">
-      <span className="flex -space-x-2"><Avatar name={name} className="ring-2 ring-card" /><Avatar name={other} className="ring-2 ring-card" /></span>
+      <span className="flex shrink-0 -space-x-2"><Avatar name={name} className="ring-2 ring-card" /><Avatar name={other} className="ring-2 ring-card" /></span>
       <span className="min-w-0 flex-1">
         <span className="block text-xs text-muted-foreground">{label}</span>
         <span className="block font-medium">{other}</span>

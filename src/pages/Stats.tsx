@@ -204,7 +204,7 @@ export default function Stats() {
                 <Card className="gap-0 py-2">
                   {(twins.length > 3 ? [...twins.slice(0, 3), twins[twins.length - 1]] : twins).map((t, i, shown) => [i === 0 ? "Closest" : t === twins[twins.length - 1] ? "Furthest apart" : "Next closest", t, shown] as const).map(([label, t]) => (
                     <div key={label + t.a + t.b} className="flex items-center gap-3 px-4 py-2">
-                      <span className="flex -space-x-2"><Avatar name={t.a} className="ring-2 ring-card" /><Avatar name={t.b} className="ring-2 ring-card" /></span>
+                      <span className="flex shrink-0 -space-x-2"><Avatar name={t.a} className="ring-2 ring-card" /><Avatar name={t.b} className="ring-2 ring-card" /></span>
                       <span className="min-w-0 flex-1"><b>{t.a}</b> and <b>{t.b}</b><br /><span className="text-sm text-muted-foreground">{label}: {fmt(t.gap)} stars apart over {t.shared} films</span></span>
                     </div>
                   ))}

@@ -58,7 +58,7 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
         </label>
       </div>
       <div className="flex items-center gap-4 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
-        <span className="flex -space-x-2"><Avatar name={name} /><Avatar name={who} /></span>
+        <span className="flex shrink-0 -space-x-2"><Avatar name={name} /><Avatar name={who} /></span>
         <div className="min-w-0">
           {h.match != null
             ? <p><b className="font-display text-3xl">{h.match}%</b> <span className="text-muted-foreground">alike</span></p>
