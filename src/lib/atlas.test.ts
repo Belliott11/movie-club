@@ -54,3 +54,12 @@ test("the club's whole history counts each film once, rated by the average of ev
   expect(by.Jaws).toBe(4) // only Bo rated it
   expect(by["Only Club"]).toBeNull()
 })
+
+test("a co-production counts once for each of its countries", () => {
+  const h: LbEntry[] = [["Pan's Labyrinth", 2006, 4], ["The Platform", 2019, 3], ["Amelie", 2001, null]]
+  const codes: Record<string, string[]> = { "Pan's Labyrinth": ["MX", "ES", "ES"], "The Platform": ["ES"], Amelie: ["FR"] }
+  const t = tallyCountries(h, e => codes[e[0]])
+  expect(t.find(c => c.code === "ES")).toEqual({ code: "ES", n: 2, avg: 3.5 })
+  expect(t.find(c => c.code === "MX")?.n).toBe(1)
+  expect(t.find(c => c.code === "FR")).toEqual({ code: "FR", n: 1, avg: null })
+})

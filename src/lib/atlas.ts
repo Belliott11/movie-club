@@ -73,15 +73,17 @@ export function mergeHistories(club: { title: string; year: number; avg: number 
 const OLD: Record<string, string> = { SU: "RU", XC: "CZ", YU: "RS", DD: "DE", XG: "DE" }
 
 /** How many films of each country someone has watched, and their average rating for it. `codeOf` says which country a film is from (unknown films are left out). */
-export function tallyCountries(history: LbEntry[], codeOf: (e: LbEntry) => string | undefined) {
+export function tallyCountries(history: LbEntry[], codeOf: (e: LbEntry) => string | string[] | undefined) {
   const t = new Map<string, { n: number; rated: number[] }>()
   for (const e of history) {
-    const c = OLD[codeOf(e) ?? ""] ?? codeOf(e) // former countries count as today's
-    if (!c) continue
-    const x = t.get(c) ?? { n: 0, rated: [] }
-    x.n++
-    if (e[2] != null) x.rated.push(e[2])
-    t.set(c, x)
+    const got = codeOf(e)
+    // a co-production counts for each of its countries once, and former countries count as today's
+    for (const c of new Set([got ?? []].flat().filter(Boolean).map(k => OLD[k] ?? k))) {
+      const x = t.get(c) ?? { n: 0, rated: [] }
+      x.n++
+      if (e[2] != null) x.rated.push(e[2])
+      t.set(c, x)
+    }
   }
   return [...t].map(([code, x]) => ({ code, n: x.n, avg: x.rated.length ? x.rated.reduce((a, b) => a + b, 0) / x.rated.length : null }))
     .sort((a, b) => b.n - a.n || a.code.localeCompare(b.code))

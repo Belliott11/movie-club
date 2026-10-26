@@ -6,7 +6,7 @@ import { movieHref } from "@/lib/movieLink"
 import { Bars, Tags } from "@/components/Breakdown"
 import { continentOfCode, regionOfCode } from "@/lib/continents"
 import { blindspots, decadeOf, entryKey, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
-import { loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type CountryCache, type GenreCache } from "@/lib/lbCountries"
+import { loadAllCountries, loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type AllCountries, type CountryCache, type GenreCache } from "@/lib/lbCountries"
 import { findEntry, type LbEntry } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -19,14 +19,17 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
   const { suggest } = useStore()
   const [cache, setCache] = useState<CountryCache>(loadCountryCache)
   const [genreCache, setGenreCache] = useState<GenreCache>(loadGenreCache)
+  const [allCache, setAllCache] = useState<AllCountries>(loadAllCountries)
+  // every country a film is credited to; films looked up before co-productions were kept fall back to their main country
+  const codesOf = (e: LbEntry) => allCache[entryKey(e)] ?? (cache[entryKey(e)] ? [cache[entryKey(e)]] : [])
   const [running, setRunning] = useState(false)
   const stop = useRef(false)
   useEffect(() => () => { stop.current = true }, [])
-  const known = history.filter(e => cache[entryKey(e)]).length, looked = history.filter(e => cache[entryKey(e)] !== undefined && genreCache[entryKey(e)] !== undefined).length
-  const counts = useMemo(() => tallyCountries(history, e => cache[entryKey(e)] || undefined), [history, cache])
+  const known = history.filter(e => codesOf(e).length).length, looked = history.filter(e => cache[entryKey(e)] !== undefined && genreCache[entryKey(e)] !== undefined && allCache[entryKey(e)] !== undefined).length
+  const counts = useMemo(() => tallyCountries(history, codesOf), [history, cache, allCache])
   const spots = useMemo(() => blindspots(counts), [counts])
-  const continents = useMemo(() => tallyBy(history, e => { const c = continentOfCode(cache[entryKey(e)]); return c ? [c] : [] }).filter(c => c.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
-  const regions = useMemo(() => tallyBy(history, e => { const r = regionOfCode(cache[entryKey(e)]); return r ? [r] : [] }).filter(r => r.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
+  const continents = useMemo(() => tallyBy(history, e => { return codesOf(e).map(continentOfCode).filter((c): c is NonNullable<typeof c> => !!c) }).filter(c => c.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
+  const regions = useMemo(() => tallyBy(history, e => { return codesOf(e).map(regionOfCode).filter((r): r is NonNullable<typeof r> => !!r) }).filter(r => r.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
   const decades = useMemo(() => tallyBy(history, e => (e[1] ? [decadeOf(e[1])] : [])).filter(d => d.rated > 0).sort((a, b) => a.name.localeCompare(b.name)), [history])
   const genres = useMemo(() => tallyBy(history, e => genreCache[entryKey(e)] ?? []), [history, genreCache])
   const moves = useMemo(() => movementBlindspots(history).slice(0, 5), [history])
@@ -39,7 +42,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
 
   const go = async () => {
     stop.current = false; setRunning(true)
-    await resolveCountries(history, (c, g) => { setCache(c); setGenreCache(g) }, () => stop.current)
+    await resolveCountries(history, (c, g, a) => { setCache(c); setGenreCache(g); setAllCache(a) }, () => stop.current)
     setRunning(false)
   }
   const top = counts.slice(0, 8), max = Math.max(1, ...top.map(c => c.n))
@@ -68,6 +71,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
             ))}
           </ul>
         )}
+        {counts.length > 0 && <p className="mt-2 text-xs text-muted-foreground">A film made in several countries counts for each of them.</p>}
         {complete && known < history.length && <p className="mt-2 text-xs text-muted-foreground">{history.length - known} films had no country on TMDB and are left out.</p>}
       </div>
       </Collapse>
