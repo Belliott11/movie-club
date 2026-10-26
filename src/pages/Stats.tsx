@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
 import { Collapse, setAllPanels } from "@/components/Collapse"
@@ -16,11 +16,9 @@ import { Scale } from "@/components/Scale"
 import { SortTable } from "@/components/SortTable"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
 import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
 import { mergeHistories } from "@/lib/atlas"
-import { isUnused } from "@/lib/people"
 import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ratingRange, spread, tilt, trend } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
@@ -30,7 +28,7 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function Stats() {
-  const { movies, members, watchlist, suggestions, renameMember, removeMember, lb, loadLb } = useStore()
+  const { movies, members, watchlist, suggestions, lb, loadLb } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
@@ -240,13 +238,6 @@ export default function Stats() {
         )}
       </Collapse>
 
-      <Collapse id="manage" title="Manage people" defaultOpen={false}>
-        <p className="mb-2 text-sm text-muted-foreground">Rename someone, or type an existing name to merge two spellings. Ratings, picks, watchlists and votes move over.</p>
-        <Card className="gap-0 py-1">
-          {members.map(n => <PersonRow key={n} name={n} unused={isUnused(n, movies, watchlist, suggestions)} onRename={to => renameMember(n, to)} onRemove={() => removeMember(n)} />)}
-        </Card>
-      </Collapse>
-
       <WatchDates />
 
       <Collapse id="download" title="Download your data" defaultOpen={false}>
@@ -304,23 +295,3 @@ function RaterDots({ m }: { m: Movie }) {
   )
 }
 
-function PersonRow({ name, unused, onRename, onRemove }: { name: string; unused: boolean; onRename: (to: string) => void; onRemove: () => void }) {
-  const [editing, setEditing] = useState(false)
-  const [to, setTo] = useState(name)
-  if (!editing) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-1">
-        <a className="flex flex-1 items-center gap-2 font-medium hover:underline" href={personHref(name)}><Avatar name={name} size="sm" />{name}</a>
-        <Button variant="ghost" className="h-10 px-3" onClick={() => { setTo(name); setEditing(true) }}>Rename or merge</Button>
-        {unused && <Button variant="ghost" className="h-10 px-3 text-destructive" onClick={onRemove}>Remove</Button>}
-      </div>
-    )
-  }
-  return (
-    <form className="flex flex-wrap items-center gap-2 px-4 py-1" onSubmit={e => { e.preventDefault(); if (to.trim() && to.trim() !== name) onRename(to); setEditing(false) }}>
-      <Input value={to} onChange={e => setTo(e.target.value)} aria-label={`New name for ${name}`} autoFocus className="h-10 w-44" />
-      <Button type="submit" className="h-10 px-4">Save</Button>
-      <Button type="button" variant="ghost" className="h-10 px-3" onClick={() => setEditing(false)}>Cancel</Button>
-    </form>
-  )
-}

@@ -7,6 +7,7 @@ import { GenreTaste } from "@/components/GenreTaste"
 import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
+import { AdminPanel } from "@/components/AdminPanel"
 import { AutoPlan } from "@/components/AutoPlan"
 import { MyPlan } from "@/components/MyPlan"
 import { PersonAtlas } from "@/components/PersonAtlas"
@@ -126,6 +127,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
           )}
         </section>
       )}
+
+      {signedIn === name && <AdminPanel />}
 
       {signedIn === name && <FavoritesEditor name={name} />}
 

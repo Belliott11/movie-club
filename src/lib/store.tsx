@@ -69,6 +69,10 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
+  /** Every row of the club's shared tables, for a backup file. Without a shared database it is what this device holds. */
+  backup: () => Promise<Record<string, unknown[]>>
+  /** Puts rows from a backup back (overwriting matching ones, deleting nothing) and returns how many were written. */
+  restore: (data: Record<string, unknown[]>) => Promise<number>
   /** People who don't use Letterboxd, so the site stops asking them to import. Loads with loadSeal. */
   noLb: string[]
   setNoLb: (member: string, on: boolean) => Promise<void>
@@ -121,6 +125,9 @@ type Store = {
   vote: (s: Suggestion) => Promise<void>
   removeSuggestion: (s: Suggestion) => Promise<void>
 }
+/** Tables a backup holds, and the ones a restore writes back (true: keyed by a film, so rows for deleted films are skipped). */
+const BACKUP_TABLES = ["movies", "ratings", "watchlist", "suggestions", "members", "takes", "rec_flags", "lb_history", "club_settings", "sealed"]
+const RESTORE_TABLES: Record<string, boolean> = { members: false, ratings: true, takes: true, watchlist: false, rec_flags: false, lb_history: false, club_settings: false, sealed: true }
 const Ctx = createContext<Store>(null!)
 export const useStore = () => useContext(Ctx)
 
@@ -477,6 +484,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
     if (sealRef.current.shared && sb) fail((on ? await sb.from("club_settings").upsert({ key: `nolb:${member}`, value: "1" }) : await sb.from("club_settings").delete().eq("key", `nolb:${member}`)).error)
   }, [])
+  const backup = useCallback(async () => {
+    if (!sb) return { movies: movRef.current, watchlist, suggestions } as Record<string, unknown[]>
+    const out: Record<string, unknown[]> = {}
+    for (const t of BACKUP_TABLES) { const r = await sb.from(t).select("*"); out[t] = r.error ? [] : (r.data as unknown[]) } // optional tables may not exist yet
+    return out
+  }, [watchlist, suggestions])
+  const restore = useCallback(async (data: Record<string, unknown[]>) => {
+    if (!sb) throw new Error("Restore needs the shared database.")
+    const films = new Set(movRef.current.map(m => m.id))
+    let n = 0
+    for (const [t, byFilm] of Object.entries(RESTORE_TABLES)) {
+      let rows = Array.isArray(data[t]) ? data[t] : []
+      if (byFilm) rows = rows.filter(r => films.has((r as { movie_id: number }).movie_id)) // a film that was deleted can't take ratings back
+      for (let i = 0; i < rows.length; i += 500) { const part = rows.slice(i, i + 500); fail((await sb.from(t).upsert(part)).error); n += part.length }
+    }
+    await load()
+    return n
+  }, [load])
   const setSelector = useCallback(async (name: string | null) => { await putTurn("selector", name ? { name, turn: currentTurn() } : null) }, [])
   const setDeck = useCallback(async (d: { drawn: string[]; used: string[] }) => { await putTurn("deck", { turn: currentTurn(), ...d }) }, [])
 
@@ -699,7 +724,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: turnState.deck.used } : { drawn: [], used: turnState.deck ? [...turnState.deck.used, ...turnState.deck.drawn] : [] }
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

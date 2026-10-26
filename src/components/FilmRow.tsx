@@ -21,7 +21,7 @@ export function outsideChips(m: Movie, tmdbScore?: number | null) {
 }
 
 export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
-  const { mini, members, setRating, patchMovie, deleteMovie } = useStore()
+  const { mini, members, setRating, patchMovie, deleteMovie, canDesignate } = useStore()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -104,8 +104,8 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
               <a href={`#/films/${encodeURIComponent(String(m.id))}`} className={buttonVariants({ variant: "outline", className: "h-10 w-fit px-4" })}>
                 Cast, crew &amp; synopsis
               </a>
-              <Button variant="outline" className="h-10 px-4" onClick={() => setEditing(true)}>Edit film</Button>
-              {confirmDelete ? (
+              {canDesignate && <Button variant="outline" className="h-10 px-4" onClick={() => setEditing(true)}>Edit film</Button>}
+              {!canDesignate ? null : confirmDelete ? (
                 <span className="flex items-center gap-2 rounded-lg bg-destructive/10 px-3 py-1">
                   <span className="text-sm">Delete {m.title} and its {Object.keys(m.ratings).length} ratings?</span>
                   <Button variant="destructive" className="h-9 px-3" onClick={() => deleteMovie(m)}>Delete</Button>
