@@ -7,7 +7,7 @@ import { Bars, Tags } from "@/components/Breakdown"
 import { continentOfCode, regionOfCode } from "@/lib/continents"
 import { blindspots, decadeOf, entryKey, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
 import { loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type CountryCache, type GenreCache } from "@/lib/lbCountries"
-import type { LbEntry } from "@/lib/letterboxd"
+import { findEntry, type LbEntry } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 
@@ -56,7 +56,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
             {running && <Button variant="ghost" className="h-11 px-4" onClick={() => { stop.current = true; setRunning(false) }}>Pause</Button>}
           </div>
         )}
-        {counts.length > 0 && <div className="mb-4"><WorldMap counts={Object.fromEntries(counts.map(c => [c.code, c.n]))} label={`World map of the films ${name} has watched, shaded by country`} /></div>}
+        {counts.length > 0 && <div className="mb-4"><WorldMap counts={Object.fromEntries(counts.map(c => [c.code, c.n]))} label={`World map of the films ${name} has watched, shaded by country`} seen={(t, y) => !!findEntry(history, t, y)} /></div>}
         {top.length > 0 && (
           <ul className="flex flex-col gap-2">
             {top.map(c => (
