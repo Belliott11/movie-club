@@ -80,7 +80,7 @@ export function Breakdown({ movies }: { movies: Movie[] }) {
   const languages = useMemo(() => byTag(movies, m => info[String(m.id)]?.language ? [info[String(m.id)].language!] : []), [movies, info])
   const decades = byDecade(movies)
   return (
-    <Collapse id="breakdown" title="What the club watches" source="tmdb"><div className="flex flex-col gap-5">
+    <Collapse id="breakdown" defaultOpen={false} title="What the club watches" source="tmdb"><div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <h4 className="font-display text-lg font-bold">By decade</h4>
         <Bars rows={decades} />

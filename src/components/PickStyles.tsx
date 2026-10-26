@@ -16,7 +16,7 @@ export function PickStyles({ movies }: { movies: Movie[] }) {
   const rows = styles.map(s => ({ ...s, label: styleLabel(s, styles) }))
   const gambler = [...styles].sort((a, b) => b.risk - a.risk)[0]
   return (
-    <Collapse id="pickstyles" title="How people pick" source="club">
+    <Collapse id="pickstyles" defaultOpen={false} title="How people pick" source="club">
       <p className="mb-3 text-sm text-muted-foreground">
         Risk is how much a pick splits the room. A gambler's films are loved by some of you and hated by others. A hit is a pick that beat the club's overall average of {fmt(clubAverage, 1)}.
       </p>

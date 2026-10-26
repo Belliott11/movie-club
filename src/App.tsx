@@ -10,6 +10,7 @@ import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
 import { ChartColumn, Film, Lightbulb, RefreshCw, Search, User, Users, Bookmark } from "lucide-react"
 import { SearchOverlay } from "@/components/SearchOverlay"
+import { RateBanner } from "@/components/RateBanner"
 import { ThemeMenu } from "@/components/ThemeMenu"
 import { pickHeroFilm } from "@/lib/hero"
 import { chosenFavorites, favoritesOf } from "@/lib/lbstats"
@@ -211,6 +212,7 @@ function Shell() {
         </TabsList>
       </Tabs>
 
+      {tab !== "films" && ready && <RateBanner />}
       <main key={tab + (sub ?? "")}>{!sub && TABS.some(t => t[0] === tab) && tab !== "me" && <h2 className="sr-only">{TABS.find(t => t[0] === tab)![1]}</h2>}<ErrorBoundary resetKey={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "wrapped" ? <Wrapped /> : tab === "movie" && sub ? <MoviePage title={sub} year={Number(rest[0]) || 0} /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />

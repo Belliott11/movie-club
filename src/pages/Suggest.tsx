@@ -128,7 +128,7 @@ export default function Suggest() {
           <p className="text-muted-foreground">No suggestions yet. The projector is warmed up: add a film above and everyone can vote on it.</p>
         )}
       </Collapse>
-      <Collapse id="sug-watchlists" title="From your watchlists">
+      <Collapse id="sug-watchlists" title="More from your watchlists" defaultOpen={false}>
         <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
         <PickControls />
         {!hasTmdb() ? (

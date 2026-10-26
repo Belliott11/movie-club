@@ -14,14 +14,14 @@ export function TasteDrift({ name, history, own }: { name: string; history: LbEn
   }, [history])
   if (!history.length) return null
   if (!hasDates(history)) return (
-    <Collapse id="me-drift" title={`How ${name}\'s taste changed`}>
+    <Collapse id="me-drift" defaultOpen={false} title={`How ${name}\'s taste changed`}>
       <p className="text-sm text-muted-foreground">{own ? "Your Letterboxd import doesn't include dates yet. Upload your export again on the Watchlists tab and this fills in." : `${name}'s Letterboxd import doesn't include dates yet, so there's no year-by-year picture.`}</p>
     </Collapse>
   )
   if (rows.length < 2) return null
   const summary = driftSummary(rows)
   return (
-    <Collapse id="me-drift" title={`How ${name}\'s taste changed`}>
+    <Collapse id="me-drift" defaultOpen={false} title={`How ${name}\'s taste changed`}>
       <p className="mb-3 text-sm text-muted-foreground">{summary ?? "Year by year, from the days films were logged on Letterboxd."}</p>
       <ol className="flex flex-col gap-2">
         {rows.map(r => (

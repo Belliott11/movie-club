@@ -5,7 +5,7 @@ import { fieldCls } from "@/components/field"
 import { useStore } from "@/lib/store"
 
 /** Who picks this week. Whoever is designated can add the week's film and deal the pick cards; everyone else can watch. It lapses once that film is added. */
-export function SelectorPanel() {
+export function SelectorPanel({ upNext }: { upNext?: string }) {
   const { members, selector, setSelector, canDesignate, me, movies } = useStore()
   const [name, setName] = useState(selector ?? "")
   useEffect(() => { setName(selector ?? "") }, [selector])
@@ -24,6 +24,7 @@ export function SelectorPanel() {
             {members.map(n => <option key={n}>{n}</option>)}
           </select>
           <Button className="h-11 px-4" disabled={!name || name === selector} onClick={() => setSelector(name)}>Set selector</Button>
+          {upNext && upNext !== selector && <Button variant="outline" className="h-11 px-4" onClick={() => setSelector(upNext)}>{upNext} is next in line</Button>}
           {selector && <Button variant="ghost" className="h-11 px-4" onClick={() => setSelector(null)}>Let anyone pick</Button>}
         </div>
       ) : (

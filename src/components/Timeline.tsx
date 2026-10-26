@@ -11,7 +11,7 @@ export function Timeline({ movies }: { movies: Movie[] }) {
   const brk = longestBreak(movies), run = longestStreak(movies)
   const peak = Math.max(1, ...months.map(m => m.films.length))
   return (
-    <Collapse id="timeline" title="Month by month" source="club">
+    <Collapse id="timeline" defaultOpen={false} title="Month by month" source="club">
       <p className="mb-3 text-sm text-muted-foreground">
         {run && run.films > 1 && <>Longest run of weekly screenings: {run.films} in a row. </>}
         {brk && brk.days > 8 && <>Longest break: {Math.round(brk.days / 7)} weeks, between {brk.from.title} and {brk.to.title}.</>}

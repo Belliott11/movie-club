@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { CARDS, deal, fitting, untouchedMovementKeys, type Cand, type Ctx } from "./deck"
+import { CARDS, DEFAULT_CARDS, deal, fitting, untouchedMovementKeys, type Cand, type Ctx } from "./deck"
 
 const ctx: Ctx = { thisYear: 2026, countries: new Set(["US", "JP"]), continents: new Set(["North America", "Asia"]), regions: new Set(["East Asia", "US and Canada"]), movementKeys: new Set(["breathless"]) }
 const c = (title: string, year: number, o: Partial<Cand> = {}): Cand => ({ title, year, wantedBy: 1, ...o })
@@ -74,4 +74,13 @@ test("untouched movements: landmark films from movements the club hasn't played"
   const keys = untouchedMovementKeys(new Set(["breathless"])) // played something from the French New Wave
   expect(keys.has("breathless")).toBe(false)
   expect(keys.has("themarriageofmariabraun")).toBe(true) // New German Cinema is still untouched
+})
+
+test("only cards in the chosen pool are dealt, and the recommended set is real cards", () => {
+  const pool = [card("old"), card("bw")]
+  const seen = new Set<string>()
+  for (let i = 0; i < 20; i++) seen.add(deal([], Math.random, pool).id)
+  expect([...seen].sort()).toEqual(["bw", "old"])
+  expect(deal(["old", "bw"], () => 0, pool).id).toBe("old") // pool used up: start over
+  expect(DEFAULT_CARDS.every(id => CARDS.some(c => c.id === id))).toBe(true)
 })

@@ -28,7 +28,7 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function Stats() {
-  const { movies, members, watchlist, suggestions, lb, loadLb } = useStore()
+  const { movies, members, lb, loadLb } = useStore()
   useEffect(() => { loadLb() }, [loadLb])
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
@@ -128,7 +128,7 @@ export default function Stats() {
 
       <Breakdown movies={rated} />
 
-      {club.length > 0 && <Collapse id="world" title="World tour, decades and genres" source="mixed" defaultOpen={false}><PersonAtlas name="the club" history={club} group /></Collapse>}
+      {club.length > 0 && <Collapse id="world" defaultOpen={false} title="World tour, decades and genres" source="mixed"><PersonAtlas name="the club" history={club} group /></Collapse>}
 
       <Collapse id="people" title="People" source="club">
         <div data-no-swipe>
@@ -162,7 +162,7 @@ export default function Stats() {
         </div>
       </Collapse>
 
-      <Collapse id="divisive" title="Most divisive" source="club">
+      <Collapse id="divisive" defaultOpen={false} title="Most divisive" source="club">
         <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground" aria-label="Who each dot is">
           {[...new Set(divisive.flatMap(m => Object.keys(m.ratings)))].sort().map(n => <li key={n} className="flex items-center gap-1.5"><Avatar name={n} size="xs" />{n}</li>)}
         </ul>
@@ -176,7 +176,7 @@ export default function Stats() {
         </ul>
       </Collapse>
 
-      <Collapse id="gap" title="Biggest gap with outside ratings" source="outside">
+      <Collapse id="gap" defaultOpen={false} title="Biggest gap with outside ratings" source="outside">
         <p className="mb-3 text-sm text-muted-foreground"><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Us <i className="mr-1.5 ml-3 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside</p>
         {gap.length ? (
           <ul className="flex flex-col gap-3">
@@ -190,7 +190,7 @@ export default function Stats() {
         ) : <p className="text-muted-foreground">Outside ratings are still loading.</p>}
       </Collapse>
 
-      <Collapse id="lb" title="From Letterboxd" source="letterboxd">
+      <Collapse id="lb" defaultOpen={false} title="From Letterboxd" source="letterboxd">
         <p className="mb-4 text-sm text-muted-foreground">Built from everyone's imported history, so it gets sharper with every export. {imported.length} {imported.length === 1 ? "person has" : "people have"} imported so far.</p>
         {imported.length < 2 ? (
           <Card className="px-4"><p className="text-sm">These need at least two people to import. <a className="underline" href="#/watch">Import your Letterboxd history</a>.</p></Card>
@@ -245,7 +245,6 @@ export default function Stats() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-ratings.csv", ratingsCsv(movies, members))}>Ratings spreadsheet (.csv)</Button>
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-letterboxd-list.csv", letterboxdCsv(movies))}>Letterboxd list (.csv)</Button>
-          <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-backup.json", JSON.stringify({ exported: new Date().toISOString(), movies, watchlist, suggestions }, null, 2), "application/json")}>Full backup (.json)</Button>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">To use the Letterboxd list: Letterboxd, then Lists, New list, Import.</p>
       </Collapse>

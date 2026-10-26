@@ -64,10 +64,13 @@ export function untouchedMovementKeys(playedKeys: Set<string>): Set<string> {
   return out
 }
 
-/** Deals a card at random, never one in `not`. `rand` is injectable so the draw can be tested. */
-export function deal(not: string[] = [], rand: () => number = Math.random): Card {
-  const left = CARDS.filter(c => !not.includes(c.id))
-  return (left.length ? left : CARDS)[Math.floor(rand() * (left.length || CARDS.length))]
+/** The cards in the deck until the host picks their own: the ones that most change what you'd choose. */
+export const DEFAULT_CARDS = ["old", "recent", "foreign", "short", "haul", "newCountry", "newContinent", "movement", "doc", "animation", "horror", "bw", "trueStory", "womanDirector", "famous", "oscar"]
+
+/** Deals a card at random from `pool`, never one in `not`. `rand` is injectable so the draw can be tested. */
+export function deal(not: string[] = [], rand: () => number = Math.random, pool: Card[] = CARDS): Card {
+  const left = pool.filter(c => !not.includes(c.id))
+  return (left.length ? left : pool)[Math.floor(rand() * (left.length || pool.length))]
 }
 
 /** Watchlist films that definitely meet the card, best candidates first (wanted by the most people). */

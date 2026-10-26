@@ -40,9 +40,6 @@ export default function Next() {
   return (
     <div className="stagger flex flex-col gap-6">
       <ImportNudge />
-      <ClubShortlist />
-      <SelectorPanel />
-      <ConstraintDeck />
       <Collapse id="next-here" title="Who's here this week?">
         <div className="flex flex-wrap gap-2">
           {members.map(n => (
@@ -56,8 +53,10 @@ export default function Next() {
           <AddPerson label="Add and switch on" onAdded={n => { if (!attending.includes(n)) toggleAttend(n) }} />
         </div>
       </Collapse>
+      <SelectorPanel upNext={order[0]?.n} />
+      <ConstraintDeck />
       <Collapse id="next-picks" title="Best picks for tonight">
-        <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped.</p>
+        <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped. More ideas are on the Suggestions tab.</p>
         <PickControls />
         {!attending.length ? (
           <p className="text-muted-foreground">Switch on whoever is coming and the best picks show up here.</p>
@@ -80,7 +79,7 @@ export default function Next() {
           <p className="text-muted-foreground">No clear pick yet. Ask the room to add watchlists or import Letterboxd and this fills in.</p>
         )}
       </Collapse>
-      <Collapse id="next-order" title="Pick order">
+      <Collapse id="next-order" title="Pick order" defaultOpen={false}>
         {order.length ? (
           <Card className="gap-0 py-2">
             {order.map((x, i) => (
@@ -94,7 +93,7 @@ export default function Next() {
           <p className="text-muted-foreground">Switch on whoever is coming and the seats fill up.</p>
         )}
       </Collapse>
-      <Collapse id="next-watchlists" title="On the attendees' watchlists">
+      <Collapse id="next-watchlists" title="On the attendees' watchlists" defaultOpen={false}>
         {top.length ? (
           <ul className="flex flex-col gap-3">
             {top.map(h => (
@@ -105,6 +104,7 @@ export default function Next() {
           <p className="text-muted-foreground">Upload watchlists on the Watchlists tab, then switch on who's here.</p>
         )}
       </Collapse>
+      <ClubShortlist />
     </div>
   )
 }

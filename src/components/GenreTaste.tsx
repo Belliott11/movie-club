@@ -20,7 +20,7 @@ export function GenreTaste({ movies, name }: { movies: Movie[]; name: string }) 
   if (mean == null || rows.length < 3) return null
   const reach = Math.max(0.5, ...rows.map(r => Math.abs(r.avg - mean)))
   return (
-    <Collapse id="me-genres" title={`${name}\'s taste by genre`}>
+    <Collapse id="me-genres" defaultOpen={false} title={`${name}\'s taste by genre`}>
       <p className="mb-3 text-sm text-muted-foreground">Compared with {name}'s own average of {fmt(mean, 1)}. Genres with at least two films.</p>
       <ul className="flex flex-col gap-2.5">
         {rows.map(r => {

@@ -21,11 +21,12 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
  * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn, and no repeats until the deck's done.
  */
 export function ConstraintDeck() {
-  const { movies, watchlist, lb, loadLb, countries: fixed, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck } = useStore()
+  const { movies, watchlist, lb, loadLb, countries: fixed, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards } = useStore()
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
-  const mine = { drawn: deck.drawn, used: deck.used.length >= CARDS.length - 1 ? [] : deck.used }
+  const deckPool = CARDS.filter(c => deckCards.includes(c.id))
+  const mine = { drawn: deck.drawn, used: deck.used.length >= deckPool.length - 1 ? [] : deck.used }
   const [stage, setStage] = useState<Stage>(mine.drawn.length ? "face-up" : "idle")
   // someone else dealing (or a new pick starting) changes what's on the table
   useEffect(() => { if (stage === "idle" && mine.drawn.length) setStage("face-up"); if (stage === "face-up" && !mine.drawn.length) setStage("idle") }, [mine.drawn.length, stage])
@@ -35,7 +36,7 @@ export function ConstraintDeck() {
   const redrawsLeft = mine.drawn.length < 2
 
   const play = (isRedraw: boolean) => {
-    const next = deal([...mine.used, ...mine.drawn])
+    const next = deal([...mine.used, ...mine.drawn], Math.random, deckPool.length ? deckPool : CARDS)
     const commit = () => setDeck({ drawn: [...(isRedraw ? mine.drawn : []), next.id], used: mine.used })
     if (reduced()) { commit(); setStage("face-up"); return }
     setStage("shuffling")

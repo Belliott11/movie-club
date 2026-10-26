@@ -41,13 +41,13 @@ export function Compare({ name, lb }: { name: string; lb: LbHistory }) {
   useEffect(() => { setRecs(null) }, [name, who])
   if (!lb[name]?.length) return null
   if (!others.length) return (
-    <Collapse id="me-compare" title="Compare with a friend">
+    <Collapse id="me-compare" defaultOpen={false} title="Compare with a friend">
       <p className="text-sm text-muted-foreground">This unlocks when someone else imports their Letterboxd history on the Watchlists tab.</p>
     </Collapse>
   )
   const h: Head2Head = headToHead(lb, name, who)
   return (
-    <Collapse id="me-compare" title={`${name} and ${who}`}>
+    <Collapse id="me-compare" defaultOpen={false} title={`${name} and ${who}`}>
     <div className="flex flex-col gap-4">
       <div>
         <label className="flex items-center gap-2 text-sm text-muted-foreground">

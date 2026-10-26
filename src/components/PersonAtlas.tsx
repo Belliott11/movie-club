@@ -47,7 +47,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
 
   return (
     <section className="flex flex-col gap-6">
-      <Collapse id="atlas-tour" title={group ? "The club's world tour" : `${name}'s world tour`}>
+      <Collapse id="atlas-tour" defaultOpen={false} title={group ? "The club's world tour" : `${name}'s world tour`}>
       <div>
         <p className="mb-3 text-sm text-muted-foreground">{group ? "Countries of every film the club has played or any member has logged on Letterboxd" : `Countries of the films ${name} has logged on Letterboxd`}, using TMDB's main country for each film.</p>
         {!complete && (
@@ -73,7 +73,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       </Collapse>
 
       {continents.length > 0 && (
-        <Collapse id="atlas-continents" title={group ? "Films by continent" : `${name}'s continents`}>
+        <Collapse id="atlas-continents" defaultOpen={false} title={group ? "Films by continent" : `${name}'s continents`}>
         <div className="flex flex-col gap-2">
           <Bars rows={continents.map(c => ({ name: c.name, n: c.n, avg: c.avg }))} />
           <p className="text-xs text-muted-foreground">Russia counts as Europe and Turkey as Asia.</p>
@@ -82,7 +82,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       )}
 
       {regions.length > 0 && (
-        <Collapse id="atlas-regions" title={group ? "Films by region" : `${name}'s regions`}>
+        <Collapse id="atlas-regions" defaultOpen={false} title={group ? "Films by region" : `${name}'s regions`}>
         <div className="flex flex-col gap-2">
           <Bars rows={regions.map(r => ({ name: r.name, n: r.n, avg: r.avg }))} />
           <p className="text-xs text-muted-foreground">Regions are slices of the world smaller than a continent, like East Asia or the Nordic countries.</p>
@@ -91,7 +91,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       )}
 
       {decades.length > 0 && (
-        <Collapse id="atlas-decades" title={group ? "Films by decade" : `${name}'s decades`}>
+        <Collapse id="atlas-decades" defaultOpen={false} title={group ? "Films by decade" : `${name}'s decades`}>
         <div className="flex flex-col gap-2">
           <Bars rows={decades.map(d => ({ name: d.name, n: d.n, avg: d.avg }))} />
           <p className="text-xs text-muted-foreground">Bars show the average rating for each decade, with how many films went into it.</p>
@@ -102,7 +102,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       {genres.length > 0 && <Tags title={group ? "Genres across the club" : `${name}'s genres`} groups={genres.filter(g => g.rated > 0)} />}
 
       {complete && counts.length > 0 && (
-        <Collapse id="atlas-countries" title="Biggest country blindspots">
+        <Collapse id="atlas-countries" defaultOpen={false} title="Biggest country blindspots">
         <div>
           <p className="mb-3 text-sm text-muted-foreground">{group ? "Major film nations the club has seen the least of, with a top-rated film from each that nobody has seen." : `Major film nations ${name} has watched the least, with a top-rated film from each that they haven't seen.`}</p>
           <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 sm:grid-cols-2">
@@ -126,7 +126,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       )}
 
       {moves.length > 0 && (
-        <Collapse id="atlas-movements" title="Movement blindspots">
+        <Collapse id="atlas-movements" defaultOpen={false} title="Movement blindspots">
         <div>
           <p className="mb-3 text-sm text-muted-foreground">Landmark films from film movements, picked by hand, so it's a starting point and not a full canon.</p>
           <ul className="flex flex-col gap-3">
