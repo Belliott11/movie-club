@@ -1,4 +1,5 @@
 import { Collapse } from "@/components/Collapse"
+import { MovieCalendar } from "@/components/MovieCalendar"
 import { MiniFilm } from "@/components/MiniFilm"
 import { AddPerson } from "@/components/AddPerson"
 import { PickControls, FactsLine, useMyServices, usePickPrefs } from "@/components/PickControls"
@@ -39,6 +40,7 @@ export default function Next() {
 
   return (
     <div className="stagger flex flex-col gap-6">
+      <MovieCalendar />
       <ImportNudge />
       <Collapse id="next-here" title="Who's here this week?">
         <div className="flex flex-wrap gap-2">

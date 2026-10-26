@@ -2,11 +2,12 @@ import { Card } from "@/components/ui/card"
 import { buttonVariants } from "@/components/ui/button"
 import { filmToRate } from "@/lib/rate"
 import { useStore } from "@/lib/store"
+import { useToday } from "@/lib/today"
 
 /** Reminds you to rate the club's newest film on the day it's watched, and for a week after, until you have. */
 export function RateBanner() {
   const { movies, me, seal } = useStore()
-  const today = new Date().toLocaleDateString("en-CA")
+  const today = useToday()
   const m = filmToRate(movies, me, seal.sealedBy, today)
   if (!m) return null
   return (
