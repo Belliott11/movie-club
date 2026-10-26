@@ -7,7 +7,6 @@ import { movieHref } from "@/lib/movieLink"
 import { hasTmdb, IMG, searchFilm, tmdb } from "@/lib/api"
 import { findEntry, seenBy } from "@/lib/letterboxd"
 import { chosenFavorites, favoritesOf } from "@/lib/lbstats"
-import { crowdPicks } from "@/lib/picks"
 import { groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { useFilmInfo } from "@/lib/useFilmInfo"
@@ -15,7 +14,7 @@ import type { Suggestion } from "@/lib/types"
 import { Button } from "@/components/ui/button"
 import { FilmSearch } from "@/components/FilmSearch"
 import { ImportNudge } from "@/components/ImportNudge"
-import { PickCard } from "@/components/PickCard"
+import { LovedByOne } from "@/components/LovedByOne"
 import { Card } from "@/components/ui/card"
 import { Collapse } from "@/components/Collapse"
 import { Input } from "@/components/ui/input"
@@ -105,9 +104,6 @@ export default function Suggest() {
   const facts = useFacts((recs ?? []).map(r => ({ title: r.title, year: r.year })))
   const visible = (recs ?? []).filter(r => !myFlag(r.id) && !onLb(r) && passesFilters(facts[key(r.title, r.year)], prefs, mine))
   const hidden = (recs ?? []).filter(r => myFlag(r.id) || onLb(r))
-  const crowd = crowdPicks(lb, movies, { minRaters: 1, maxSeen: 1 }).slice(0, 8)
-  const importedCount = Object.values(lb).filter(h => h.length).length
-  const suggested = (t: string, y: number) => suggestions.some(x => key(x.title, x.year) === key(t, y))
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -135,23 +131,7 @@ export default function Suggest() {
       </Collapse>
       <Collapse id="sug-loved" title="One of you loved it">
         <p className="mb-3 text-sm text-muted-foreground">Films one of you rated 4 or higher on Letterboxd that nobody else has seen, so the rest of you can see it fresh.</p>
-        {crowd.length ? (
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {crowd.map(p => (
-              <li key={p.title + p.year}>
-                <PickCard
-                  title={p.title}
-                  year={p.year}
-                  done={suggested(p.title, p.year)}
-                  onSuggest={() => suggest(p.title, p.year)}
-                  lines={[p.ratings.filter(r => r.rating >= 4).map(r => `${r.name} ${r.rating}`).join(" · "), "nobody else has seen it"]}
-                />
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-muted-foreground">{importedCount < 2 ? "This fills in once two or more people have imported their Letterboxd history." : "No film is loved by just one of you and unseen by the rest yet."}</p>
-        )}
+        <LovedByOne />
       </Collapse>
       <Collapse id="sug-watchlists" title="From your watchlists">
         <p className="mb-3 text-sm text-muted-foreground">Films on the club's watchlists that none of you have played and that fewer than two of you have seen. The ones that fit what you and the club loved come first.</p>
