@@ -94,7 +94,7 @@ export default function Stats() {
           {awards.map(a => (
             <Card key={a.label} className="rise gap-2 px-4">
               <span className={`flex items-center gap-1.5 text-sm font-medium ${a.gold ? "text-gold" : "text-muted-foreground"}`}><a.icon className="size-4" aria-hidden />{a.label}</span>
-              <a href={personHref(a.who)} className="flex items-center gap-2 font-display text-xl leading-tight font-bold hover:underline"><Avatar name={a.who} size="sm" />{a.who}</a>
+              <a href={personHref(a.who)} className="flex min-h-11 items-center gap-2 font-display text-xl leading-tight font-bold hover:underline"><Avatar name={a.who} size="sm" />{a.who}</a>
               <span className="text-sm text-muted-foreground">{a.detail}</span>
             </Card>
           ))}
@@ -139,7 +139,7 @@ export default function Stats() {
             rowKey={p => p.n}
             initial={{ id: "attend", dir: "desc" }}
             columns={[
-              { id: "name", label: "Name", get: p => p.n, first: "asc", render: p => <a className="flex items-center gap-1.5 font-medium hover:underline" href={personHref(p.n)}><span className="hidden min-[400px]:inline-flex"><Avatar name={p.n} size="sm" /></span>{p.n}</a> },
+              { id: "name", label: "Name", get: p => p.n, first: "asc", render: p => <a className="flex min-h-11 items-center gap-1.5 font-medium hover:underline" href={personHref(p.n)}><span className="hidden min-[400px]:inline-flex"><Avatar name={p.n} size="sm" /></span>{p.n}</a> },
               {
                 id: "attend", label: "Attend", get: p => p.attend,
                 render: p => (
@@ -171,7 +171,7 @@ export default function Stats() {
         <ul className="flex flex-col gap-3">
           {divisive.map(m => (
             <li key={m.id}>
-              <a href={filmHref(m)} className="flex items-baseline justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">spread {fmt(spread(m))}</span></a>
+              <a href={filmHref(m)} className="flex min-h-11 items-center justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">spread {fmt(spread(m))}</span></a>
               <RaterDots m={m} />
             </li>
           ))}
@@ -184,7 +184,7 @@ export default function Stats() {
           <ul className="flex flex-col gap-3">
             {gap.map(m => (
               <li key={m.id}>
-                <a href={filmHref(m)} className="flex items-baseline justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">us {fmt(groupAvg(m))}, outside {fmt(outsideAvg(m))} <b className="text-foreground">({groupAvg(m)! > outsideAvg(m)! ? "+" : "−"}{fmt(Math.abs(groupAvg(m)! - outsideAvg(m)!), 1)})</b></span></a>
+                <a href={filmHref(m)} className="flex min-h-11 items-center justify-between gap-3 font-medium hover:underline">{m.title}<span className="text-sm font-normal text-muted-foreground">us {fmt(groupAvg(m))}, outside {fmt(outsideAvg(m))} <b className="text-foreground">({groupAvg(m)! > outsideAvg(m)! ? "+" : "−"}{fmt(Math.abs(groupAvg(m)! - outsideAvg(m)!), 1)})</b></span></a>
                 <Scale us={groupAvg(m)} world={outsideAvg(m)} />
               </li>
             ))}

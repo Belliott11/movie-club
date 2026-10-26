@@ -178,8 +178,8 @@ export default function Suggest() {
                       <div className="mt-auto flex flex-col gap-1.5 pt-1">
                         <Button variant={done ? "ghost" : "outline"} disabled={done} className="h-10 w-full px-3" onClick={() => suggest(r.title, r.year)}>{done ? "Suggested" : "Suggest"}</Button>
                         <div className="flex flex-col gap-1.5 min-[440px]:flex-row">
-                          <Button variant="ghost" className="h-10 flex-1 gap-1 px-2 text-xs" onClick={() => setFlag(r.id, r.title, "seen")}><Eye aria-hidden />Seen it</Button>
-                          <Button variant="ghost" className="h-10 flex-1 gap-1 px-2 text-xs" onClick={() => setFlag(r.id, r.title, "skip")}><EyeOff aria-hidden />Not interested</Button>
+                          <Button variant="ghost" className="h-10 w-full gap-1 px-2 text-xs min-[440px]:flex-1" onClick={() => setFlag(r.id, r.title, "seen")}><Eye aria-hidden />Seen it</Button>
+                          <Button variant="ghost" className="h-10 w-full gap-1 px-2 text-xs min-[440px]:flex-1" onClick={() => setFlag(r.id, r.title, "skip")}><EyeOff aria-hidden />Not interested</Button>
                         </div>
                       </div>
                     </div>

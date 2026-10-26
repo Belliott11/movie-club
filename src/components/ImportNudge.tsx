@@ -19,7 +19,7 @@ export function ImportNudge() {
         {others.length > 0 && <>{who} {others.length === 1 ? "hasn't" : "haven't"} imported theirs{mineMissing ? " either" : " yet"}. </>}
         Picks get sharper with every export.
       </p>
-      <a href="#/watch" className="w-fit text-sm font-medium underline">Import your Letterboxd history</a>
+      <a href="#/watch" className="inline-flex min-h-11 w-fit items-center text-sm font-medium underline">Import your Letterboxd history</a>
     </Card>
   )
 }

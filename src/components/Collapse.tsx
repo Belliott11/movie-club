@@ -16,8 +16,8 @@ const SOURCES: Record<Source, { label: string; tone: string }> = {
   club: { label: "Club ratings", tone: "text-muted-foreground ring-1 ring-foreground/20" },
   tmdb: { label: "Club films + TMDB", tone: "text-muted-foreground ring-1 ring-foreground/20" },
   outside: { label: "Club vs outside sites", tone: "text-muted-foreground ring-1 ring-foreground/20" },
-  letterboxd: { label: "Letterboxd", tone: "bg-world font-medium text-white" },
-  mixed: { label: "Letterboxd + club films", tone: "bg-world font-medium text-white" },
+  letterboxd: { label: "Letterboxd", tone: "bg-world font-medium text-primary-foreground" },
+  mixed: { label: "Letterboxd + club films", tone: "bg-world font-medium text-primary-foreground" },
 }
 
 /** A page section whose heading opens and closes it. The choice is remembered per device; closed panels aren't drawn at all. */

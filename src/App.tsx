@@ -122,7 +122,9 @@ function Shell() {
     }
     place()
     window.addEventListener("resize", place)
-    return () => window.removeEventListener("resize", place)
+    const ro = new ResizeObserver(place) // the bar's size also changes when fonts load or the layout switches between phone and desktop
+    if (barRef.current) ro.observe(barRef.current)
+    return () => { window.removeEventListener("resize", place); ro.disconnect() }
   }, [active, ready])
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(

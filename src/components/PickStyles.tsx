@@ -26,7 +26,7 @@ export function PickStyles({ movies }: { movies: Movie[] }) {
           rowKey={r => r.n}
           initial={{ id: "risk", dir: "desc" }}
           columns={[
-            { id: "n", label: "Picker", get: r => r.n, first: "asc", render: r => <a className="flex items-center gap-1.5 font-medium hover:underline" href={`#/people/${encodeURIComponent(r.n)}`}><span className="hidden min-[400px]:inline-flex"><Avatar name={r.n} size="sm" /></span>{r.n}</a> },
+            { id: "n", label: "Picker", get: r => r.n, first: "asc", render: r => <a className="flex min-h-11 items-center gap-1.5 font-medium hover:underline" href={`#/people/${encodeURIComponent(r.n)}`}><span className="hidden min-[400px]:inline-flex"><Avatar name={r.n} size="sm" /></span>{r.n}</a> },
             { id: "risk", label: "Risk", align: "right", get: r => r.risk, render: r => <span className="num inline-block min-w-8 rounded-md px-1 py-0.5 text-center text-sm font-medium" style={{ background: `color-mix(in oklab, var(--sun) ${Math.round(Math.min(1, r.risk / 1.8) * 70)}%, transparent)` }}>{fmt(r.risk, 1)}</span> },
             { id: "result", label: "Result", align: "right", get: r => r.result, render: r => <HeatChip v={r.result} lo={2} hi={4}>{fmt(r.result, 1)}</HeatChip> },
             { id: "hits", label: "Hits", align: "right", get: r => r.hitRate, render: r => <span>{Math.round(r.hitRate * 100)}%<span className="sr-only"> of {r.picks} picks beat the average</span></span> },
