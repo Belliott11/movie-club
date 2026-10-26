@@ -95,6 +95,7 @@
      and page scrollbars in light or dark to match. */
   html { color-scheme: light; }
   html.dark { color-scheme: dark; }
+  svg { flex-shrink: 0; } /* icons beside long text keep their size */
   * { accent-color: var(--world); }
   ::selection { background: color-mix(in oklab, var(--sun) 60%, transparent); color: var(--foreground); }
   select option, select optgroup { background: var(--card); color: var(--card-foreground); }
