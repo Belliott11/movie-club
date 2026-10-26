@@ -51,6 +51,17 @@ test("reads stored and deflated csvs (including the watchlist) from a zip and sk
 test("the diary's watched date beats the date a film was added or rated, and films without any date stay three long", () => {
   const diary = "Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date\n2024-05-01,Heat,1995,x,4,,,2023-12-24\n"
   const e = parseExports([{ name: "watched.csv", text: "Date,Name,Year,Letterboxd URI\n2024-01-03,Heat,1995,x\n" }, { name: "diary.csv", text: diary }])
-  expect(e).toEqual([["Heat", 1995, 4, "2023-12-24"]])
+  expect(e).toEqual([["Heat", 1995, 4, "2023-12-24", ["2023-12-24"]]])
   expect(parseExports([{ name: "watched.csv", text: "Name,Year\nAlien,1979\n" }])).toEqual([["Alien", 1979, null]])
+})
+
+test("a rating changed later is not a new watch, and a rewatch is", () => {
+  const diary = "Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date\n2024-05-01,Heat,1995,x,4,,,2023-12-24\n2025-01-02,Heat,1995,x,4,Yes,,2025-01-01\n"
+  const reRated = "Date,Name,Year,Letterboxd URI,Rating\n2026-09-09,Heat,1995,x,3.5\n2026-09-09,Alien,1979,x,5\n"
+  const e = parseExports([{ name: "diary.csv", text: diary }, { name: "ratings.csv", text: reRated }])
+  const heat = e.find(x => x[0] === "Heat")!
+  expect(heat[2]).toBe(3.5) // the new rating
+  expect(heat[4]).toEqual(["2023-12-24", "2025-01-01"]) // still just the two real watches
+  expect(heat[3]).toBe("2025-01-01")
+  expect(e.find(x => x[0] === "Alien")!.length).toBe(4) // rated only: a logged date for charts, but no watch
 })

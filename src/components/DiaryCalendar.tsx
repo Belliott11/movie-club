@@ -14,7 +14,8 @@ const stars = (r: number | null) => (r == null ? "watched" : `${r}`)
 /** A person's Letterboxd diary as a month calendar: a poster on each day they logged a film, and a summary of the month. Needs the dates in their export or feed. */
 export function DiaryCalendar({ name, history, own }: { name: string; history: LbEntry[]; own: boolean }) {
   const today = useToday()
-  const dated = useMemo(() => history.filter((e): e is LbEntry & [string, number, number | null, string] => !!e[3]), [history])
+  // one row per real watch: a rewatch is another day, and a rating changed later is not a watch at all
+  const dated = useMemo(() => history.flatMap(e => (e[4] ?? []).map(d => [e[0], e[1], e[2], d] as const)), [history])
   const byDay = useMemo(() => {
     const m = new Map<string, typeof dated>()
     for (const e of dated) m.set(e[3], [...(m.get(e[3]) ?? []), e])
@@ -47,7 +48,7 @@ export function DiaryCalendar({ name, history, own }: { name: string; history: L
   if (!dated.length) {
     return (
       <Collapse id="me-diary" title={`${name}'s diary calendar`} defaultOpen={false}>
-        <p className="text-sm text-muted-foreground">{own ? "Your Letterboxd import doesn't include dates yet. Upload your export again on the Watchlists tab, or sync your profile, and your diary shows up here." : `${name}'s Letterboxd import doesn't include dates yet.`}</p>
+        <p className="text-sm text-muted-foreground">{own ? "This shows the days you watched things, taken from your Letterboxd diary. Upload your export again on the Watchlists tab (it includes diary.csv) and your diary shows up here. Dates from ratings and the watched list aren't used, since those are when you rated or logged a film." : `${name}'s Letterboxd import doesn't include diary dates yet.`}</p>
       </Collapse>
     )
   }

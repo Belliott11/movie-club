@@ -2,7 +2,7 @@ import { parseCsv } from "./csv"
 import { key } from "./stats"
 
 /** One film from someone's Letterboxd history: [title, year, rating or null when watched without rating, the day it was logged (YYYY-MM-DD) when the export has one]. */
-export type LbEntry = [string, number, number | null, string?]
+export type LbEntry = [string, number, number | null, string?, string[]?]
 export type LbHistory = Record<string, LbEntry[]>
 
 const decode = (b: Uint8Array) => new TextDecoder("utf-8").decode(b)
@@ -42,6 +42,8 @@ export async function readZip(buf: ArrayBuffer): Promise<{ name: string; text: s
 /** Merges ratings.csv, watched.csv and diary.csv into one entry per film. A rating from ratings.csv wins over the diary's. */
 export function parseExports(files: { name: string; text: string }[]): LbEntry[] {
   const films = new Map<string, LbEntry>()
+  const watches = new Map<string, Set<string>>() // the days a film was actually watched, from the diary only
+  const iso = (x?: string) => ((x ?? "").trim().match(/^\d{4}-\d{2}-\d{2}$/) ? x!.trim() : "")
   const order = ["watched.csv", "diary.csv", "ratings.csv"] // later files overwrite ratings from earlier ones
   const sorted = files.filter(f => COUNTED.has(base(f.name))).sort((a, b) => order.indexOf(base(a.name)) - order.indexOf(base(b.name)))
   for (const f of sorted) {
@@ -53,13 +55,18 @@ export function parseExports(files: { name: string; text: string }[]): LbEntry[]
       if (!title || !year) continue
       const rating = ri >= 0 && r[ri] ? +r[ri] : null
       const k = key(title, year), had = films.get(k)
-      // the day it was logged: the diary's watched date when there is one, otherwise the date on that row
-      const day = [wi >= 0 ? r[wi] : "", di >= 0 ? r[di] : ""].map(x => (x ?? "").trim()).find(x => /^\d{4}-\d{2}-\d{2}$/.test(x)) ?? had?.[3]
+      // a diary row's Watched Date is a real watch (a rewatch is another row). The plain Date column in every file is when it was logged or rated, so it only fills a blank and never moves a date
+      const real = base(f.name) === "diary.csv" && wi >= 0 ? iso(r[wi]) : ""
+      if (real) watches.set(k, (watches.get(k) ?? new Set<string>()).add(real))
+      const day = real || had?.[3] || iso(di >= 0 ? r[di] : "")
       const rated = rating && rating >= 0.5 && rating <= 5 ? rating : had?.[2] ?? null
       films.set(k, day ? [title, year, rated, day] : [title, year, rated])
     }
   }
-  return [...films.values()]
+  return [...films.entries()].map(([k, e]) => {
+    const w = [...(watches.get(k) ?? [])].sort()
+    return w.length ? ([e[0], e[1], e[2], w[w.length - 1], w] as LbEntry) : e
+  })
 }
 
 /** Finds a film in someone's history: exact title and year, else the same title a year either side (release years differ by region). */

@@ -23,3 +23,8 @@ t("reads film names and years off a watchlist page", () => {
   const html = '<div data-item-name="Big World (2024)"></div><div data-item-name="Amélie &amp; Co (2001)"></div><div data-item-name="No Year"></div>'
   ex(parseWatchlistPage(html)).toEqual([{ title: "Big World", year: 2024 }, { title: "Amélie & Co", year: 2001 }])
 })
+
+test("merging keeps every real watch from both sides", () => {
+  const merged = mergeHistory([["Heat", 1995, 3, "2024-01-01", ["2024-01-01"]]], [["Heat", 1995, 4, "2026-02-02", ["2026-02-02"]]])
+  expect(merged).toEqual([["Heat", 1995, 4, "2026-02-02", ["2024-01-01", "2026-02-02"]]])
+})
