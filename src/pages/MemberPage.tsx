@@ -8,6 +8,7 @@ import { FavoriteStill } from "@/components/FavoriteStill"
 import { Histogram } from "@/components/Charts"
 import { DeviationChart } from "@/components/DeviationChart"
 import { AdminPanel } from "@/components/AdminPanel"
+import { DiaryCalendar } from "@/components/DiaryCalendar"
 import { AutoPlan } from "@/components/AutoPlan"
 import { MyPlan } from "@/components/MyPlan"
 import { PersonAtlas } from "@/components/PersonAtlas"
@@ -137,6 +138,8 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
       {signedIn === name && <AutoPlan name={name} history={lb[name]} />}
 
       <Compare name={name} lb={lb} />
+
+      {(lb[name]?.length ?? 0) > 0 && <DiaryCalendar name={name} history={lb[name]} own={signedIn === name} />}
 
       {(lb[name]?.length ?? 0) > 0 && <TasteDrift name={name} history={lb[name]} own={signedIn === name} />}
 
