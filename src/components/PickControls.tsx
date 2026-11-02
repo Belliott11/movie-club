@@ -4,7 +4,7 @@ import { usePref } from "@/lib/prefs"
 export const usePickPrefs = () => usePref<PickPrefs>("pick-filters-v1", { stream: false, short: false })
 export const useMyServices = () => usePref<string[]>("my-services-v1", [])
 
-const chip = (on: boolean) => `min-h-11 rounded-full px-3.5 text-sm ring-1 ${on ? "bg-foreground font-medium text-background ring-foreground" : "bg-card ring-foreground/15"}`
+const chip = (on: boolean) => `min-h-11 border px-3.5 font-label text-sm ${on ? "border-foreground bg-foreground text-background" : "border-foreground/30 bg-card"}`
 
 /** Filters for picking tonight's film (streamable, under two hours) and the streaming services you have. Remembered on this device. */
 export function PickControls() {

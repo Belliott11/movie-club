@@ -155,7 +155,7 @@ export default function Watch() {
               </li>
             ))}
           </ul>
-        ) : <p className="text-muted-foreground">Nobody has imported yet. Upload an export to get the reels rolling.</p>}
+        ) : <p className="text-muted-foreground">Nobody has imported yet. Upload a Letterboxd export to start.</p>}
       </Collapse>
       <Collapse id="watch-overlap" title="On more than one watchlist (not watched yet)">
         {both.length ? <ul className="flex flex-col gap-3">{both.map(x => <li key={x.t + x.y}><MiniFilm title={x.t} year={x.y} note={`${x.n} people`} /></li>)}</ul> : <p className="text-muted-foreground">No overlaps yet.</p>}

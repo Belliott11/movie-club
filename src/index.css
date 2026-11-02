@@ -6,7 +6,7 @@
 /* Every color is a token. Light and dark are two sets of the same names.
    Cinema palette on warm paper and charcoal: curtain red is the club, teal is everyone else, marquee amber is the standout. */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.2rem; /* square-cornered, like a ticket or a print, not a stack of soft cards */
   --background: #f5f0e6;
   --foreground: #1c1915;
   --card: #fffdf8;
@@ -56,7 +56,10 @@
 
 @theme inline {
   --font-sans: "Public Sans", system-ui, sans-serif;
-  --font-display: "Bricolage Grotesque", "Public Sans", sans-serif;
+  --font-display: var(--f-heading, "Bricolage Grotesque", "Public Sans", sans-serif);
+  --font-label: var(--f-label, ui-monospace, monospace);
+  --radius-2xl: 0.3rem;
+  --radius-3xl: 0.4rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -88,7 +91,11 @@
   html { background: var(--background); overflow-x: clip; }
   body { overflow-x: clip; overscroll-behavior-y: contain; overscroll-behavior-x: none; }
   body { @apply bg-background text-foreground font-sans antialiased; }
-  h1, h2, h3 { font-family: var(--font-display); }
+  /* The lettering comes from the font preset (see lib/fonts.ts): title, headings, and typewriter labels. Single-weight display faces must not be faux-bolded. */
+  h1 { font-family: var(--f-title, var(--font-display)); }
+  h2, h3, h4 { font-family: var(--font-display); }
+  h1, h2, h3, h4, .font-display { font-weight: var(--f-weight, 700) !important; letter-spacing: var(--f-track, 0); font-synthesis: none; }
+  .font-label { font-family: var(--font-label); font-synthesis: none; }
   :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
   /* Native bits follow the theme too: with color-scheme set, the browser draws dropdown lists, date and number fields,
@@ -118,12 +125,6 @@ button:not(:disabled):active { transform: scale(0.97); }
 table { font-variant-numeric: tabular-nums; }
 
 @media (prefers-reduced-motion: no-preference) {
-  .rise { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
-  /* children of .stagger reveal one after another, quickly: the whole page is in within about half a second */
-  .stagger > * { animation: rise 0.3s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: var(--d, 0ms); }
-  .stagger > :nth-child(1) { --d: 0ms } .stagger > :nth-child(2) { --d: 25ms } .stagger > :nth-child(3) { --d: 50ms }
-  .stagger > :nth-child(4) { --d: 75ms } .stagger > :nth-child(5) { --d: 100ms } .stagger > :nth-child(6) { --d: 125ms }
-  .stagger > :nth-child(n+7) { --d: 150ms }
   .grow { transform-origin: left; animation: growX 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.15s); }
   .grow-y { transform-origin: bottom; animation: growY 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: var(--d, 0.1s); }
   .draw { stroke-dasharray: 1; animation: draw 1.4s cubic-bezier(0.4, 0, 0.2, 1) both; animation-delay: var(--d, 0.1s); }
