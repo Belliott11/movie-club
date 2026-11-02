@@ -125,9 +125,7 @@ function Shell() {
     window.addEventListener("resize", place)
     const ro = new ResizeObserver(place) // the bar's size also changes when fonts load or the layout switches between phone and desktop
     if (barRef.current) ro.observe(barRef.current)
-    document.fonts?.addEventListener("loadingdone", place) // the tab labels change width when the title font arrives
-    document.fonts?.ready.then(place)
-    return () => { window.removeEventListener("resize", place); document.fonts?.removeEventListener("loadingdone", place); ro.disconnect() }
+    return () => { window.removeEventListener("resize", place); ro.disconnect() }
   }, [active, ready])
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(
@@ -171,7 +169,7 @@ function Shell() {
         canShuffle={stillCount > 1}
         title={
           <header>
-            <h1 onClick={tapTitle} className="text-4xl leading-[0.9] select-none min-[480px]:text-6xl sm:text-7xl md:text-8xl">Movie Club</h1>
+            <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
             {movies.length > 0 && <p className="mt-2 text-sm opacity-85">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
           </header>
         }
@@ -200,12 +198,12 @@ function Shell() {
       )}
 
       <Tabs value={TABS.some(t => t[0] === active) ? active : "films"} onValueChange={v => go(v as string)}>
-        <TabsList ref={barRef} className="fixed top-1/2 left-1.5 z-40 mb-0 h-auto -translate-y-1/2 flex-col gap-1 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:relative md:top-auto md:left-auto md:mb-5 md:w-full md:translate-y-0 md:flex-row md:gap-0 md:rounded-none md:border-b-2 md:border-foreground md:bg-transparent md:p-0 md:shadow-none md:ring-0 md:backdrop-blur-none">
-          {pill && <span aria-hidden className="absolute rounded-xl bg-primary transition-[left,top,width,height] duration-300 ease-out md:top-auto! md:-bottom-0.5 md:h-[4px]! md:rounded-none md:bg-us" style={{ left: pill.left, top: pill.top, width: pill.width, height: pill.height }} />}
+        <TabsList ref={barRef} className="fixed top-1/2 left-1.5 z-40 mb-0 h-auto -translate-y-1/2 flex-col gap-1 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:relative md:top-auto md:left-auto md:mb-5 md:w-full md:translate-y-0 md:flex-row md:gap-0 md:bg-muted md:shadow-none md:ring-0">
+          {pill && <span aria-hidden className="absolute rounded-xl bg-primary transition-[left,top,width,height] duration-300 ease-out" style={{ left: pill.left, top: pill.top, width: pill.width, height: pill.height }} />}
           {TABS.map(([v, l]) => {
             const Icon = ICONS[v]
             return (
-              <TabsTrigger key={v} value={v} title={l} className="h-11 w-11 flex-none px-1 text-[13px] md:h-[calc(100%-1px)] md:min-h-12 md:w-auto md:flex-1 md:rounded-none md:font-display md:text-xl md:data-active:text-foreground md:dark:data-active:text-foreground">
+              <TabsTrigger key={v} value={v} title={l} className="h-11 w-11 flex-none px-1 text-[13px] md:h-[calc(100%-1px)] md:min-h-11 md:w-auto md:flex-1 md:text-sm">
                 <Icon className="size-5 md:hidden" aria-hidden />
                 <span className="sr-only md:not-sr-only">{l}</span>
               </TabsTrigger>

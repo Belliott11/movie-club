@@ -45,7 +45,7 @@ export default function Next() {
       <Collapse id="next-here" title="Who's here this week?">
         <div className="flex flex-wrap gap-2">
           {members.map(n => (
-            <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-sm border border-foreground/20 bg-card py-1.5 pr-4 pl-3">
+            <label key={n} className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-full bg-card py-1.5 pr-4 pl-3">
               <Switch checked={attending.includes(n)} onCheckedChange={() => toggleAttend(n)} />
               {n}
             </label>

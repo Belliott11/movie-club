@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Layers } from "lucide-react"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
@@ -105,7 +106,7 @@ export function ConstraintDeck() {
 
   return (
     <section aria-label="Constraint deck">
-      <h3 className="mb-1 text-2xl">Deal a pick card</h3>
+      <h3 className="mb-1 flex items-center gap-1.5 text-xl font-bold"><Layers className="size-4" aria-hidden />Deal a pick card</h3>
       <p className="mb-3 text-sm text-muted-foreground">A twist for the next pick, to push the club somewhere new. The selector gets one redraw.</p>
 
       <div className="flex flex-wrap items-start gap-4">

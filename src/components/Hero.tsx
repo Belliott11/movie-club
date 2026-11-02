@@ -45,7 +45,7 @@ export function Hero({ film, still, onNext, canShuffle, title, controls }: {
             </button>
           )}
         </div>
-        <figcaption className="font-label text-xs text-muted-foreground">Still from {film.title} ({film.year}){film.note ? ` · ${film.note}` : ""}</figcaption>
+        <figcaption className="text-xs text-muted-foreground">Still from {film.title} ({film.year}){film.note ? ` · ${film.note}` : ""}</figcaption>
       </figure>
     </div>
   )
