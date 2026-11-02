@@ -90,6 +90,33 @@ function save() {
 await Promise.all(Array.from({ length: 8 }, worker))
 save()
 
+// Wikidata knows what a film was based on. A film based on an earlier film is a remake, one based on a novel, novella, short story or other
+// book is a book adaptation. TMDB's keywords miss many of both, so the two sources are combined.
+const FILM = new Set(["Q11424", "Q24869", "Q202866", "Q226730", "Q2431196"]) // film, feature film, animated film, silent film, audiovisual work
+const BOOK = new Set(["Q7725634", "Q8261", "Q571", "Q149537", "Q49084", "Q47461344", "Q1318295", "Q3331189", "Q17517379"]) // literary work, novel, book, novella, short story, written work, narrative, edition, children's book
+{
+  const todo = [...results.values()].filter(e => e.id && !e.wk)
+  console.log(`${todo.length} films to ask Wikidata about`)
+  for (let i = 0; i < todo.length; i += 100) {
+    const part = todo.slice(i, i + 100)
+    const q = `SELECT ?tmdb ?cls WHERE { VALUES ?tmdb { ${part.map(e => `"${e.id}"`).join(" ")} } ?film wdt:P4947 ?tmdb . ?film wdt:P144 ?base . ?base wdt:P31 ?cls }`
+    let rows = null
+    for (let t = 0; t < 3 && !rows; t++) {
+      try {
+        const r = await fetch("https://query.wikidata.org/sparql?format=json&query=" + encodeURIComponent(q), { headers: { "User-Agent": "movie-club-friends/1.0 (private friends site)", Accept: "application/sparql-results+json" } })
+        if (r.ok) rows = (await r.json()).results.bindings
+        else await sleep(3000 * (t + 1))
+      } catch { await sleep(3000 * (t + 1)) }
+    }
+    if (!rows) { console.log("Wikidata didn't answer for a batch; run again to retry it"); continue }
+    const byId = new Map()
+    for (const b of rows) { const id = b.tmdb.value, c = b.cls.value.split("/").pop(); const x = byId.get(id) ?? { f: false, b: false }; if (FILM.has(c)) x.f = true; if (BOOK.has(c)) x.b = true; byId.set(id, x) }
+    for (const e of part) { e.wk = 1; const x = byId.get(String(e.id)); if (x?.b) e.wb = 1; if (x?.f) e.wr = 1 }
+    await sleep(1200)
+  }
+  save()
+}
+
 // OMDb gives the outside scores (IMDb, Rotten Tomatoes, Metacritic) and the Oscars. Its free key allows about a thousand calls a day, so the
 // best-known films go first and a rerun tomorrow carries on where this stopped.
 if (CONFIG.OMDB_KEY) {
