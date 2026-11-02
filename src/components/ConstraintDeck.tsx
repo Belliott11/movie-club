@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Layers } from "lucide-react"
 import { PosterThumb } from "@/components/PosterThumb"
+import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { CARDS, deal, fitting, untouchedMovementKeys, type Card, type Cand, type Ctx } from "@/lib/deck"
 import { continentOfCode, continentOfName, regionOfCode, regionOfName } from "@/lib/continents"
@@ -146,6 +147,21 @@ export function ConstraintDeck() {
           )}
         </div>
       )}
+
+      <Collapse id="deck-cards" title={`Cards in play (${deckPool.length})`} defaultOpen={false}>
+        <p className="mb-2 text-sm text-muted-foreground">Every card in the deck right now. Dealt ones stay out until the deck runs through, then they all go back in.</p>
+        <ul className="flex flex-col divide-y divide-border">
+          {deckPool.map(c => {
+            const state = c.id === card?.id ? "on the table" : [...mine.used, ...mine.drawn].includes(c.id) ? "dealt" : ""
+            return (
+              <li key={c.id} className={`flex items-start justify-between gap-3 py-2 ${state === "dealt" ? "opacity-60" : ""}`}>
+                <span className="min-w-0"><b className="font-medium">{c.title}</b><span className="block text-sm text-muted-foreground">{c.rule}</span></span>
+                {state && <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">{state}</span>}
+              </li>
+            )
+          })}
+        </ul>
+      </Collapse>
     </section>
   )
 }
