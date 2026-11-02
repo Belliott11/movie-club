@@ -52,4 +52,5 @@ test("theme cards are loose: they point at films TMDB's keywords tie to the them
   expect(CARDS.filter(c => c.loose).length).toBeGreaterThanOrEqual(12)
   expect(CARDS.some(c => c.id === "theme-space")).toBe(true)
   expect(CARDS.some(c => c.id === "theme-epidemic")).toBe(true)
+  for (const id of ["future", "religion", "issues", "music", "occult", "nature"]) expect(CARDS.some(c => c.id === `theme-${id}`)).toBe(true)
 })
