@@ -19,7 +19,7 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
 
 /**
  * A deck of constraints for the next pick. Deal a card and it says what the pick has to be (before 1970, not in English, a country
- * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn, and no repeats until the deck's done.
+ * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn (never the same card), and every deal is random from the whole deck.
  */
 export function ConstraintDeck() {
   const { movies, watchlist, lb, loadLb, countries: fixed, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards } = useStore()
@@ -27,7 +27,7 @@ export function ConstraintDeck() {
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
   const deckPool = CARDS.filter(c => deckCards.includes(c.id))
-  const mine = { drawn: deck.drawn, used: deck.used.length >= deckPool.length - 1 ? [] : deck.used }
+  const mine = { drawn: deck.drawn }
   const [stage, setStage] = useState<Stage>(mine.drawn.length ? "face-up" : "idle")
   // someone else dealing (or a new pick starting) changes what's on the table
   useEffect(() => { if (stage === "idle" && mine.drawn.length) setStage("face-up"); if (stage === "face-up" && !mine.drawn.length) setStage("idle") }, [mine.drawn.length, stage])
@@ -37,8 +37,8 @@ export function ConstraintDeck() {
   const redrawsLeft = mine.drawn.length < 2
 
   const play = (isRedraw: boolean) => {
-    const next = deal([...mine.used, ...mine.drawn], Math.random, deckPool.length ? deckPool : CARDS)
-    const commit = () => setDeck({ drawn: [...(isRedraw ? mine.drawn : []), next.id], used: mine.used })
+    const next = deal(mine.drawn, Math.random, deckPool.length ? deckPool : CARDS)
+    const commit = () => setDeck({ drawn: [...(isRedraw ? mine.drawn : []), next.id], used: [] })
     if (reduced()) { commit(); setStage("face-up"); return }
     setStage("shuffling")
     timers.current.push(
@@ -149,12 +149,12 @@ export function ConstraintDeck() {
       )}
 
       <Collapse id="deck-cards" title={`Cards in play (${deckPool.length})`} defaultOpen={false}>
-        <p className="mb-2 text-sm text-muted-foreground">Every card in the deck right now. Dealt ones stay out until the deck runs through, then they all go back in.</p>
+        <p className="mb-2 text-sm text-muted-foreground">Every card in the deck right now. Each deal is random from all of them, so a card can come up again.</p>
         <ul className="flex flex-col divide-y divide-border">
           {deckPool.map(c => {
-            const state = c.id === card?.id ? "on the table" : [...mine.used, ...mine.drawn].includes(c.id) ? "dealt" : ""
+            const state = c.id === card?.id ? "on the table" : ""
             return (
-              <li key={c.id} className={`flex items-start justify-between gap-3 py-2 ${state === "dealt" ? "opacity-60" : ""}`}>
+              <li key={c.id} className="flex items-start justify-between gap-3 py-2">
                 <span className="min-w-0"><b className="font-medium">{c.title}</b><span className="block text-sm text-muted-foreground">{c.rule}</span></span>
                 {state && <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs">{state}</span>}
               </li>

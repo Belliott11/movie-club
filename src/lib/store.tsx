@@ -733,7 +733,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const selector = turnState.selector && turnState.selector.turn === turnNow ? turnState.selector.name : null
   const canDesignate = !seal.publicKey || (!!hostKey && !!seal.publicKey)
   const canPick = !selector || me === selector
-  const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: turnState.deck.used } : { drawn: [], used: turnState.deck ? [...turnState.deck.used, ...turnState.deck.drawn] : [] }
+  const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: [] as string[] } : { drawn: [] as string[], used: [] as string[] } // every deal is random from the whole deck: dealt cards are never held back
 
   const value: Store = {
     ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => CARDS.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
