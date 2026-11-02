@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { continentOfCode, regionOfCode } from "./continents"
 import type { Cand } from "./deck"
-import { wonCannes } from "./cannes"
+import { wonFestival } from "./festivals"
 import { key } from "./stats"
 
 /** One watchlist film's facts, as written by scripts/build-catalog.mjs (short names keep the file small). */
@@ -54,7 +54,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
     franchise: e.fr ? true : e.kn ? false : undefined,
     womanDirector: e.d ? !!e.wd : undefined,
     book: e.bk || e.wb ? true : e.kn || e.wk ? false : undefined, remake: e.rm2 || e.wr ? true : e.kn || e.wk ? false : undefined, musical: e.kn ? !!(e.mu || e.g?.includes("Music")) : e.g?.includes("Music") ? true : undefined,
-    cannes: wonCannes(base.title, base.year),
+    cannes: wonFestival(base.title, base.year), // the field keeps its old name from when this was Cannes only
     budget: e.b,
     oscars: e.o ?? ((e.v ?? 0) < 800 ? 0 : undefined), // OMDb was only asked about well-voted films; the rest won nothing
   }

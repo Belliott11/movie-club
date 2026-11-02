@@ -1,7 +1,7 @@
 import { searchFilm, tmdb } from "./api"
 import { MOVEMENTS, NATIONS, type Film } from "./atlas"
 import themes from "../data/themes.json"
-import { CANNES } from "./cannes"
+import { FESTIVAL_WINNERS } from "./festivals"
 import { LOW_BUDGET, OSCAR_WINNERS, WOMAN_DIRECTED } from "./deckClassics"
 import { FAMOUS_NAMES } from "./famousDirectors"
 import { GENRE_IDS } from "./customCard"
@@ -152,7 +152,7 @@ export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: (
   if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
   if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
   if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)
-  if (card.id === "cannes") return fromTitles(CANNES, skip, rand)
+  if (card.id === "cannes") return fromTitles(FESTIVAL_WINNERS, skip, rand)
   if (card.id === "famous") return famousIdeas(skip, rand)
   if (card.id === "word") return oneWordIdeas(skip, rand)
   if (card.id === "movement") return movementIdeas(ctx, skip, rand)
