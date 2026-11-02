@@ -45,19 +45,6 @@ export function tasteTwins(lb: LbHistory, min = 15) {
   return out.sort((x, y) => x.gap - y.gap)
 }
 
-/**
- * How someone rates club films at the club versus on their own Letterboxd. Positive means higher at the club.
- * Compares only films they rated in both places.
- */
-export function clubVsHome(movies: Movie[], lb: LbHistory, name: string) {
-  const rows = movies
-    .filter(m => m.ratings[name] != null)
-    .map(m => ({ movie: m, club: m.ratings[name], home: findEntry(lb[name], m.title, m.year)?.[2] ?? null }))
-    .filter((r): r is { movie: Movie; club: number; home: number } => r.home != null)
-    .map(r => ({ ...r, diff: r.club - r.home }))
-  return { count: rows.length, average: avg(rows.map(r => r.diff)), biggest: [...rows].sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)).slice(0, 3) }
-}
-
 /** Films rated by at least `min` people, best average first, that the club hasn't watched. */
 export const groupFavorites = (lb: LbHistory, movies: Movie[], min = 3) =>
   allFilms(lb).filter(f => f.ratings.length >= min && !inClub(movies, f) && mean(f) >= 3.8).sort((a, b) => mean(b) - mean(a) || b.ratings.length - a.ratings.length).slice(0, 6)

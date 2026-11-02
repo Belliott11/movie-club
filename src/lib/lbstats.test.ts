@@ -1,6 +1,6 @@
 import { expect, test } from "vitest"
 import type { LbHistory } from "./letterboxd"
-import { clubVsHome, deepCuts, divisiveOnLb, favoritesOf, groupFavorites, tasteTwins } from "./lbstats"
+import { deepCuts, divisiveOnLb, favoritesOf, groupFavorites, tasteTwins } from "./lbstats"
 import type { Movie } from "./types"
 
 // 20 films that Ann and Ben rate alike, and Cy rates the opposite way
@@ -18,13 +18,6 @@ test("taste twins: closest pair first, and pairs need enough shared films", () =
   expect(t[0].shared).toBe(21) // 20 plus Heat
   expect(t[0].gap).toBeLessThan(t.at(-1)!.gap)
   expect(tasteTwins(lb, 30)).toEqual([])
-})
-
-test("club versus home compares only films rated in both places", () => {
-  const r = clubVsHome(club, lb, "Ann")
-  expect(r.count).toBe(1)
-  expect(r.average).toBe(-1) // 4 at the club, 5 on Letterboxd
-  expect(clubVsHome(club, lb, "Zed")).toEqual({ count: 0, average: null, biggest: [] })
 })
 
 test("group favorites skip club films; deep cuts are single-viewer 4.5+; divisive needs a wide spread", () => {

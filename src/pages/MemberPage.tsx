@@ -16,7 +16,7 @@ import { TasteDrift } from "@/components/TasteDrift"
 import { PosterThumb } from "@/components/PosterThumb"
 import { buttonVariants } from "@/components/ui/button"
 import { FavoritesEditor } from "@/components/FavoritesEditor"
-import { chosenFavorites, clubVsHome, favoritesOf } from "@/lib/lbstats"
+import { chosenFavorites, favoritesOf } from "@/lib/lbstats"
 import { avg, awardWinners, deviations, fmt, groupAvg, histogram, median, memberStats, tasteOverlap, tilt } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
@@ -47,7 +47,6 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
   const w = awardWinners(movies, members)
   const picked = chosenFavorites(favs[name], lb, name)
   const lbFavs = picked.length ? picked : favoritesOf(lb, name, 4)
-  const home = clubVsHome(movies, lb, name)
 
   const tags = [
     w.picker?.n === name && "Best pick",
@@ -105,24 +104,13 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
         </>
       )}
 
-      {(lbFavs.length > 0 || home.count >= 3) && (
+      {lbFavs.length > 0 && (
         <section className="flex flex-col gap-6">
           {lbFavs.length > 0 && (
             <Collapse id="mp-lbfavs" title={picked.length ? `${name}'s four favorites` : "Letterboxd favorites"}>
               <p className="mb-3 text-sm text-muted-foreground">{picked.length ? `Chosen by ${name}, in order, with their Letterboxd rating.` : `${name}'s highest-rated films on Letterboxd.`}</p>
               <ul className="grid grid-cols-2 gap-3">
                 {lbFavs.map(f => <li key={f.title + f.year}><FavoriteStill {...f} /></li>)}
-              </ul>
-            </Collapse>
-          )}
-          {home.count >= 3 && home.average != null && (
-            <Collapse id="mp-home" title="At the club and at home">
-              <p className="text-sm">
-                Across {home.count} films {name} rated in both places, {name} rates{" "}
-                {Math.abs(home.average) < 0.1 ? <><b>about the same</b> at the club as on Letterboxd.</> : <><b>{fmt(Math.abs(home.average), 1)} stars {home.average > 0 ? "higher" : "lower"}</b> at the club than on Letterboxd.</>}
-              </p>
-              <ul className="mt-2 text-sm text-muted-foreground">
-                {home.biggest.map(r => <li key={r.movie.id}>{r.movie.title}: {r.club} at the club, {r.home} at home</li>)}
               </ul>
             </Collapse>
           )}
