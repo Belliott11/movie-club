@@ -264,5 +264,39 @@
       "interstellar",
       "galaxy"
     ]
+  },
+  {
+    "id": "epidemic",
+    "title": "Outbreak",
+    "rule": "A disease, plague or epidemic.",
+    "kw": [
+      "epidemic",
+      "pandemic",
+      "virus",
+      "plague",
+      "outbreak",
+      "disease",
+      "infection",
+      "quarantine",
+      "contagion",
+      "deadly virus",
+      "infectious disease",
+      "cholera",
+      "tuberculosis",
+      "aids",
+      "hiv",
+      "leprosy",
+      "terminal illness",
+      "illness",
+      "sickness",
+      "black death",
+      "bubonic plague",
+      "spanish flu",
+      "covid-19",
+      "ebola",
+      "cancer",
+      "biological weapon",
+      "bioterrorism"
+    ]
   }
 ]
