@@ -11,7 +11,7 @@ import { usePlan } from "@/lib/usePlan"
 /** Only ever shown to the person it belongs to, on their own page. */
 export function MyPlan({ name, history }: { name: string; history: LbEntry[] | undefined }) {
   const { suggest } = useStore()
-  const { plan, status, save, unlock, lock, remove, setSeen } = usePlan(name)
+  const { plan, status, save, unlock, lock, remove, setSeen, setWatching } = usePlan(name)
   const [text, setText] = useState("")
   const [pass, setPass] = useState("")
   const [bad, setBad] = useState("")
@@ -48,7 +48,7 @@ export function MyPlan({ name, history }: { name: string; history: LbEntry[] | u
 
       {status === "open" && plan && (
         <>
-          <PlanList plan={plan} seen={seen} overrides={plan.overrides} onSeen={setSeen} onSuggest={f => suggest(f.title, f.year ?? null)} />
+          <PlanList plan={plan} seen={seen} overrides={plan.overrides} onSeen={setSeen} onSuggest={f => suggest(f.title, f.year ?? null)} onWatching={setWatching} />
           {replacing ? form : (
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" className="h-11 px-4" onClick={() => setReplacing(true)}>Replace plan</Button>

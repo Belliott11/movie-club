@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { filmKey, groupProgress, parsePlan, seenMatcher, upNext } from "./plan"
+import { filmKey, groupProgress, parsePlan, seenMatcher, upNext, upNextAll } from "./plan"
 
 const sample = `WATCHLIST PLAN BY GROUP, some intro
 Long hauls to save for weekends or split over two nights: Shoah, Dekalog, Jeanne Dielman.
@@ -86,4 +86,48 @@ test("a tiered plan keeps its groups, tiers, starred films and the groups to wat
   expect(p.groups[2].films[0]).toMatchObject({ title: "Intolerance", year: 1916, added: true }) // the asterisk is not part of the title
   expect(p.groups[0].films[0]).toMatchObject({ title: "Stray Dog", year: 1949 })
   expect(p.watching).toEqual([1, 2, 5]) // the first group with each name; War is group 5 here
+})
+
+const prioritized = `WATCH PLAN BY GROUP, WITH PRIORITY
+
+66 groups, 751 films. Every film is tagged CORE (195), MAIN (307) or STRETCH (249).
+CURRENTLY WATCHING, a cap of three groups at a time: Deep dive: Kurosawa, Samurai, kung fu and Hong Kong action, Crime and noir. Finish one before opening the next.
+An asterisk means it is not on your watchlist.
+
+GROUP 1: DEEP DIVE: KUROSAWA (2 films, 2 core)
+Two Kurosawa films. 12 Angry Men is not one of them.
+1. Stray Dog (1949) [CORE]
+2. Sanjuro (1962) [CORE] [LB500 #488]
+
+GROUP 2: SAMURAI, KUNG FU AND HONG KONG ACTION (2 films, 0 core)
+Starts with Samurai Rebellion.
+1. Samurai Rebellion (1967) [MAIN] [LB500 #173]
+2. Battle Royale (2000) [MAIN]
+
+GROUP 3: CRIME AND NOIR (3 films, 1 core)
+Classic noir first.
+1. The Maltese Falcon (1941) [CORE] [AFI, TSPDT #306]
+2. White Heat (1949) [MAIN]
+3. Little Caesar (1931)* [STRETCH]
+
+GROUP 4: WAR (1 films, 1 core)
+1. Das Boot (1981) [CORE]
+`
+
+test("a prioritized plan keeps its groups with 'N core' counts, priority tags, and the groups it says to watch", () => {
+  const p = parsePlan(prioritized)
+  expect(p.groups.map(g => [g.n, g.films.length])).toEqual([[1, 2], [2, 2], [3, 3], [4, 1]])
+  expect(p.groups[2].films.map(f => f.priority)).toEqual(["core", "main", "stretch"])
+  expect(p.groups[2].films[2]).toMatchObject({ title: "Little Caesar", year: 1931, added: true })
+  expect(p.groups[0].blurb).toMatch(/12 Angry Men/) // a description line, not a film
+  expect(p.watching).toEqual([1, 2, 3]) // a group name with commas in it still counts as one; War is not named
+})
+
+test("up next lists each group being watched, or the earliest unfinished one", () => {
+  const p = parsePlan(prioritized)
+  const seen = (f: { title: string }) => f.title === "Stray Dog"
+  const now = upNextAll(p, seen)
+  expect(now.map(x => [x.group.n, x.films[0].title])).toEqual([[1, "Sanjuro"], [2, "Samurai Rebellion"], [3, "The Maltese Falcon"]])
+  expect(upNextAll({ ...p, watching: [4] }, seen).map(x => x.group.n)).toEqual([4])
+  expect(upNextAll({ ...p, watching: undefined }, seen).map(x => x.group.n)).toEqual([1])
 })

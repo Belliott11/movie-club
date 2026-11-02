@@ -27,7 +27,9 @@ export function usePlan(member: string | null) {
   const save = useCallback(async (text: string, pass: string) => {
     const parsed = parsePlan(text)
     if (!member || !parsed.groups.length) return false
-    parsed.overrides = readOpen(member)?.overrides // a pasted replacement keeps your corrections
+    const old = readOpen(member)
+    parsed.overrides = old?.overrides // a pasted replacement keeps your corrections
+    if (old?.watching) parsed.watching = old.watching // and the groups you chose to watch now
     await savePlanCipher(member, await lockKey(JSON.stringify(parsed), pass))
     localStorage.setItem(openKey(member), JSON.stringify(parsed))
     localStorage.setItem(passKey(member), pass)
@@ -42,6 +44,16 @@ export function usePlan(member: string | null) {
     if (value == null) delete overrides[filmKey(f)]
     else overrides[filmKey(f)] = value
     const next = { ...plan, overrides }
+    localStorage.setItem(openKey(member), JSON.stringify(next))
+    setPlan(next)
+    const pass = localStorage.getItem(passKey(member))
+    if (pass) await savePlanCipher(member, await lockKey(JSON.stringify(next), pass))
+  }, [member, plan, savePlanCipher])
+
+  /** Chooses which groups you are working through now. Saved locked, like the rest of the plan. */
+  const setWatching = useCallback(async (groups: number[]) => {
+    if (!member || !plan) return
+    const next = { ...plan, watching: groups }
     localStorage.setItem(openKey(member), JSON.stringify(next))
     setPlan(next)
     const pass = localStorage.getItem(passKey(member))
@@ -63,5 +75,5 @@ export function usePlan(member: string | null) {
   const lock = useCallback(() => { if (member) { localStorage.removeItem(openKey(member)); localStorage.removeItem(passKey(member)) }; setPlan(null); setStatus("locked") }, [member])
   /** Deletes the plan everywhere. */
   const remove = useCallback(async () => { if (member) { localStorage.removeItem(openKey(member)); localStorage.removeItem(passKey(member)); await savePlanCipher(member, null) } setPlan(null); setStatus("none") }, [member, savePlanCipher])
-  return { plan, status, save, unlock, lock, remove, setSeen }
+  return { plan, status, save, unlock, lock, remove, setSeen, setWatching }
 }
