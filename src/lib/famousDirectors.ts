@@ -1,7 +1,7 @@
 import { fold } from "./stats"
 
 /** Directors whose name alone sells a film. Hand-picked, spelled the way TMDB spells them; matching ignores accents and case. */
-const NAMES = [
+export const FAMOUS_NAMES = [
   "Quentin Tarantino", "Martin Scorsese", "Steven Spielberg", "Christopher Nolan", "Stanley Kubrick", "Alfred Hitchcock", "Francis Ford Coppola", "Akira Kurosawa",
   "David Fincher", "Wes Anderson", "Paul Thomas Anderson", "Denis Villeneuve", "Ridley Scott", "James Cameron", "David Lynch", "Clint Eastwood", "Woody Allen",
   "Spike Lee", "Ang Lee", "Bong Joon-ho", "Park Chan-wook", "Hayao Miyazaki", "Pedro Almodóvar", "Ingmar Bergman", "Federico Fellini", "François Truffaut",
@@ -17,7 +17,7 @@ const NAMES = [
   "Robert Eggers", "Rian Johnson", "Oliver Stone", "Spike Jonze", "Michel Gondry", "Todd Haynes", "Paul Schrader", "Ryan Coogler", "Ava DuVernay", "Steve McQueen",
   "Gus Van Sant", "Ron Howard", "Rob Reiner", "John Hughes", "Peter Weir", "Mike Leigh", "Ken Loach", "Hou Hsiao-hsien", "Edward Yang", "Takeshi Kitano",
 ]
-const KNOWN = new Set(NAMES.map(n => fold(n).replace(/[^a-z0-9]/g, "")))
+const KNOWN = new Set(FAMOUS_NAMES.map(n => fold(n).replace(/[^a-z0-9]/g, "")))
 
 /** Whether this director is on the list of big names. */
 export const isFamousDirector = (name: string) => KNOWN.has(fold(name).replace(/[^a-z0-9]/g, ""))

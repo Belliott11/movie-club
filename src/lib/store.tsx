@@ -62,7 +62,7 @@ type Store = {
   /** Renames a person, or merges them into an existing one. Ratings, picks, watchlists and votes all move. */
   renameMember: (from: string, to: string) => Promise<void>
   removeMember: (name: string) => Promise<void>
-  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null) => Promise<void>
+  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null, cardId?: string | null) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   setTake: (m: Movie, member: string, text: string) => Promise<void>
   seal: SealState
@@ -81,6 +81,9 @@ type Store = {
   /** People who don't use Letterboxd, so the site stops asking them to import. Loads with loadSeal. */
   noLb: string[]
   setNoLb: (member: string, on: boolean) => Promise<void>
+  /** Which pick card each film was chosen for, by the film's number in the club's order. Loads with loadSeal. */
+  pickCards: Record<string, string>
+  setPickCard: (seq: number, cardId: string | null) => Promise<void>
   /** The four films each player has picked as their favorites, in order. Loads with loadSeal. */
   favs: Record<string, { t: string; y: number }[]>
   setFavs: (member: string, list: { t: string; y: number }[]) => Promise<void>
@@ -154,6 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [countries, setCountries] = useState<Record<string, string>>({})
   const [deckSaved, setDeckSaved] = useState<string[] | null>(null)
   const [noLb, setNoLbState] = useState<string[]>([])
+  const [pickCards, setPickCardsState] = useState<Record<string, string>>({})
   const [favs, setFavsState] = useState<Record<string, { t: string; y: number }[]>>({})
   const [candidates, setCandidatesState] = useState<Record<string, { add: { t: string; y?: number }[]; hide: string[] }>>({})
   // who picks this week and the cards dealt, both tied to the number of the film being chosen so they lapse once it's added
@@ -293,10 +297,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return full
   }, [])
 
-  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null) => {
+  const setPickCard = useCallback(async (seq: number, cardId: string | null) => {
+    setPickCardsState(all => {
+      const next = { ...all }
+      if (cardId) next[String(seq)] = cardId; else delete next[String(seq)]
+      if (!sealRef.current.shared) lsSet("pickcards-local-v1", next)
+      return next
+    })
+    if (sealRef.current.shared && sb) fail((cardId ? await sb.from("club_settings").upsert({ key: `pickcard:${seq}`, value: cardId }) : await sb.from("club_settings").delete().eq("key", `pickcard:${seq}`)).error)
+  }, [])
+  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null, cardId = null) => {
     const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
     await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId, watched_on: today() })
-  }, [insertMovie])
+    if (cardId) await setPickCard(seq, cardId) // the card this pick answers, kept with the film
+  }, [insertMovie, setPickCard])
 
   const deleteMovie = useCallback(async (m: Movie) => {
     setMovies(ms => ms.filter(x => x.id !== m.id))
@@ -407,6 +421,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setFavsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("favs:")).flatMap(r => { try { return [[r.key.slice(5), JSON.parse(r.value)] as const] } catch { return [] } })))
         setNoLbState((s.data as { key: string }[]).filter(r => r.key.startsWith("nolb:")).map(r => r.key.slice(5)))
         setDeckSaved((() => { try { const v = JSON.parse(get("deck-cards") ?? "null"); return Array.isArray(v) ? v : null } catch { return null } })())
+        setPickCardsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("pickcard:")).map(r => [r.key.slice(9), r.value])))
         const json = (k: string) => { try { return JSON.parse(get(k) ?? "null") } catch { return null } }
         setTurnState({ selector: json("selector"), deck: json("deck") })
         const by: Record<string, string[]> = {}
@@ -419,6 +434,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setTurnState(lsGet("turn-local-v1", { selector: null, deck: null }))
     setCandidatesState(lsGet("candidates-local-v1", {}))
     setFavsState(lsGet("favs-local-v1", {}))
+    setPickCardsState(lsGet("pickcards-local-v1", {}))
     setNoLbState(lsGet("nolb-local-v1", []))
     setDeckSaved(lsGet("deck-cards-local-v1", null))
     const l = readSealLocal()
@@ -748,7 +764,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deck = { drawn: drawnFor(turnState.deck, turnNow), by: turnState.deck?.turn === turnNow ? turnState.deck.by : undefined } // every deal is random from the whole deck: dealt cards are never held back
 
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => CARDS.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => CARDS.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

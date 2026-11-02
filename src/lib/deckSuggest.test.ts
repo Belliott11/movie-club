@@ -30,5 +30,15 @@ test("place cards are worked out from the card's own rule", () => {
 })
 
 test("cards TMDB can't express give no filter", () => {
-  for (const id of ["franchise", "lowBudget", "womanDirector", "famous", "oscar", "word", "movement"]) expect(discoverParams(card(id), ctx)).toBeNull()
+  for (const id of ["lowBudget", "womanDirector", "famous", "oscar", "word", "movement"]) expect(discoverParams(card(id), ctx)).toBeNull()
+})
+
+test("franchise uses TMDB's sequel keyword, and the hand-made lists are sound", async () => {
+  expect(discoverParams(card("franchise"), ctx, { franchise: 9663 })).toBe("&with_keywords=9663")
+  const { WOMAN_DIRECTED, LOW_BUDGET, OSCAR_WINNERS } = await import("./deckClassics")
+  for (const list of [WOMAN_DIRECTED, LOW_BUDGET, OSCAR_WINNERS]) {
+    expect(list.length).toBeGreaterThan(20)
+    expect(new Set(list.map(([t, y]) => `${t}|${y}`)).size).toBe(list.length) // no repeats
+    expect(list.every(([t, y]) => t && y > 1900 && y < 2030)).toBe(true)
+  }
 })

@@ -9,6 +9,7 @@ import { FilmSearch } from "./FilmSearch"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { CARDS } from "@/lib/deck"
 import { fieldCls } from "./field"
 import { Scale } from "./Scale"
 
@@ -21,7 +22,7 @@ export function outsideChips(m: Movie, tmdbScore?: number | null) {
 }
 
 export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
-  const { mini, members, setRating, patchMovie, deleteMovie, canDesignate } = useStore()
+  const { mini, members, setRating, patchMovie, deleteMovie, canDesignate, pickCards } = useStore()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -49,7 +50,7 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
         <span className={`row-span-2 self-center font-display text-4xl leading-none font-extrabold tracking-tight ${best ? "text-gold" : ""}`} title={best ? "Highest rated" : "Group average"}>
           {fmt(g)}
         </span>
-        <span className="text-sm text-muted-foreground">{m.pick}'s pick · {Object.keys(m.ratings).length} {Object.keys(m.ratings).length === 1 ? "rating" : "ratings"}</span>
+        <span className="text-sm text-muted-foreground">{m.pick}'s pick · {Object.keys(m.ratings).length} {Object.keys(m.ratings).length === 1 ? "rating" : "ratings"}{CARDS.find(c => c.id === pickCards[String(m.seq)]) ? ` · card: ${CARDS.find(c => c.id === pickCards[String(m.seq)])!.title}` : ""}</span>
         <span className="col-span-2"><Scale us={g} world={o} /></span>
         <span className="col-span-2 mt-0.5 flex flex-wrap gap-x-3.5 text-sm text-muted-foreground">
           {chips.length ? chips.map(([l, v, u]) => <span key={l}><b className="font-semibold text-foreground">{l}</b> {fmt(v, 1)}{u}</span>) : <span>Looking up outside ratings…</span>}

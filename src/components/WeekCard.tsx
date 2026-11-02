@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { filmDetail, hasTmdb, IMG, searchFilm, whereToWatch } from "@/lib/api"
+import { CARDS } from "@/lib/deck"
 import { fmt, groupAvg, key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { buttonVariants } from "@/components/ui/button"
@@ -9,7 +10,7 @@ import { StarRating } from "./StarRating"
 
 /** The newest film, with one-tap rating for whoever is signed in and a "waiting on" line for everyone else. */
 export function WeekCard() {
-  const { movies, mini, me, attending, setRating, seal } = useStore()
+  const { movies, mini, me, attending, setRating, seal, pickCards } = useStore()
   const m = [...movies].sort((a, b) => b.seq - a.seq)[0]
   const [d, setD] = useState<any>(null)
   const [where, setWhere] = useState<{ names: string[]; link: string | null } | null>(null)
@@ -50,6 +51,7 @@ export function WeekCard() {
             <a href={`#/films/${encodeURIComponent(String(m.id))}`} className="hover:underline">{m.title}</a> <small className="font-sans text-sm font-medium text-muted-foreground">{m.year}</small>
           </h2>
           <p className="text-sm text-muted-foreground">{m.pick}'s pick · {g == null ? "no ratings yet" : <>{Object.keys(m.ratings).length} {Object.keys(m.ratings).length === 1 ? "rating" : "ratings"}, average <b className="text-foreground">{fmt(g)}</b></>}</p>
+          {pickCards[String(m.seq)] && (() => { const c = CARDS.find(x => x.id === pickCards[String(m.seq)]); return c ? <p className="text-sm"><b>Card: {c.title}.</b> <span className="text-muted-foreground">{c.rule}</span></p> : null })()}
           {waiting.length > 0 && <p className="text-sm">Waiting on {waiting.join(", ")}</p>}
           {expected.length > 0 && waiting.length === 0 && <p className="text-sm text-pos">Everyone has rated it</p>}
         </div>

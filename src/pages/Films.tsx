@@ -8,10 +8,11 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { fieldCls } from "@/components/field"
 import { bestFilm, decadesOf, defaultFilter, filterFilms, pickOrder, type FilmFilter, type FilmSort } from "@/lib/stats"
+import { CARDS } from "@/lib/deck"
 import { useStore } from "@/lib/store"
 
 export default function Films() {
-  const { movies, attending, me, addMovie, seed, canPick, selector } = useStore()
+  const { movies, attending, me, addMovie, seed, canPick, selector, deck, deckCards } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
@@ -26,7 +27,7 @@ export default function Films() {
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
-    await addMovie(title.trim(), +year, String(f.get("pick")).trim(), {}, tmdbId)
+    await addMovie(title.trim(), +year, String(f.get("pick")).trim(), {}, tmdbId, String(f.get("card") ?? "") || null)
     setAdding(false); setTitle(""); setYear(""); setTmdbId(null)
   }
 
@@ -70,6 +71,13 @@ export default function Films() {
             <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
             <Input name="year" type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
             <Input name="pick" placeholder="Picked by" defaultValue={next} required className="h-10 w-36" />
+            <label className="flex items-center gap-2 text-sm text-muted-foreground">
+              Card
+              <select name="card" aria-label="Which pick card this film answers" defaultValue={deck.drawn.at(-1) ?? ""} className={fieldCls}>
+                <option value="">None</option>
+                {CARDS.filter(c => deckCards.includes(c.id) || c.id === deck.drawn.at(-1)).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              </select>
+            </label>
             <Button type="submit" className="h-10 px-4">Add film</Button>
             <Button type="button" variant="ghost" className="h-10 px-4" onClick={() => setAdding(false)}>Cancel</Button>
           </form>

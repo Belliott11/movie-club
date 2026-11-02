@@ -1,5 +1,7 @@
-import { tmdb } from "./api"
-import { NATIONS } from "./atlas"
+import { searchFilm, tmdb } from "./api"
+import { MOVEMENTS, NATIONS, type Film } from "./atlas"
+import { LOW_BUDGET, OSCAR_WINNERS, WOMAN_DIRECTED } from "./deckClassics"
+import { FAMOUS_NAMES } from "./famousDirectors"
 import type { Card, Ctx } from "./deck"
 import { continentOfCode, regionOfCode } from "./continents"
 import { key } from "./stats"
@@ -9,7 +11,7 @@ const nameOf = (code: string) => { try { return code === "US" ? "USA" : intl.of(
 
 const GENRES: Record<string, number> = { doc: 99, animation: 16, western: 37, horror: 27, romance: 10749, war: 10752, scifi: 878 }
 /** Cards decided by a TMDB keyword; the id is looked up by name since keyword ids aren't something to memorize. */
-export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story" }
+export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story", franchise: "sequel" }
 const LANGS = "fr|ja|ko|es|it|de|hi|zh|sv|ru|pt|fa|da|pl|tr|ar|th|el|hu|cs"
 
 /**
@@ -46,8 +48,57 @@ async function keywordIds(): Promise<Record<string, number>> {
   return out
 }
 
-/** Well-known films that meet a card, for when nothing on anyone's watchlist does. A random page of the most-voted ones, so it isn't the same list every time. */
+const shuffle = <T,>(xs: T[], rand: () => number) => xs.map(x => [rand(), x] as const).sort((a, b) => a[0] - b[0]).map(x => x[1])
+const slim = (x: any): Idea => ({ title: x.title as string, year: +(x.release_date ?? "").slice(0, 4) || 0, id: x.id as number, poster: x.poster_path as string | null, score: x.vote_average as number, votes: x.vote_count as number })
+
+/** A random handful from a hand-made list, looked up on TMDB for their poster and score. */
+async function fromTitles(list: Film[], skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const pick = shuffle(list, rand).slice(0, 12)
+  const found = await Promise.all(pick.map(async ([t, y]) => { const r = await searchFilm(t, y); return r?.id ? slim(r) : null }))
+  return found.filter((x): x is Idea => !!x && !!x.year && !skip.has(key(x.title, x.year))).slice(0, 6)
+}
+
+const PERSON = "person-ids-v1"
+const readPeople = (): Record<string, number> => { try { return JSON.parse(localStorage.getItem(PERSON) ?? "{}") } catch { return {} } }
+async function personId(name: string): Promise<number | null> {
+  const known = readPeople()
+  if (known[name]) return known[name]
+  const r = await tmdb<{ results?: { id: number; name: string; known_for_department: string }[] }>("/search/person", `&query=${encodeURIComponent(name)}`)
+  const hit = r?.results?.find(p => p.known_for_department === "Directing") ?? r?.results?.[0]
+  if (!hit) return null
+  try { localStorage.setItem(PERSON, JSON.stringify({ ...readPeople(), [name]: hit.id })) } catch { /* full: looked up again */ }
+  return hit.id
+}
+
+/** The best-known films of a few big-name directors picked at random. */
+async function famousIdeas(skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const ids = (await Promise.all(shuffle(FAMOUS_NAMES, rand).slice(0, 8).map(personId))).filter((x): x is number => !!x)
+  if (!ids.length) return []
+  const r = await tmdb<{ results?: any[] }>("/discover/movie", `&with_crew=${ids.join("|")}&sort_by=vote_count.desc&vote_count.gte=500&include_adult=false`)
+  return (r?.results ?? []).map(slim).filter(x => x.year && !skip.has(key(x.title, x.year))).slice(0, 6)
+}
+
+/** Well-known films whose whole title is one word. TMDB can't search for that, so a few pages of the most-voted films are filtered. */
+async function oneWordIdeas(skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const first = 1 + Math.floor(rand() * 3)
+  const pages = await Promise.all([first, first + 1, first + 2].map(page => tmdb<{ results?: any[] }>("/discover/movie", `&sort_by=vote_count.desc&vote_count.gte=2000&include_adult=false&page=${page}`)))
+  return pages.flatMap(p => p?.results ?? []).map(slim).filter(x => x.year && x.title.trim().split(/\s+/).length === 1 && !skip.has(key(x.title, x.year))).slice(0, 6)
+}
+
+/** Landmark films from film movements the club hasn't touched. */
+function movementIdeas(ctx: Ctx, skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const films = MOVEMENTS.flatMap(m => m.films).filter(([t]) => ctx.movementKeys.has(key(t, 0).split("|")[0]))
+  return fromTitles(films, skip, rand)
+}
+
+/** Well-known films that meet a card, for when nothing on anyone's watchlist does. Random each time, so it isn't the same list twice. */
 export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: () => number = Math.random): Promise<Idea[]> {
+  if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
+  if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
+  if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)
+  if (card.id === "famous") return famousIdeas(skip, rand)
+  if (card.id === "word") return oneWordIdeas(skip, rand)
+  if (card.id === "movement") return movementIdeas(ctx, skip, rand)
   const params = discoverParams(card, ctx, KEYWORD_CARDS[card.id] ? await keywordIds() : {})
   if (!params) return []
   // niche cards (silent film, a small nation) have few films with many votes, so loosen the floor until something turns up

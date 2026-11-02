@@ -60,15 +60,19 @@ function Ratings() {
 }
 
 function Films() {
-  const { movies, deleteMovie } = useStore()
+  const { movies, deleteMovie, pickCards, setPickCard } = useStore()
   const [sure, setSure] = useState<number | null>(null)
   return (
     <>
-      <p className="mb-2 text-sm text-muted-foreground">Open a film to edit its title, year or pick. Only you can edit or delete films; a deleted film can be brought back from the message at the bottom.</p>
+      <p className="mb-2 text-sm text-muted-foreground">Open a film to edit its title, year or pick. The menu beside each film sets the card it answered. Only you can edit or delete films; a deleted film can be brought back from the message at the bottom.</p>
       <ul className="flex flex-col divide-y divide-border">
         {[...movies].sort((a, b) => a.seq - b.seq).map(m => (
           <li key={m.id} className="flex flex-wrap items-center gap-x-2 py-1">
             <a href={`#/films/${m.id}`} className="min-h-11 min-w-0 flex-1 content-center truncate hover:underline">{m.seq}. {m.title} <small className="text-muted-foreground">{m.year} · {m.pick}</small></a>
+            <select aria-label={`Card for ${m.title}`} value={pickCards[String(m.seq)] ?? ""} onChange={e => setPickCard(m.seq, e.target.value || null)} className={`${fieldCls} w-40 shrink-0`}>
+              <option value="">No card</option>
+              {CARDS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+            </select>
             {sure === m.id ? (
               <>
                 <Button variant="destructive" className="h-10 px-3" onClick={() => { deleteMovie(m); setSure(null) }}>Delete with {Object.keys(m.ratings).length} ratings</Button>
