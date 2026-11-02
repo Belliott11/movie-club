@@ -14,7 +14,7 @@ const nameOf = (code: string) => { try { return code === "US" ? "USA" : intl.of(
 
 const GENRES: Record<string, number> = { doc: 99, animation: 16, western: 37, horror: 27, romance: 10749, war: 10752, scifi: 878 }
 /** Cards decided by a TMDB keyword; the id is looked up by name since keyword ids aren't something to memorize. */
-export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story", franchise: "sequel", book: "based on novel or book", remake: "remake", musical: "musical" }
+export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story", franchise: "sequel", book: "based on novel or book", remake: "remake", musical: "musical", indie: "independent film" }
 const LANGS = "fr|ja|ko|es|it|de|hi|zh|sv|ru|pt|fa|da|pl|tr|ar|th|el|hu|cs"
 
 /**

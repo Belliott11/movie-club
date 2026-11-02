@@ -36,3 +36,12 @@ test("the outside rating is the average of IMDb, Rotten Tomatoes and Metacritic 
   const c = candFromEntry({ t: "A", y: 2000, id: 1, rr: 60 }, { title: "A", year: 2000, wantedBy: 1 })
   expect(c.rating).toBe(3)
 })
+
+test("independent: tagged as such, or an English film with no big studio behind it", () => {
+  const base = { title: "A", year: 2000, wantedBy: 1 }
+  expect(candFromEntry({ t: "A", y: 2000, id: 1, l: "en", pc: 1 }, base).independent).toBe(true)
+  expect(candFromEntry({ t: "A", y: 2000, id: 1, l: "en", pc: 1, mj: 1 }, base).independent).toBe(false) // a studio picture
+  expect(candFromEntry({ t: "A", y: 2000, id: 1, l: "fr", pc: 1 }, base).independent).toBe(false) // foreign films only count if tagged
+  expect(candFromEntry({ t: "A", y: 2000, id: 1, l: "fr", pc: 1, kn: 1, ik: 1 }, base).independent).toBe(true)
+  expect(candFromEntry({ t: "A", y: 2000, id: 1, l: "en" }, base).independent).toBeUndefined() // no company data
+})

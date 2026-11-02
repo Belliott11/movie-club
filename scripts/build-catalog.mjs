@@ -36,7 +36,7 @@ console.log(`${rows.length} watchlist rows, ${films.length} different films`)
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : { films: [] }
 const done = new Map(old.films.map(f => [`${f.t}|${f.y}`, f]))
 // films with no poster recorded are looked up again (older catalogs didn't keep it), keeping what they already know
-const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || !e.kk || e.tk !== THEMES.length)) })
+const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || !e.kk || !e.cm || e.tk !== THEMES.length)) })
 console.log(`${todo.length} to look up`)
 
 const has = (kw, ...names) => kw.some(k => names.some(n => k === n || k.includes(n)))
@@ -53,6 +53,11 @@ async function look({ t, y }) {
   const was = done.get(`${t}|${y}`)
   if (was) for (const k of ["o", "ox", "ri", "rr", "rm", "wk", "wb", "wr"]) if (was[k] !== undefined) e[k] = was[k] // what OMDb already told us
   e.kk = 1
+  // production companies: a film with none of the big Hollywood studios behind it counts as independent when it's in English
+  const MAJORS = ["warner bros", "universal pictures", "paramount", "columbia pictures", "sony pictures", "20th century", "twentieth century", "walt disney", "metro-goldwyn-mayer", "tristar", "new line cinema", "dreamworks", "pixar", "lucasfilm", "marvel studios", "touchstone", "hollywood pictures", "orion pictures", "united artists", "rko"]
+  const co = (d.production_companies ?? []).map(c => String(c.name).toLowerCase())
+  if (co.length) { e.pc = 1; if (co.some(n => MAJORS.some(m => n.includes(m)))) e.mj = 1 }
+  e.cm = 1
   e.tk = THEMES.length // which version of the theme list this film was sorted with
   if (d.runtime) e.rt = d.runtime
   if (d.original_language) e.l = d.original_language
@@ -68,6 +73,7 @@ async function look({ t, y }) {
     if (kw.includes("based on novel or book")) e.bk = 1
     if (kw.includes("remake")) e.rm2 = 1
     if (kw.includes("musical")) e.mu = 1
+    if (has(kw, "independent film")) e.ik = 1
     const th = THEMES.filter(t => t.kw.some(k => kw.includes(k))).map(t => t.id)
     if (th.length) e.th = th
   }

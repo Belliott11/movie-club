@@ -8,7 +8,7 @@ import { key } from "./stats"
 export type CatalogEntry = {
   t: string; y: number; id: number
   v?: number; rt?: number; l?: string; cc?: string[]; g?: string[]; d?: string[]
-  p?: string; tk?: number; th?: string[]; wk?: 1; wb?: 1; wr?: 1; kk?: 1; bk?: 1; rm2?: 1; mu?: 1; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
+  p?: string; cm?: 1; pc?: 1; mj?: 1; ik?: 1; tk?: number; th?: string[]; wk?: 1; wb?: 1; wr?: 1; kk?: 1; bk?: 1; rm2?: 1; mu?: 1; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
 }
 export type Catalog = Map<string, CatalogEntry>
 
@@ -54,6 +54,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
     franchise: e.fr ? true : e.kn ? false : undefined,
     womanDirector: e.d ? !!e.wd : undefined,
     book: e.bk || e.wb ? true : e.kn || e.wk ? false : undefined, remake: e.rm2 || e.wr ? true : e.kn || e.wk ? false : undefined, musical: e.kn ? !!(e.mu || e.g?.includes("Music")) : e.g?.includes("Music") ? true : undefined,
+    independent: e.ik ? true : e.l === "en" && e.pc ? !e.mj : e.kn || e.pc ? false : undefined,
     cannes: wonFestival(base.title, base.year), // the field keeps its old name from when this was Cannes only
     budget: e.b,
     oscars: e.o ?? ((e.v ?? 0) < 800 ? 0 : undefined), // OMDb was only asked about well-voted films; the rest won nothing

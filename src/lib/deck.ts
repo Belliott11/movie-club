@@ -4,7 +4,7 @@ import { isFamousDirector } from "./famousDirectors"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; poster?: string; /** loose themes TMDB's keywords point to */ themes?: string[]; book?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
+export type Cand = { title: string; year: number; poster?: string; /** loose themes TMDB's keywords point to */ themes?: string[]; book?: boolean; independent?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
   directors?: string[]; bw?: boolean; silent?: boolean; trueStory?: boolean; franchise?: boolean; budget?: number; womanDirector?: boolean; oscars?: number }
 /** What the club has already done, so cards can ask for something new. */
 export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }
@@ -12,7 +12,7 @@ export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Co
 /** What someone filled in to make a card of their own. Every option is optional; a film has to meet all that are given. */
 export type CardDef = {
   id: string; title: string; rule: string; by?: string
-  f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" | "book" | "remake" | "musical" | "cannes" }
+  f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" | "book" | "remake" | "musical" | "cannes" | "indie" }
 }
 
 export type Card = { /** a card about an impression, not a property: the watchlist matches are only the obvious ones */ loose?: boolean; id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
@@ -62,6 +62,7 @@ export const CARDS: Card[] = [
   { id: "womanDirector", title: "Directed by a woman", rule: "A woman is the director.", fits: f => f.womanDirector },
   { id: "famous", title: "A big-name director", rule: "Tarantino, Scorsese, Kubrick, Varda, Kurosawa: someone whose name sells the film.", fits: f => known(f.directors, d => d.some(isFamousDirector)) },
   { id: "book", title: "Based on a book", rule: "Adapted from a novel or another book.", fits: f => f.book },
+  { id: "indie", title: "Independent", rule: "Made outside the big Hollywood studios.", fits: f => f.independent },
   { id: "remake", title: "A remake", rule: "A new version of an earlier film.", fits: f => f.remake },
   { id: "musical", title: "A musical", rule: "People sing, and the story depends on it.", fits: f => f.musical },
   // the id says "cannes" from when this card was Cannes only; it now covers Venice and Berlin too
