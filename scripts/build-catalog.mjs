@@ -34,7 +34,8 @@ console.log(`${rows.length} watchlist rows, ${films.length} different films`)
 
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : { films: [] }
 const done = new Map(old.films.map(f => [`${f.t}|${f.y}`, f]))
-const todo = films.filter(f => !done.has(`${f.t}|${f.y}`))
+// films with no poster recorded are looked up again (older catalogs didn't keep it), keeping what they already know
+const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && !e.p) })
 console.log(`${todo.length} to look up`)
 
 const has = (kw, ...names) => kw.some(k => names.some(n => k === n || k.includes(n)))
@@ -47,6 +48,9 @@ async function look({ t, y }) {
   const kw = (d.keywords?.keywords ?? []).map(k => String(k.name).toLowerCase())
   const dirs = (d.credits?.crew ?? []).filter(c => c.job === "Director")
   const e = { t, y, id: d.id, v: d.vote_count ?? 0 }
+  if (d.poster_path) e.p = d.poster_path
+  const was = done.get(`${t}|${y}`)
+  if (was?.o !== undefined) e.o = was.o
   if (d.runtime) e.rt = d.runtime
   if (d.original_language) e.l = d.original_language
   const cc = d.origin_country?.length ? d.origin_country : (d.production_countries ?? []).map(c => c.iso_3166_1)

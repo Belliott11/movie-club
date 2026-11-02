@@ -7,7 +7,7 @@ import { key } from "./stats"
 export type CatalogEntry = {
   t: string; y: number; id: number
   v?: number; rt?: number; l?: string; cc?: string[]; g?: string[]; d?: string[]
-  wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
+  p?: string; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
 }
 export type Catalog = Map<string, CatalogEntry>
 
@@ -38,6 +38,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
   const code = e.cc?.[0]
   return {
     ...base,
+    poster: e.p,
     runtime: e.rt, lang: e.l, genres: e.g, directors: e.d,
     country: code ? countryName(code) : undefined, continent: continentOfCode(code), region: regionOfCode(code),
     bw: e.kn ? !!e.bw : undefined, silent: e.kn ? !!e.si : undefined, trueStory: e.kn ? !!e.ts : undefined,

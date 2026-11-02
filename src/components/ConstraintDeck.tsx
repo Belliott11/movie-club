@@ -4,6 +4,7 @@ import { PosterThumb } from "@/components/PosterThumb"
 import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { CardIdeas } from "@/components/CardIdeas"
+import { IMG } from "@/lib/api"
 import { candFromEntry } from "@/lib/catalog"
 import { useDeckData } from "@/lib/useDeckData"
 import { CARDS, deal, fitting, type Card, type Cand } from "@/lib/deck"
@@ -145,7 +146,7 @@ export function ConstraintDeck() {
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
               {fits.map(f => (
                 <li key={f.title + f.year} className="min-w-0">
-                  <a href={movieHref(f.title, f.year)} aria-label={`About ${f.title}`}><PosterThumb title={f.title} year={f.year} className="w-full" /></a>
+                  <a href={movieHref(f.title, f.year)} aria-label={`About ${f.title}`}>{f.poster ? <img src={`${IMG}w185${f.poster}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <PosterThumb title={f.title} year={f.year} className="w-full" />}</a>
                   <p className="mt-1 truncate text-sm font-medium leading-tight">{f.title}</p>
                   <p className="text-xs text-muted-foreground">{f.year} · wanted by {f.wantedBy}</p>
                   {(card.id === "famous" || card.id === "womanDirector") && f.directors?.[0] && <p className="truncate text-xs">dir. {f.directors[0]}</p>}
