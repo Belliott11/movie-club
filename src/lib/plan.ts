@@ -2,9 +2,9 @@ import { findEntry, type LbEntry } from "./letterboxd"
 import { key } from "./stats"
 
 export type PlanFilm = { title: string; year?: number; added?: boolean; canon?: string }
-export type PlanGroup = { n: number; title: string; blurb: string; films: PlanFilm[] }
+export type PlanGroup = { n: number; title: string; blurb: string; films: PlanFilm[]; tier?: { n: number; name: string } }
 /** `overrides` holds the owner's own corrections: true = seen, false = not seen, whatever Letterboxd says. */
-export type Plan = { groups: PlanGroup[]; club: string[]; long: string[]; overrides?: Record<string, boolean> }
+export type Plan = { groups: PlanGroup[]; club: string[]; long: string[]; /** group numbers the plan says to work through now */ watching?: number[]; overrides?: Record<string, boolean> }
 
 export const filmKey = (f: { title: string; year?: number }) => key(f.title, f.year ?? 0)
 
@@ -19,14 +19,22 @@ export function parsePlan(text: string): Plan {
   const plan: Plan = { groups: [], club: [], long: [] }
   let cur: PlanGroup | null = null
   let done = false
+  let tier: PlanGroup["tier"]
+  let watching: string[] = []
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim()
     if (!line) continue
     if (/^movie club candidates/i.test(line)) { plan.club = list(line); continue }
     if (/^long hauls/i.test(line)) { plan.long = list(line); continue }
+    // "TIER 1: CORE (195 films, 52 groups)" starts a tier; its description line is skipped
+    const tm = line.match(/^TIER (\d+): (.+?) \(\d+ films?/)
+    if (tm) { tier = { n: Number(tm[1]), name: tm[2].charAt(0) + tm[2].slice(1).toLowerCase() }; cur = null; continue }
+    // "CURRENTLY WATCHING, a cap of three groups at a time: Deep dive: Kurosawa, Crime and noir, War."
+    if (/^currently watching/i.test(line)) { watching = line.replace(/^[^:]*at a time:/i, "").replace(/\.\s+.*$/, "").replace(/\.$/, "").split(/,\s+/).map(s => s.trim().toLowerCase()).filter(Boolean); continue }
     const g = line.match(/^GROUP (\d+): (.+?) \(\d+ films?\)$/)
-    if (g) { cur = { n: Number(g[1]), title: g[2], blurb: "", films: [] }; plan.groups.push(cur); continue }
-    if (/^[A-Z][A-Z0-9 &,'()/:-]{8,}$/.test(line) && !/^GROUP/.test(line)) { cur = null; done = true; continue } // a closing section such as DOUBLE FEATURES
+    if (g) { cur = { n: Number(g[1]), title: g[2], blurb: "", films: [], tier }; plan.groups.push(cur); continue }
+    // a closing section such as DOUBLE FEATURES (a heading line before the first group, like WATCH PLAN BY TIER, is just a title)
+    if (plan.groups.length && /^[A-Z][A-Z0-9 &,'()/:-]{8,}$/.test(line) && !/^GROUP/.test(line)) { cur = null; done = true; continue }
     if (done || !cur) continue
     const f = line.match(/^\d+\.\s+(.+)$/)
     if (!f) { if (!cur.films.length) cur.blurb = cur.blurb ? `${cur.blurb} ${line}` : line; continue }
@@ -34,9 +42,15 @@ export function parsePlan(text: string): Plan {
     const canon = t.match(/\[canon: ([^\]]+)\]/)?.[1]
     const added = /\[added[^\]]*\]/.test(t)
     t = t.replace(/\s*\[[^\]]*\]/g, "").trim()
+    const star = /\*$/.test(t) // an asterisk marks a film that isn't on the owner's watchlist
+    t = t.replace(/\s*\*$/, "").trim()
     const y = t.match(/\s\((\d{4})\)$/)
-    cur.films.push({ title: y ? t.slice(0, y.index).trim() : t, year: y ? Number(y[1]) : undefined, added: added || undefined, canon })
+    cur.films.push({ title: y ? t.slice(0, y.index).trim() : t, year: y ? Number(y[1]) : undefined, added: added || star || undefined, canon })
   }
+  // the groups named under CURRENTLY WATCHING: an exact title match first, else the first group whose title contains the name
+  const same = (g: PlanGroup, w: string) => g.title.toLowerCase() === w
+  const found = watching.flatMap(w => { const g = plan.groups.find(x => same(x, w)) ?? plan.groups.find(x => x.title.toLowerCase().includes(w)); return g ? [g.n] : [] })
+  if (found.length) plan.watching = [...new Set(found)]
   return plan
 }
 

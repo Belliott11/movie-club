@@ -33,13 +33,15 @@ export function PlanList({ plan, seen, overrides, onSeen, onSuggest }: {
       )}
       <Collapse id="plan-groups" title="All groups">
       <ul className="flex flex-col divide-y divide-border border-y border-border">
-        {plan.groups.map(g => {
+        {plan.groups.map((g, i) => {
           const p = groupProgress(g, seen), isOpen = openGroup === g.n
+          const newTier = g.tier && g.tier.n !== plan.groups[i - 1]?.tier?.n
           return (
             <li key={g.n}>
+              {newTier && <p className="pt-3 pb-1 text-sm font-semibold text-muted-foreground">Tier {g.tier!.n}: {g.tier!.name}</p>}
               <button type="button" aria-expanded={isOpen} onClick={() => setOpenGroup(isOpen ? null : g.n)} className="flex min-h-11 w-full items-center gap-3 py-2 text-left">
                 <span className="min-w-0 flex-1">
-                  <span className={`block truncate font-medium ${p.complete ? "text-muted-foreground line-through" : ""}`}>{g.n}. {shout(g.title)}</span>
+                  <span className={`block truncate font-medium ${p.complete ? "text-muted-foreground line-through" : ""}`}>{g.n}. {shout(g.title)}{plan.watching?.includes(g.n) && <span className="ml-2 rounded-sm bg-world px-1.5 py-0.5 text-[11px] font-medium text-primary-foreground no-underline">watching now</span>}</span>
                   <span className="mt-1 block h-1.5 rounded-full bg-muted"><span className="block h-full rounded-full bg-world" style={{ width: `${(p.done / Math.max(1, p.total)) * 100}%` }} /></span>
                 </span>
                 <span className="shrink-0 text-sm text-muted-foreground">{p.done} / {p.total}</span>
