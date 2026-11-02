@@ -15,7 +15,7 @@ export type CardDef = {
   f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" | "book" | "remake" | "musical" | "cannes" }
 }
 
-export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef }
+export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
 
 const known = <T,>(v: T | undefined | null, f: (v: T) => boolean) => (v == null ? undefined : f(v))
 

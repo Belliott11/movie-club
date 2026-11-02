@@ -130,6 +130,7 @@ async function customIdeas(def: CardDef, skip: Set<string>, rand: () => number):
 /** Well-known films that meet a card, for when nothing on anyone's watchlist does. Random each time, so it isn't the same list twice. */
 export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: () => number = Math.random): Promise<Idea[]> {
   if (card.custom) return customIdeas(card.custom, skip, rand)
+  if (card.list) return fromTitles(card.list, skip, rand)
   if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
   if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
   if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)

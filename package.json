@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "catalog": "node scripts/build-catalog.mjs",
+    "lists": "node scripts/build-lists.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

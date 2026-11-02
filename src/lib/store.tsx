@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { CARDS, DEFAULT_CARDS, type Card, type CardDef } from "./deck"
 import { buildCard } from "./customCard"
+import { listCard, useLists } from "./lists"
 import { canDeal, drawnFor, isStale, type DeckRow } from "./deckFlow"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
 import { createDb } from "./db"
@@ -568,7 +569,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!sealRef.current.shared) lsSet("cards-deleted-local-v1", next)
     else if (sb) fail((next.length ? await sb.from("club_settings").upsert({ key: "cards-deleted", value: JSON.stringify(next) }) : await sb.from("club_settings").delete().eq("key", "cards-deleted")).error)
   }, [])
-  const deleteCard = useCallback(async (id: string) => { if (CARDS.some(c => c.id === id)) await saveDeleted([...new Set([...deletedCards, id])]) }, [deletedCards, saveDeleted])
+  const deleteCard = useCallback(async (id: string) => { if (!customCards.some(c => c.id === id)) await saveDeleted([...new Set([...deletedCards, id])]) }, [deletedCards, saveDeleted, customCards])
   const restoreCard = useCallback(async (id: string) => { await saveDeleted(deletedCards.filter(x => x !== id)) }, [deletedCards, saveDeleted])
   const editCardText = useCallback(async (id: string, text: { title?: string; rule?: string } | null) => {
     const next = { ...cardEdits }
@@ -816,7 +817,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const canPick = canDeal(selector, me)
   const deck = { drawn: drawnFor(turnState.deck, turnNow), by: turnState.deck?.turn === turnNow ? turnState.deck.by : undefined } // every deal is random from the whole deck: dealt cards are never held back
 
-  const cards = useMemo(() => [...CARDS.filter(c => !deletedCards.includes(c.id)).map(c => ({ ...c, ...cardEdits[c.id] })), ...customCards.map(buildCard)], [customCards, deletedCards, cardEdits])
+  const lists = useLists()
+  const cards = useMemo(() => [...CARDS, ...lists.map(listCard)].filter(c => !deletedCards.includes(c.id)).map(c => ({ ...c, ...cardEdits[c.id] })).concat(customCards.map(buildCard)), [customCards, deletedCards, cardEdits, lists])
   const value: Store = {
     ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, cards, cardEdits, editCardText, updateCustomCard, deletedCards, deleteCard, restoreCard, customCards, addCustomCard, removeCustomCard, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => cards.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
