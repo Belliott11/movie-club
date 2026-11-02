@@ -4,16 +4,16 @@ import { PosterThumb } from "@/components/PosterThumb"
 import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { CardIdeas } from "@/components/CardIdeas"
-import { CARDS, deal, fitting, untouchedMovementKeys, type Card, type Cand, type Ctx } from "@/lib/deck"
+import { candFromEntry } from "@/lib/catalog"
+import { useDeckData } from "@/lib/useDeckData"
+import { CARDS, deal, fitting, type Card, type Cand } from "@/lib/deck"
 import { afterDeal, canRedraw } from "@/lib/deckFlow"
-import { continentOfCode, continentOfName, regionOfCode, regionOfName } from "@/lib/continents"
+import { continentOfCode, regionOfCode } from "@/lib/continents"
 import { useExtras, useOscars } from "@/lib/filmExtras"
 import { useFacts } from "@/lib/filmFacts"
-import { seenBy } from "@/lib/letterboxd"
 import { movieHref } from "@/lib/movieLink"
 import { key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
-import { useFilmTags } from "@/lib/useFilmTags"
 
 const EXTRAS = ["bw", "silent", "trueStory", "franchise", "lowBudget", "womanDirector", "famous"]
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -24,7 +24,7 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
  * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn (never the same card), and every deal is random from the whole deck.
  */
 export function ConstraintDeck() {
-  const { movies, watchlist, lb, loadLb, countries: fixed, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards } = useStore()
+  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist } = useStore()
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
@@ -57,46 +57,38 @@ export function ConstraintDeck() {
   }
 
   // films on anyone's watchlist that the club hasn't played and fewer than two of you have seen
-  const pool = useMemo(() => {
-    const played = new Set(movies.map(m => key(m.title, m.year)))
-    const by = new Map<string, { title: string; year: number; who: Set<string> }>()
-    for (const w of watchlist) {
-      const k = key(w.title, w.year)
-      if (played.has(k)) continue
-      const e = by.get(k) ?? { title: w.title, year: w.year, who: new Set<string>() }
-      e.who.add(w.member)
-      by.set(k, e)
-    }
-    return [...by.values()].map(e => ({ title: e.title, year: e.year, wantedBy: e.who.size, seenBy: seenBy(lb, e.title, e.year).length })).filter(e => e.seenBy < 2)
-  }, [movies, watchlist, lb])
-
-  // what the club has done already, so a card can ask for something new
-  const tags = useFilmTags(movies)
-  const ctx: Ctx = useMemo(() => ({
-    thisYear: new Date().getFullYear(),
-    countries: new Set(movies.flatMap(m => (fixed[String(m.id)] ? [fixed[String(m.id)]] : tags[String(m.id)]?.countries ?? []))),
-    continents: new Set(movies.flatMap(m => { const c = continentOfName(fixed[String(m.id)] ?? tags[String(m.id)]?.countries?.[0]); return c ? [c] : [] })),
-    regions: new Set(movies.flatMap(m => { const r = regionOfName(fixed[String(m.id)] ?? tags[String(m.id)]?.countries?.[0]); return r ? [r] : [] })),
-    movementKeys: untouchedMovementKeys(new Set(movies.map(m => key(m.title, 0).split("|")[0]))),
-  }), [movies, tags, fixed])
+  const { pool, ctx, catalog, room } = useDeckData()
 
   // cards that need facts (length, language, country, genres) look the films up; only the most-wanted ones, to keep it light
-  const sample = useMemo(() => [...pool].sort((a, b) => b.wantedBy - a.wantedBy || a.title.localeCompare(b.title)).slice(0, 60), [pool])
+  const known = (c: { title: string; year: number }) => catalog?.get(key(c.title, c.year))
+  const sample = useMemo(() => [...pool].filter(c => !(catalog && catalog.get(key(c.title, c.year)))).sort((a, b) => b.wantedBy - a.wantedBy || a.title.localeCompare(b.title)).slice(0, 60), [pool, catalog])
   const needsFacts = !!card && !["old", "recent", "movement", "word", ...EXTRAS, "oscar"].includes(card.id)
   const facts = useFacts(needsFacts && stage === "face-up" ? sample : [])
   const extras = useExtras(card && EXTRAS.includes(card.id) && stage === "face-up" ? sample : [])
   const oscars = useOscars(card?.id === "oscar" && stage === "face-up" ? sample : [])
   const regions = useMemo(() => new Intl.DisplayNames(["en"], { type: "region" }), [])
-  const cands: Cand[] = sample.map(c => {
+  const lazy: Cand[] = sample.map(c => {
     const f = facts[key(c.title, c.year)]
     const name = f?.country ? (f.country === "US" ? "USA" : (() => { try { return regions.of(f.country!) ?? f.country } catch { return f.country } })()) : undefined
     const x = extras[key(c.title, c.year)]
     return { ...c, directors: x?.directors, bw: x?.bw, silent: x?.silent, trueStory: x?.trueStory, franchise: x?.franchise, budget: x?.budget, womanDirector: x?.womanDirector, oscars: oscars[key(c.title, c.year)]?.n, runtime: f?.runtime, lang: f?.lang, country: name, continent: continentOfCode(f?.country), region: regionOfCode(f?.country), genres: f?.genres }
   })
+  const cands: Cand[] = [...pool.flatMap(c => { const e = known(c); return e ? [candFromEntry(e, c)] : [] }), ...lazy]
   const asked = new Set(suggestions.map(s => key(s.title, s.year)))
-  const fits = card && stage === "face-up" ? fitting(card, cands, ctx, 6) : []
+  const fits = card && stage === "face-up" ? fitting(card, cands, ctx, 12) : []
   // films a card can't be checked against (TMDB lacks the fact, or it hasn't loaded)
   const unchecked = card && stage === "face-up" ? cands.filter(c => card.fits(c, ctx) === undefined) : []
+  // outside suggestions skip what the club played and what anyone in the room has seen
+  const skipSet = useMemo(() => {
+    const out = new Set(movies.map(m => key(m.title, m.year)))
+    for (const [member, h] of Object.entries(lb)) if (room.includes(member)) for (const e of h) out.add(key(e[0], e[1]))
+    return out
+  }, [movies, lb, room])
+  const wantedBy = useMemo(() => {
+    const w = new Map<string, string[]>()
+    for (const x of watchlist) w.set(key(x.title, x.year), [...(w.get(key(x.title, x.year)) ?? []), x.member])
+    return w
+  }, [watchlist])
   const [settled, setSettled] = useState(false)
   useEffect(() => {
     setSettled(!needsFacts && !(card && EXTRAS.includes(card.id)) && card?.id !== "oscar")
@@ -162,7 +154,7 @@ export function ConstraintDeck() {
               ))}
             </ul>
           ) : (
-            !settled && sample.length ? <p className="text-sm text-muted-foreground">Checking the watchlists…</p> : <CardIdeas card={card} ctx={ctx} skip={new Set(movies.map(m => key(m.title, m.year)))} asked={asked} onSuggest={suggest} />
+            !settled && sample.length ? <p className="text-sm text-muted-foreground">Checking the watchlists…</p> : <CardIdeas card={card} ctx={ctx} skip={skipSet} wanted={wantedBy} asked={asked} onSuggest={suggest} />
           )}
           {settled && unchecked.length > 0 && (
             <details className="mt-3 text-sm text-muted-foreground">
