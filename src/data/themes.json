@@ -237,5 +237,32 @@
       "adultery",
       "doomed romance"
     ]
+  },
+  {
+    "id": "space",
+    "title": "Space",
+    "rule": "Space, astronauts, aliens or other worlds.",
+    "kw": [
+      "space",
+      "outer space",
+      "alien",
+      "aliens",
+      "alien invasion",
+      "extraterrestrial",
+      "space travel",
+      "astronaut",
+      "spacecraft",
+      "spaceship",
+      "space opera",
+      "first contact",
+      "space station",
+      "alien life-form",
+      "planet",
+      "moon",
+      "mars",
+      "space mission",
+      "interstellar",
+      "galaxy"
+    ]
   }
 ]

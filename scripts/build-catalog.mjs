@@ -36,7 +36,7 @@ console.log(`${rows.length} watchlist rows, ${films.length} different films`)
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : { films: [] }
 const done = new Map(old.films.map(f => [`${f.t}|${f.y}`, f]))
 // films with no poster recorded are looked up again (older catalogs didn't keep it), keeping what they already know
-const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || !e.kk || !e.tk)) })
+const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || !e.kk || e.tk !== THEMES.length)) })
 console.log(`${todo.length} to look up`)
 
 const has = (kw, ...names) => kw.some(k => names.some(n => k === n || k.includes(n)))
@@ -53,7 +53,7 @@ async function look({ t, y }) {
   const was = done.get(`${t}|${y}`)
   if (was) for (const k of ["o", "ox", "ri", "rr", "rm", "wk", "wb", "wr"]) if (was[k] !== undefined) e[k] = was[k] // what OMDb already told us
   e.kk = 1
-  e.tk = 1
+  e.tk = THEMES.length // which version of the theme list this film was sorted with
   if (d.runtime) e.rt = d.runtime
   if (d.original_language) e.l = d.original_language
   const cc = d.origin_country?.length ? d.origin_country : (d.production_countries ?? []).map(c => c.iso_3166_1)

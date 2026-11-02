@@ -50,4 +50,5 @@ test("theme cards are loose: they point at films TMDB's keywords tie to the them
   expect(sports.fits({ title: "Heat", year: 1995, wantedBy: 1, themes: ["heist"] }, ctx)).toBe(false)
   expect(sports.fits({ title: "X", year: 2000, wantedBy: 1 }, ctx)).toBeUndefined()
   expect(CARDS.filter(c => c.loose).length).toBeGreaterThanOrEqual(12)
+  expect(CARDS.some(c => c.id === "theme-space")).toBe(true)
 })
