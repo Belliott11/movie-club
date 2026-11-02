@@ -4,7 +4,7 @@ import { isFamousDirector } from "./famousDirectors"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; poster?: string; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
+export type Cand = { title: string; year: number; poster?: string; /** out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
   directors?: string[]; bw?: boolean; silent?: boolean; trueStory?: boolean; franchise?: boolean; budget?: number; womanDirector?: boolean; oscars?: number }
 /** What the club has already done, so cards can ask for something new. */
 export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }
@@ -12,7 +12,7 @@ export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Co
 /** What someone filled in to make a card of their own. Every option is optional; a film has to meet all that are given. */
 export type CardDef = {
   id: string; title: string; rule: string; by?: string
-  f: { from?: number; to?: number; minRun?: number; maxRun?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" }
+  f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" }
 }
 
 export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef }

@@ -114,6 +114,8 @@ async function customIdeas(def: CardDef, skip: Set<string>, rand: () => number):
   if (f.to != null) p.push(`primary_release_date.lte=${f.to}-12-31`)
   if (f.minRun != null) p.push(`with_runtime.gte=${f.minRun}`)
   if (f.maxRun != null) p.push(`with_runtime.lte=${f.maxRun}`)
+  if (f.minRating != null) p.push(`vote_average.gte=${f.minRating * 2}`)
+  if (f.maxRating != null) p.push(`vote_average.lte=${f.maxRating * 2}`)
   if (f.lang) p.push(`with_original_language=${f.lang === "!en" ? LANGS : f.lang}`)
   if (f.genre && GENRE_IDS[f.genre]) p.push(`with_genres=${GENRE_IDS[f.genre]}`)
   if (f.country) p.push(`with_origin_country=${f.country}`)
