@@ -3,7 +3,9 @@ import { Layers } from "lucide-react"
 import { PosterThumb } from "@/components/PosterThumb"
 import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
+import { CardIdeas } from "@/components/CardIdeas"
 import { CARDS, deal, fitting, untouchedMovementKeys, type Card, type Cand, type Ctx } from "@/lib/deck"
+import { afterDeal, canRedraw } from "@/lib/deckFlow"
 import { continentOfCode, continentOfName, regionOfCode, regionOfName } from "@/lib/continents"
 import { useExtras, useOscars } from "@/lib/filmExtras"
 import { useFacts } from "@/lib/filmFacts"
@@ -34,16 +36,23 @@ export function ConstraintDeck() {
   const timers = useRef<number[]>([])
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
   const card: Card | undefined = CARDS.find(c => c.id === mine.drawn[mine.drawn.length - 1])
-  const redrawsLeft = mine.drawn.length < 2
+  const redrawsLeft = canRedraw(mine.drawn)
+  const [notice, setNotice] = useState("")
 
   const play = (isRedraw: boolean) => {
     const next = deal(mine.drawn, Math.random, deckPool.length ? deckPool : CARDS)
-    const commit = () => setDeck({ drawn: [...(isRedraw ? mine.drawn : []), next.id], used: [] })
-    if (reduced()) { commit(); setStage("face-up"); return }
+    setNotice("")
+    // the deal is refused if someone else dealt since this device last looked; their card stays on the table
+    const commit = async () => {
+      const ok = await setDeck(afterDeal(mine.drawn, isRedraw, next.id), mine.drawn)
+      if (!ok) { setNotice("Someone else just dealt, so their card is on the table."); setStage("face-up") }
+      return ok
+    }
+    if (reduced()) { commit().then(ok => ok && setStage("face-up")); return }
     setStage("shuffling")
     timers.current.push(
-      window.setTimeout(() => { commit(); setStage("dealing") }, 750),
-      window.setTimeout(() => setStage("face-up"), 750 + 520),
+      window.setTimeout(() => { commit().then(ok => { if (ok) setStage("dealing") }) }, 750),
+      window.setTimeout(() => setStage(st => (st === "dealing" ? "face-up" : st)), 750 + 520 + 400),
     )
   }
 
@@ -86,6 +95,14 @@ export function ConstraintDeck() {
   })
   const asked = new Set(suggestions.map(s => key(s.title, s.year)))
   const fits = card && stage === "face-up" ? fitting(card, cands, ctx, 6) : []
+  // films a card can't be checked against (TMDB lacks the fact, or it hasn't loaded)
+  const unchecked = card && stage === "face-up" ? cands.filter(c => card.fits(c, ctx) === undefined) : []
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    setSettled(!needsFacts && !(card && EXTRAS.includes(card.id)) && card?.id !== "oscar")
+    const t = window.setTimeout(() => setSettled(true), 4000)
+    return () => clearTimeout(t)
+  }, [card?.id, needsFacts]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section aria-label="Constraint deck">
@@ -119,6 +136,7 @@ export function ConstraintDeck() {
           {stage === "face-up" && card && (
             <>
               <p className="text-lg leading-snug"><b className="font-display">{card.title}.</b> {card.rule}</p>
+              {deck.by && <p className="text-xs text-muted-foreground">Dealt by {deck.by}</p>}
               <div className="flex flex-wrap gap-2">
                 {canPick ? <Button variant="outline" className="h-11 px-4" disabled={!redrawsLeft} onClick={() => play(true)}>{redrawsLeft ? "Redraw once" : "No redraws left"}</Button> : <p className="text-xs text-muted-foreground">Only {selector} can redraw.</p>}
               </div>
@@ -127,6 +145,7 @@ export function ConstraintDeck() {
         </div>
       </div>
 
+      {notice && <p role="status" className="mt-3 text-sm font-medium">{notice}</p>}
       {stage === "face-up" && card && (
         <div className="mt-4">
           <h4 className="mb-1 font-display text-lg font-bold">Watchlist films that fit</h4>
@@ -143,7 +162,14 @@ export function ConstraintDeck() {
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">{needsFacts && (Object.keys(facts).length + Object.keys(extras).length + Object.keys(oscars).length) < sample.length && sample.length ? "Checking the watchlists…" : "Nothing on the watchlists fits this card. Time to hunt, or redraw."}</p>
+            !settled && sample.length ? <p className="text-sm text-muted-foreground">Checking the watchlists…</p> : <CardIdeas card={card} ctx={ctx} skip={new Set(movies.map(m => key(m.title, m.year)))} asked={asked} onSuggest={suggest} />
+          )}
+          {settled && unchecked.length > 0 && (
+            <details className="mt-3 text-sm text-muted-foreground">
+              <summary className="min-h-11 cursor-pointer py-2">{unchecked.length} watchlist {unchecked.length === 1 ? "film" : "films"} couldn't be checked for this card</summary>
+              <p className="mb-1 text-xs">TMDB doesn't have the detail this card needs for them, so they may fit. Have a look yourself:</p>
+              <ul className="flex flex-col gap-0.5">{unchecked.slice(0, 12).map(f => <li key={f.title + f.year}><a href={movieHref(f.title, f.year)} className="hover:underline">{f.title}</a> <small>{f.year}</small></li>)}</ul>
+            </details>
           )}
         </div>
       )}

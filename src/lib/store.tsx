@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { CARDS, DEFAULT_CARDS } from "./deck"
+import { canDeal, drawnFor, isStale, type DeckRow } from "./deckFlow"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
 import { createDb } from "./db"
 import { findEntry, type LbEntry, type LbHistory } from "./letterboxd"
@@ -94,8 +95,9 @@ type Store = {
   /** True when you may set the week's film and deal cards: no selector is designated, or you are the selector. */
   canPick: boolean
   /** The pick cards dealt for the film being chosen. Shared, so everyone sees the card the selector drew. */
-  deck: { drawn: string[]; used: string[] }
-  setDeck: (d: { drawn: string[]; used: string[] }) => Promise<void>
+  deck: { drawn: string[]; by?: string }
+  /** Puts the cards on the table. With `seen` (what you were looking at) it refuses, and returns false, if someone else dealt in the meantime. */
+  setDeck: (drawn: string[], seen?: string[]) => Promise<boolean>
   /** A person's watching plan as stored: already locked with their passphrase, so what is in the database is unreadable to everyone else. */
   planCipher: (member: string) => Promise<string | null>
   savePlanCipher: (member: string, cipher: string | null) => Promise<void>
@@ -155,7 +157,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [favs, setFavsState] = useState<Record<string, { t: string; y: number }[]>>({})
   const [candidates, setCandidatesState] = useState<Record<string, { add: { t: string; y?: number }[]; hide: string[] }>>({})
   // who picks this week and the cards dealt, both tied to the number of the film being chosen so they lapse once it's added
-  const [turnState, setTurnState] = useState<{ selector: { name: string; turn: number } | null; deck: { turn: number; drawn: string[]; used: string[] } | null }>({ selector: null, deck: null })
+  const [turnState, setTurnState] = useState<{ selector: { name: string; turn: number } | null; deck: DeckRow | null }>({ selector: null, deck: null })
   const [hostKey, setHostKey] = useState<string | null>(() => localStorage.getItem("seal-private-key"))
   const [takes, setTakes] = useState<Takes>(() => lsGet("takes-local", {}))
   const [mini, setMini] = useState<Record<string, Mini>>(loadMini)
@@ -515,7 +517,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     else if (sb) fail((ids ? await sb.from("club_settings").upsert({ key: "deck-cards", value: JSON.stringify(ids) }) : await sb.from("club_settings").delete().eq("key", "deck-cards")).error)
   }, [])
   const setSelector = useCallback(async (name: string | null) => { await putTurn("selector", name ? { name, turn: currentTurn() } : null) }, [])
-  const setDeck = useCallback(async (d: { drawn: string[]; used: string[] }) => { await putTurn("deck", { turn: currentTurn(), ...d }) }, [])
+  const setDeck = useCallback(async (drawn: string[], seen?: string[]) => {
+    if (seen && sealRef.current.shared && sb) {
+      // someone may have dealt since this device last looked: compare with what is stored now before overwriting it
+      const r = await sb.from("club_settings").select("value").eq("key", "deck")
+      let saved: DeckRow | null = null
+      try { saved = r.error || !(r.data as { value: string }[])?.[0] ? null : JSON.parse((r.data as { value: string }[])[0].value) } catch { /* unreadable: treated as empty */ }
+      if (isStale(seen, drawnFor(saved, currentTurn()))) { setTurnState(t => ({ ...t, deck: saved })); return false }
+    }
+    await putTurn("deck", { turn: currentTurn(), drawn, by: localStorage.getItem("me") || "", at: Date.now() })
+    return true
+  }, [])
 
   const setCountry = useCallback(async (m: Movie, country: string) => {
     const c = country.trim(), k = String(m.id)
@@ -732,8 +744,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const turnNow = Math.max(0, ...movies.map(m => m.seq)) + 1
   const selector = turnState.selector && turnState.selector.turn === turnNow ? turnState.selector.name : null
   const canDesignate = !seal.publicKey || (!!hostKey && !!seal.publicKey)
-  const canPick = !selector || me === selector
-  const deck = turnState.deck && turnState.deck.turn === turnNow ? { drawn: turnState.deck.drawn, used: [] as string[] } : { drawn: [] as string[], used: [] as string[] } // every deal is random from the whole deck: dealt cards are never held back
+  const canPick = canDeal(selector, me)
+  const deck = { drawn: drawnFor(turnState.deck, turnNow), by: turnState.deck?.turn === turnNow ? turnState.deck.by : undefined } // every deal is random from the whole deck: dealt cards are never held back
 
   const value: Store = {
     ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, favs, setFavs, noLb, setNoLb, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => CARDS.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
