@@ -56,7 +56,7 @@
 
 @theme inline {
   --font-sans: "Public Sans", system-ui, sans-serif;
-  --font-display: "Bricolage Grotesque", "Public Sans", sans-serif;
+  --font-display: var(--f-heading, "Bricolage Grotesque", "Public Sans", sans-serif);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -89,6 +89,9 @@
   body { overflow-x: clip; overscroll-behavior-y: contain; overscroll-behavior-x: none; }
   body { @apply bg-background text-foreground font-sans antialiased; }
   h1, h2, h3 { font-family: var(--font-display); }
+  /* movie-title lettering from the Theme menu: only when a preset other than Classic is chosen (see lib/fonts.ts) */
+  html[data-fonts] h1 { font-family: var(--f-title); }
+  html[data-fonts] h1, html[data-fonts] h2, html[data-fonts] h3, html[data-fonts] h4, html[data-fonts] .font-display { font-weight: var(--f-weight) !important; letter-spacing: var(--f-track); font-synthesis: none; }
   :focus-visible { outline: 3px solid var(--ring); outline-offset: 2px; }
 
   /* Native bits follow the theme too: with color-scheme set, the browser draws dropdown lists, date and number fields,
