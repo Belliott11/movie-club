@@ -18,7 +18,7 @@ const countryName = (code: string) => { try { return code === "US" ? "USA" : int
 let loading: Promise<Catalog> | null = null
 /** The catalog file, read once. Empty when it isn't there, in which case the deck looks films up as it always did. */
 export function loadCatalog(): Promise<Catalog> {
-  return (loading ??= fetch(`${import.meta.env.BASE_URL}catalog.json`)
+  return (loading ??= fetch(`${import.meta.env.BASE_URL}catalog.json`, { cache: "no-cache" })
     .then(r => (r.ok ? r.json() : { films: [] }))
     .then((j: { films: CatalogEntry[] }) => new Map(j.films.filter(e => e.id).map(e => [key(e.t, e.y), e] as const)))
     .catch(() => new Map()))

@@ -8,7 +8,7 @@ export type TopList = { id: string; name: string; short: string; films: [string,
 let loading: Promise<TopList[]> | null = null
 /** The lists file, read once. Empty when it isn't there. */
 export function loadLists(): Promise<TopList[]> {
-  return (loading ??= fetch(`${import.meta.env.BASE_URL}lists.json`).then(r => (r.ok ? r.json() : { lists: [] })).then((j: { lists: TopList[] }) => j.lists).catch(() => []))
+  return (loading ??= fetch(`${import.meta.env.BASE_URL}lists.json`, { cache: "no-cache" }).then(r => (r.ok ? r.json() : { lists: [] })).then((j: { lists: TopList[] }) => j.lists).catch(() => []))
 }
 
 export function useLists(): TopList[] {

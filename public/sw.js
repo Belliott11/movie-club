@@ -1,6 +1,7 @@
 // Keeps the site opening with no signal. Data itself comes from Supabase; the app keeps its own saved copy for offline reading.
 const CACHE = "movie-club-v1"
-const FRESH = [/\/config\.js$/, /\/manifest\.webmanifest$/]
+// data files and the app's config always try the network first, so a rebuilt catalog or list file shows up at once
+const FRESH = [/\/config\.js$/, /\/manifest\.webmanifest$/, /\/catalog\.json$/, /\/lists\.json$/]
 
 self.addEventListener("install", () => self.skipWaiting())
 self.addEventListener("activate", e => {
