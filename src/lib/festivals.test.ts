@@ -10,6 +10,8 @@ test("knows the winners at Cannes, Venice and Berlin, a year either side, and no
   expect(wonFestival("Pulp Fiction", 1994)).toBe(true)
   expect(wonFestival("Roma", 2018)).toBe(true) // Venice
   expect(wonFestival("Spirited Away", 2001)).toBe(true) // Berlin
+  expect(wonFestival("Whiplash", 2014)).toBe(true) // Sundance
+  expect(wonFestival("La La Land", 2016)).toBe(true) // Toronto
   expect(wonFestival("Raging Bull", 1980)).toBe(false)
   expect(wonFestival("Parasite", 2005)).toBe(false) // same title, a different film
   expect(new Set(FESTIVAL_WINNERS.map(([t, y]) => `${t}|${y}`)).size).toBe(FESTIVAL_WINNERS.length)

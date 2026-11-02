@@ -65,7 +65,7 @@ export const CARDS: Card[] = [
   { id: "remake", title: "A remake", rule: "A new version of an earlier film.", fits: f => f.remake },
   { id: "musical", title: "A musical", rule: "People sing, and the story depends on it.", fits: f => f.musical },
   // the id says "cannes" from when this card was Cannes only; it now covers Venice and Berlin too
-  { id: "cannes", title: "Festival winner", rule: "Won the top prize at Cannes, Venice or Berlin.", fits: f => f.cannes },
+  { id: "cannes", title: "Festival winner", rule: "Won a top prize at a festival: Cannes, Venice, Berlin, Sundance or Toronto.", fits: f => f.cannes },
   { id: "oscar", title: "Oscar winner", rule: "It won at least one Academy Award.", fits: f => known(f.oscars, n => n > 0) },
   { id: "word", title: "One word", rule: "The title is a single word.", fits: f => f.title.trim().split(/\s+/).length === 1 },
   ...THEME_CARDS,

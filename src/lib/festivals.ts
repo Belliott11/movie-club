@@ -44,11 +44,27 @@ const BERLIN: [string, number][] = [
   ["Alcarràs", 2022], ["On the Adamant", 2023], ["Dahomey", 2024],
 ]
 
-/** Every film that won the top prize at Cannes, Venice or Berlin. */
-export const FESTIVAL_WINNERS: [string, number][] = [...new Map([...CANNES, ...VENICE, ...BERLIN].map(f => [`${f[0]}|${f[1]}`, f] as const)).values()] // a film that won twice is listed once
+/** Winners of the Grand Jury Prize (dramatic) at Sundance, the ones I'm sure of. */
+const SUNDANCE: [string, number][] = [
+  ["Poison", 1991], ["The Brothers McMullen", 1995], ["Welcome to the Dollhouse", 1995], ["Slam", 1998], ["Girlfight", 2000], ["You Can Count on Me", 2000],
+  ["American Splendor", 2003], ["Primer", 2004], ["Frozen River", 2008], ["Precious", 2009], ["Winter's Bone", 2010], ["Like Crazy", 2011],
+  ["Beasts of the Southern Wild", 2012], ["Fruitvale Station", 2013], ["Whiplash", 2014], ["Me and Earl and the Dying Girl", 2015], ["The Birth of a Nation", 2016],
+  ["Clemency", 2019], ["Minari", 2020], ["CODA", 2021], ["Nanny", 2022], ["A Thousand and One", 2023],
+]
+
+/** Winners of the People's Choice Award at the Toronto festival, the ones I'm sure of. */
+const TORONTO: [string, number][] = [
+  ["Shine", 1996], ["Life Is Beautiful", 1997], ["American Beauty", 1999], ["Crouching Tiger, Hidden Dragon", 2000], ["Amélie", 2001], ["Whale Rider", 2002],
+  ["Zatoichi", 2003], ["Hotel Rwanda", 2004], ["Tsotsi", 2005], ["Eastern Promises", 2007], ["Slumdog Millionaire", 2008], ["Precious", 2009], ["The King's Speech", 2010],
+  ["Silver Linings Playbook", 2012], ["12 Years a Slave", 2013], ["The Imitation Game", 2014], ["Room", 2015], ["La La Land", 2016], ["Three Billboards Outside Ebbing, Missouri", 2017],
+  ["Green Book", 2018], ["Jojo Rabbit", 2019], ["Nomadland", 2020], ["Belfast", 2021], ["The Fabelmans", 2022], ["American Fiction", 2023],
+]
+
+/** Every film that won the top prize at Cannes, Venice or Berlin, the Grand Jury Prize at Sundance, or the People's Choice Award at Toronto. */
+export const FESTIVAL_WINNERS: [string, number][] = [...new Map([...CANNES, ...VENICE, ...BERLIN, ...SUNDANCE, ...TORONTO].map(f => [`${f[0]}|${f[1]}`, f] as const)).values()] // a film that won twice is listed once
 
 const WON = new Set(FESTIVAL_WINNERS.map(([t, y]) => key(t, y)))
 const WON_TITLES = new Set(FESTIVAL_WINNERS.map(([t]) => key(t, 0).split("|")[0]))
 
-/** Whether a film won the top prize at Cannes, Venice or Berlin. The year may be a year either side (release years differ by region). */
+/** Whether a film won a top prize at one of the festivals above. The year may be a year either side (release years differ by region). */
 export const wonFestival = (title: string, year: number) => WON.has(key(title, year)) || WON.has(key(title, year - 1)) || WON.has(key(title, year + 1)) || (WON_TITLES.has(key(title, 0).split("|")[0]) && FESTIVAL_WINNERS.some(([t, y]) => key(t, 0) === key(title, 0) && Math.abs(y - year) <= 1))
