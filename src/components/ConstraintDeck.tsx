@@ -143,7 +143,7 @@ export function ConstraintDeck() {
       {stage === "face-up" && card && (
         <div className="mt-4">
           <h4 className="mb-1 font-display text-lg font-bold">{card.loose ? "Obvious fits on the watchlists" : "Watchlist films that fit"}</h4>
-          {card.loose && <p className="mb-2 text-sm text-muted-foreground">This card is about an impression, so the list is only the easy answers. Any film works if you can argue it.</p>}
+          {card.loose && <p className="mb-2 text-sm text-muted-foreground">This card is about an impression, so the list is only the easy answers.</p>}
           {fits.length ? (
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
               {fits.map(f => (

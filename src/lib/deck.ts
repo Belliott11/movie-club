@@ -15,13 +15,13 @@ export type CardDef = {
   f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" | "book" | "remake" | "musical" | "cannes" }
 }
 
-export type Card = { /** a card about an impression, not a property: the watchlist matches are only the obvious ones and anything can be argued */ loose?: boolean; id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
+export type Card = { /** a card about an impression, not a property: the watchlist matches are only the obvious ones */ loose?: boolean; id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
 
 const known = <T,>(v: T | undefined | null, f: (v: T) => boolean) => (v == null ? undefined : f(v))
 
 import themes from "../data/themes.json"
 
-/** Cards about impressions: the watchlist films whose TMDB keywords point to the theme are the obvious fits, but any film can be argued. */
+/** Cards about impressions: the watchlist films whose TMDB keywords point to the theme are only the obvious fits. */
 const THEME_CARDS: Card[] = (themes as { id: string; title: string; rule: string }[]).map(t => ({ id: `theme-${t.id}`, title: t.title, rule: t.rule, loose: true, fits: f => (f.themes ? f.themes.includes(t.id) : undefined) }))
 
 /** The deck: each card is a constraint on the next pick, and says whether a given film meets it (undefined = can't tell yet). */
