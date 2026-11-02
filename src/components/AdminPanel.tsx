@@ -101,14 +101,15 @@ function Suggestions() {
 }
 
 function Cards() {
-  const { deckCards, setDeckCards } = useStore()
+  const { deckCards, setDeckCards, deck, setDeck } = useStore()
   const toggle = (id: string) => setDeckCards(deckCards.includes(id) ? deckCards.filter(x => x !== id) : CARDS.map(c => c.id).filter(x => x === id || deckCards.includes(x)))
   return (
     <>
-      <p className="mb-2 text-sm text-muted-foreground">Choose which cards go in the deck. {deckCards.length} of {CARDS.length} are in. Cards left out are never dealt.</p>
+      <p className="mb-2 text-sm text-muted-foreground">Choose which cards go in the deck. {deckCards.length} of {CARDS.length} are in. Cards left out are never dealt. "Reset dealt cards" puts the ones already dealt back in the deck and clears the card on the table.</p>
       <div className="mb-2 flex flex-wrap gap-2">
         <Button variant="outline" className="h-10 px-3" onClick={() => setDeckCards(null)}>Recommended ({DEFAULT_CARDS.length})</Button>
         <Button variant="outline" className="h-10 px-3" onClick={() => setDeckCards(CARDS.map(c => c.id))}>All</Button>
+        <Button variant="outline" className="h-10 px-3" disabled={!deck.drawn.length && !deck.used.length} onClick={() => { if (confirm("Put every dealt card back and clear the card on the table?")) setDeck({ drawn: [], used: [] }) }}>Reset dealt cards ({deck.used.length + deck.drawn.length})</Button>
       </div>
       <ul className="flex flex-col divide-y divide-border">
         {CARDS.map(c => (
