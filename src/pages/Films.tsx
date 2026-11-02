@@ -8,11 +8,10 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { fieldCls } from "@/components/field"
 import { bestFilm, decadesOf, defaultFilter, filterFilms, pickOrder, type FilmFilter, type FilmSort } from "@/lib/stats"
-import { CARDS } from "@/lib/deck"
 import { useStore } from "@/lib/store"
 
 export default function Films() {
-  const { movies, attending, me, addMovie, seed, canPick, selector, deck, deckCards } = useStore()
+  const { movies, attending, me, addMovie, seed, canPick, selector, deck, deckCards, cards } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
@@ -75,7 +74,7 @@ export default function Films() {
               Card
               <select name="card" aria-label="Which pick card this film answers" defaultValue={deck.drawn.at(-1) ?? ""} className={fieldCls}>
                 <option value="">None</option>
-                {CARDS.filter(c => deckCards.includes(c.id) || c.id === deck.drawn.at(-1)).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                {cards.filter(c => deckCards.includes(c.id) || c.id === deck.drawn.at(-1)).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
               </select>
             </label>
             <Button type="submit" className="h-10 px-4">Add film</Button>

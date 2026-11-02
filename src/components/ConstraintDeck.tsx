@@ -8,7 +8,7 @@ import { CardPicker } from "@/components/CardPicker"
 import { IMG } from "@/lib/api"
 import { candFromEntry } from "@/lib/catalog"
 import { useDeckData } from "@/lib/useDeckData"
-import { CARDS, deal, fitting, type Card, type Cand } from "@/lib/deck"
+import { deal, fitting, type Card, type Cand } from "@/lib/deck"
 import { afterDeal, canRedraw } from "@/lib/deckFlow"
 import { continentOfCode, regionOfCode } from "@/lib/continents"
 import { useExtras, useOscars } from "@/lib/filmExtras"
@@ -26,23 +26,23 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
  * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn (never the same card), and every deal is random from the whole deck.
  */
 export function ConstraintDeck() {
-  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist } = useStore()
+  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist, cards } = useStore()
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
-  const deckPool = CARDS.filter(c => deckCards.includes(c.id))
+  const deckPool = cards.filter(c => deckCards.includes(c.id))
   const mine = { drawn: deck.drawn }
   const [stage, setStage] = useState<Stage>(mine.drawn.length ? "face-up" : "idle")
   // someone else dealing (or a new pick starting) changes what's on the table
   useEffect(() => { if (stage === "idle" && mine.drawn.length) setStage("face-up"); if (stage === "face-up" && !mine.drawn.length) setStage("idle") }, [mine.drawn.length, stage])
   const timers = useRef<number[]>([])
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
-  const card: Card | undefined = CARDS.find(c => c.id === mine.drawn[mine.drawn.length - 1])
+  const card: Card | undefined = cards.find(c => c.id === mine.drawn[mine.drawn.length - 1])
   const redrawsLeft = canRedraw(mine.drawn)
   const [notice, setNotice] = useState("")
 
   const play = (isRedraw: boolean) => {
-    const next = deal(mine.drawn, Math.random, deckPool.length ? deckPool : CARDS)
+    const next = deal(mine.drawn, Math.random, deckPool.length ? deckPool : cards)
     setNotice("")
     // the deal is refused if someone else dealt since this device last looked; their card stays on the table
     const commit = async () => {
@@ -168,7 +168,7 @@ export function ConstraintDeck() {
         </div>
       )}
 
-      <Collapse id="deck-cards" title={`Cards in play (${deckPool.length} of ${CARDS.length})`} defaultOpen={false}>
+      <Collapse id="deck-cards" title={`Cards in play (${deckPool.length} of ${cards.length})`} defaultOpen={false}>
         <CardPicker current={card?.id} />
       </Collapse>
     </section>

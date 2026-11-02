@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 import { Collapse } from "@/components/Collapse"
 import { candFromEntry } from "@/lib/catalog"
-import { CARDS } from "@/lib/deck"
 import { movieHref } from "@/lib/movieLink"
 import { key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
@@ -9,19 +8,19 @@ import { useDeckData } from "@/lib/useDeckData"
 
 /** Every watchlist film nobody here has seen, sorted under each pick card it qualifies for. Films may sit under several cards. */
 export function WatchlistByCard() {
-  const { deckCards } = useStore()
+  const { deckCards, cards } = useStore()
   const { pool, ctx, catalog, room } = useDeckData()
   const [open, setOpen] = useState<string | null>(null)
   const rows = useMemo(() => {
     if (!catalog) return null
     const cands = pool.flatMap(c => { const e = catalog.get(key(c.title, c.year)); return e ? [{ c, cand: candFromEntry(e, c) }] : [] })
     return {
-      sorted: CARDS.map(card => ({ card, films: cands.filter(x => card.fits(x.cand, ctx) === true).sort((a, b) => b.c.wantedBy - a.c.wantedBy || a.c.title.localeCompare(b.c.title)) })),
+      sorted: cards.map(card => ({ card, films: cands.filter(x => card.fits(x.cand, ctx) === true).sort((a, b) => b.c.wantedBy - a.c.wantedBy || a.c.title.localeCompare(b.c.title)) })),
       unsorted: pool.length - cands.length,
-      anyCard: cands.filter(x => CARDS.some(card => card.fits(x.cand, ctx) === true)).length,
+      anyCard: cands.filter(x => cards.some(card => card.fits(x.cand, ctx) === true)).length,
       total: cands.length,
     }
-  }, [pool, catalog, ctx])
+  }, [pool, catalog, ctx, cards])
   return (
     <Collapse id="next-bycard" title="Watchlists sorted by card" defaultOpen={false}>
       {!rows ? <p className="text-sm text-muted-foreground">Loading…</p> : (

@@ -5,7 +5,6 @@ import { fieldCls } from "@/components/field"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { CARDS } from "@/lib/deck"
 import { download } from "@/lib/exporters"
 import { isUnused } from "@/lib/people"
 import { useStore } from "@/lib/store"
@@ -60,7 +59,7 @@ function Ratings() {
 }
 
 function Films() {
-  const { movies, deleteMovie, pickCards, setPickCard } = useStore()
+  const { movies, deleteMovie, pickCards, setPickCard, cards } = useStore()
   const [sure, setSure] = useState<number | null>(null)
   return (
     <>
@@ -71,7 +70,7 @@ function Films() {
             <a href={`#/films/${m.id}`} className="min-h-11 min-w-0 flex-1 content-center truncate hover:underline">{m.seq}. {m.title} <small className="text-muted-foreground">{m.year} · {m.pick}</small></a>
             <select aria-label={`Card for ${m.title}`} value={pickCards[String(m.seq)] ?? ""} onChange={e => setPickCard(m.seq, e.target.value || null)} className={`${fieldCls} w-40 shrink-0`}>
               <option value="">No card</option>
-              {CARDS.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+              {cards.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
             {sure === m.id ? (
               <>

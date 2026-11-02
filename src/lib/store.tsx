@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { CARDS, DEFAULT_CARDS } from "./deck"
+import { CARDS, DEFAULT_CARDS, type Card, type CardDef } from "./deck"
+import { buildCard } from "./customCard"
 import { canDeal, drawnFor, isStale, type DeckRow } from "./deckFlow"
 import { loadMini, omdbFill, saveMini, searchFilm } from "./api"
 import { createDb } from "./db"
@@ -71,6 +72,12 @@ type Store = {
   loadSeal: (force?: boolean) => void
   /** Country the club has set for a film, by movie id, replacing the one TMDB reports. Loads with loadSeal. */
   countries: Record<string, string>
+  /** Every card that can be dealt: the built-in ones and the ones people made. */
+  cards: Card[]
+  /** Cards people made themselves, shared with the club. Anyone can add one; it goes straight into the deck. Loads with loadSeal. */
+  customCards: CardDef[]
+  addCustomCard: (def: CardDef) => Promise<void>
+  removeCustomCard: (id: string) => Promise<void>
   /** The pick cards in the deck: the host's choice, else the recommended set. Loads with loadSeal. */
   deckCards: string[]
   setDeckCards: (ids: string[] | null) => Promise<void>
@@ -155,6 +162,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   sealRef.current = seal
   const sealLoaded = useRef(false)
   const [countries, setCountries] = useState<Record<string, string>>({})
+  const [customCards, setCustomState] = useState<CardDef[]>([])
   const [deckSaved, setDeckSaved] = useState<string[] | null>(null)
   const [noLb, setNoLbState] = useState<string[]>([])
   const [pickCards, setPickCardsState] = useState<Record<string, string>>({})
@@ -422,6 +430,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setNoLbState((s.data as { key: string }[]).filter(r => r.key.startsWith("nolb:")).map(r => r.key.slice(5)))
         setDeckSaved((() => { try { const v = JSON.parse(get("deck-cards") ?? "null"); return Array.isArray(v) ? v : null } catch { return null } })())
         setPickCardsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("pickcard:")).map(r => [r.key.slice(9), r.value])))
+        setCustomState((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("card:")).flatMap(r => { try { return [JSON.parse(r.value) as CardDef] } catch { return [] } }))
         const json = (k: string) => { try { return JSON.parse(get(k) ?? "null") } catch { return null } }
         setTurnState({ selector: json("selector"), deck: json("deck") })
         const by: Record<string, string[]> = {}
@@ -437,6 +446,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPickCardsState(lsGet("pickcards-local-v1", {}))
     setNoLbState(lsGet("nolb-local-v1", []))
     setDeckSaved(lsGet("deck-cards-local-v1", null))
+    setCustomState(lsGet("custom-cards-local-v1", []))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -531,6 +541,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDeckSaved(ids)
     if (!sealRef.current.shared) lsSet("deck-cards-local-v1", ids)
     else if (sb) fail((ids ? await sb.from("club_settings").upsert({ key: "deck-cards", value: JSON.stringify(ids) }) : await sb.from("club_settings").delete().eq("key", "deck-cards")).error)
+  }, [])
+  const addCustomCard = useCallback(async (def: CardDef) => {
+    setCustomState(all => { const next = [...all.filter(c => c.id !== def.id), def]; if (!sealRef.current.shared) lsSet("custom-cards-local-v1", next); return next })
+    if (sealRef.current.shared && sb) fail((await sb.from("club_settings").upsert({ key: `card:${def.id}`, value: JSON.stringify(def) })).error)
+    // a new card goes straight into the deck
+    await setDeckCards([...(deckSaved ?? DEFAULT_CARDS), def.id])
+  }, [deckSaved, setDeckCards])
+  const removeCustomCard = useCallback(async (id: string) => {
+    setCustomState(all => { const next = all.filter(c => c.id !== id); if (!sealRef.current.shared) lsSet("custom-cards-local-v1", next); return next })
+    if (sealRef.current.shared && sb) fail((await sb.from("club_settings").delete().eq("key", `card:${id}`)).error)
   }, [])
   const setSelector = useCallback(async (name: string | null) => { await putTurn("selector", name ? { name, turn: currentTurn() } : null) }, [])
   const setDeck = useCallback(async (drawn: string[], seen?: string[]) => {
@@ -763,8 +783,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const canPick = canDeal(selector, me)
   const deck = { drawn: drawnFor(turnState.deck, turnNow), by: turnState.deck?.turn === turnNow ? turnState.deck.by : undefined } // every deal is random from the whole deck: dealt cards are never held back
 
+  const cards = useMemo(() => [...CARDS, ...customCards.map(buildCard)], [customCards])
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => CARDS.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, cards, customCards, addCustomCard, removeCustomCard, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => cards.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

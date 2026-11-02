@@ -2,7 +2,8 @@ import { searchFilm, tmdb } from "./api"
 import { MOVEMENTS, NATIONS, type Film } from "./atlas"
 import { LOW_BUDGET, OSCAR_WINNERS, WOMAN_DIRECTED } from "./deckClassics"
 import { FAMOUS_NAMES } from "./famousDirectors"
-import type { Card, Ctx } from "./deck"
+import { GENRE_IDS } from "./customCard"
+import type { Card, CardDef, Ctx } from "./deck"
 import { continentOfCode, regionOfCode } from "./continents"
 import { key } from "./stats"
 
@@ -91,8 +92,41 @@ function movementIdeas(ctx: Ctx, skip: Set<string>, rand: () => number): Promise
   return fromTitles(films, skip, rand)
 }
 
+/** Films from TMDB's discover for a set of filters, most-voted first, loosening the vote floor for niche filters until something turns up. */
+async function discoverIdeas(params: string, skip: Set<string>, rand: () => number, keep: (title: string) => boolean = () => true): Promise<Idea[]> {
+  for (const floor of [1000, 150, 20]) {
+    const page = floor === 1000 ? 1 + Math.floor(rand() * 3) : 1
+    const r = await tmdb<{ results?: any[] }>("/discover/movie", `${params}&sort_by=vote_count.desc&vote_count.gte=${floor}&include_adult=false&page=${page}`)
+    const ideas = (r?.results ?? []).map(slim).filter(x => x.year && keep(x.title) && !skip.has(key(x.title, x.year))).slice(0, 6)
+    if (ideas.length >= 3 || floor === 20) return ideas
+  }
+  return []
+}
+
+/** Films for a card someone made: its options become TMDB filters. Cards about directors or budgets that TMDB can't filter use the hand-made lists. */
+async function customIdeas(def: CardDef, skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const f = def.f
+  const inYears = ([, y]: Film) => (f.from == null || y >= f.from) && (f.to == null || y <= f.to)
+  if (f.tag === "womanDirector") return fromTitles(WOMAN_DIRECTED.filter(inYears), skip, rand)
+  if (f.tag === "lowBudget") return fromTitles(LOW_BUDGET.filter(inYears), skip, rand)
+  const p: string[] = []
+  if (f.from != null) p.push(`primary_release_date.gte=${f.from}-01-01`)
+  if (f.to != null) p.push(`primary_release_date.lte=${f.to}-12-31`)
+  if (f.minRun != null) p.push(`with_runtime.gte=${f.minRun}`)
+  if (f.maxRun != null) p.push(`with_runtime.lte=${f.maxRun}`)
+  if (f.lang) p.push(`with_original_language=${f.lang === "!en" ? LANGS : f.lang}`)
+  if (f.genre && GENRE_IDS[f.genre]) p.push(`with_genres=${GENRE_IDS[f.genre]}`)
+  if (f.country) p.push(`with_origin_country=${f.country}`)
+  if (f.tag) { const id = (await keywordIds())[f.tag]; if (id) p.push(`with_keywords=${id}`) }
+  if (f.director) { const id = await personId(f.director); if (id) p.push(`with_crew=${id}`) }
+  if (!p.length) return []
+  const word = f.word?.toLowerCase()
+  return discoverIdeas("&" + p.join("&"), skip, rand, word ? t => t.toLowerCase().includes(word) : undefined)
+}
+
 /** Well-known films that meet a card, for when nothing on anyone's watchlist does. Random each time, so it isn't the same list twice. */
 export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: () => number = Math.random): Promise<Idea[]> {
+  if (card.custom) return customIdeas(card.custom, skip, rand)
   if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
   if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
   if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)
@@ -101,16 +135,5 @@ export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: (
   if (card.id === "movement") return movementIdeas(ctx, skip, rand)
   const params = discoverParams(card, ctx, KEYWORD_CARDS[card.id] ? await keywordIds() : {})
   if (!params) return []
-  // niche cards (silent film, a small nation) have few films with many votes, so loosen the floor until something turns up
-  for (const floor of [1000, 150, 20]) {
-    const page = floor === 1000 ? 1 + Math.floor(rand() * 3) : 1
-    const r = await tmdb<{ results?: any[] }>("/discover/movie", `${params}&sort_by=vote_count.desc&vote_count.gte=${floor}&include_adult=false&page=${page}`)
-    const ideas = (r?.results ?? [])
-      .map(x => ({ title: x.title as string, year: +(x.release_date ?? "").slice(0, 4) || 0, id: x.id as number, poster: x.poster_path as string | null, score: x.vote_average as number, votes: x.vote_count as number }))
-      .filter(x => x.year && !skip.has(key(x.title, x.year)))
-      .slice(0, 6)
-    if (ideas.length >= 3) return ideas
-    if (floor === 20) return ideas
-  }
-  return []
+  return discoverIdeas(params, skip, rand)
 }
