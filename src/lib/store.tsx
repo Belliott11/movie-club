@@ -74,6 +74,11 @@ type Store = {
   countries: Record<string, string>
   /** Every card that can be dealt: the built-in ones (less any the host deleted) and the ones people made. */
   cards: Card[]
+  /** New wording the host gave built-in cards (their title and rule), by card id. */
+  cardEdits: Record<string, { title?: string; rule?: string }>
+  editCardText: (id: string, text: { title?: string; rule?: string } | null) => Promise<void>
+  /** Saves changes to a custom card without touching whether it is in the deck. */
+  updateCustomCard: (def: CardDef) => Promise<void>
   /** Built-in cards the host deleted, so they can be brought back. */
   deletedCards: string[]
   deleteCard: (id: string) => Promise<void>
@@ -166,6 +171,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   sealRef.current = seal
   const sealLoaded = useRef(false)
   const [countries, setCountries] = useState<Record<string, string>>({})
+  const [cardEdits, setEditsState] = useState<Record<string, { title?: string; rule?: string }>>({})
   const [deletedCards, setDeletedState] = useState<string[]>([])
   const [customCards, setCustomState] = useState<CardDef[]>([])
   const [deckSaved, setDeckSaved] = useState<string[] | null>(null)
@@ -437,6 +443,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setPickCardsState(Object.fromEntries((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("pickcard:")).map(r => [r.key.slice(9), r.value])))
         setCustomState((s.data as { key: string; value: string }[]).filter(r => r.key.startsWith("card:")).flatMap(r => { try { return [JSON.parse(r.value) as CardDef] } catch { return [] } }))
         setDeletedState((() => { try { const v = JSON.parse(get("cards-deleted") ?? "[]"); return Array.isArray(v) ? v : [] } catch { return [] } })())
+        setEditsState((() => { try { return JSON.parse(get("card-edits") ?? "{}") } catch { return {} } })())
         const json = (k: string) => { try { return JSON.parse(get(k) ?? "null") } catch { return null } }
         setTurnState({ selector: json("selector"), deck: json("deck") })
         const by: Record<string, string[]> = {}
@@ -454,6 +461,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setDeckSaved(lsGet("deck-cards-local-v1", null))
     setCustomState(lsGet("custom-cards-local-v1", []))
     setDeletedState(lsGet("cards-deleted-local-v1", []))
+    setEditsState(lsGet("card-edits-local-v1", {}))
     const l = readSealLocal()
     setSeal({ ready: true, shared: false, publicKey: l.publicKey, lockedKey: l.locked ?? null, openMovie: l.open, sealedBy: Object.fromEntries(Object.entries(l.rows).map(([k, v]) => [k, Object.keys(v)])) })
   }, [])
@@ -562,6 +570,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
   const deleteCard = useCallback(async (id: string) => { if (CARDS.some(c => c.id === id)) await saveDeleted([...new Set([...deletedCards, id])]) }, [deletedCards, saveDeleted])
   const restoreCard = useCallback(async (id: string) => { await saveDeleted(deletedCards.filter(x => x !== id)) }, [deletedCards, saveDeleted])
+  const editCardText = useCallback(async (id: string, text: { title?: string; rule?: string } | null) => {
+    const next = { ...cardEdits }
+    if (text && (text.title || text.rule)) next[id] = text; else delete next[id]
+    setEditsState(next)
+    if (!sealRef.current.shared) lsSet("card-edits-local-v1", next)
+    else if (sb) fail((Object.keys(next).length ? await sb.from("club_settings").upsert({ key: "card-edits", value: JSON.stringify(next) }) : await sb.from("club_settings").delete().eq("key", "card-edits")).error)
+  }, [cardEdits])
+  const updateCustomCard = useCallback(async (def: CardDef) => {
+    setCustomState(all => { const next = all.map(c => (c.id === def.id ? def : c)); if (!sealRef.current.shared) lsSet("custom-cards-local-v1", next); return next })
+    if (sealRef.current.shared && sb) fail((await sb.from("club_settings").upsert({ key: `card:${def.id}`, value: JSON.stringify(def) })).error)
+  }, [])
   const removeCustomCard = useCallback(async (id: string) => {
     setCustomState(all => { const next = all.filter(c => c.id !== id); if (!sealRef.current.shared) lsSet("custom-cards-local-v1", next); return next })
     if (sealRef.current.shared && sb) fail((await sb.from("club_settings").delete().eq("key", `card:${id}`)).error)
@@ -797,9 +816,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const canPick = canDeal(selector, me)
   const deck = { drawn: drawnFor(turnState.deck, turnNow), by: turnState.deck?.turn === turnNow ? turnState.deck.by : undefined } // every deal is random from the whole deck: dealt cards are never held back
 
-  const cards = useMemo(() => [...CARDS.filter(c => !deletedCards.includes(c.id)), ...customCards.map(buildCard)], [customCards, deletedCards])
+  const cards = useMemo(() => [...CARDS.filter(c => !deletedCards.includes(c.id)).map(c => ({ ...c, ...cardEdits[c.id] })), ...customCards.map(buildCard)], [customCards, deletedCards, cardEdits])
   const value: Store = {
-    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, cards, deletedCards, deleteCard, restoreCard, customCards, addCustomCard, removeCustomCard, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => cards.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
+    ready, error, offline, movies, watchlist, suggestions, takes, seal, isHost: !!hostKey && !!seal.publicKey, loadSeal, countries, setCountry, candidates, setCandidates, pickCards, setPickCard, favs, setFavs, noLb, setNoLb, cards, cardEdits, editCardText, updateCustomCard, deletedCards, deleteCard, restoreCard, customCards, addCustomCard, removeCustomCard, deckCards: (deckSaved ?? DEFAULT_CARDS).filter(id => cards.some(c => c.id === id)), setDeckCards, backup, restore, selector, setSelector, canDesignate, canPick, deck, setDeck, planCipher, savePlanCipher, sealSetup, sealLock, sealUseKey, sealOpen, sealMine, sealedValue, sealReveal, sealCancel, lb, loadLb, importLb, fillFromLb, flags, mini: miniShown, setPoster, me, attending, members, shared: !!sb, toast, dismissToast,
     refresh, setMe, toggleAttend, addMember, renameMember, removeMember, addMovie, setRating, setTake, setFlag, patchMovie, setWatched, deleteMovie, seed,
     importWatchlist, suggest, vote, removeSuggestion,
   }

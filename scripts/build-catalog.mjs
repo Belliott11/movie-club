@@ -35,7 +35,7 @@ console.log(`${rows.length} watchlist rows, ${films.length} different films`)
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : { films: [] }
 const done = new Map(old.films.map(f => [`${f.t}|${f.y}`, f]))
 // films with no poster recorded are looked up again (older catalogs didn't keep it), keeping what they already know
-const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || e.r === undefined)) })
+const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && !e.p) })
 console.log(`${todo.length} to look up`)
 
 const has = (kw, ...names) => kw.some(k => names.some(n => k === n || k.includes(n)))
@@ -49,7 +49,6 @@ async function look({ t, y }) {
   const dirs = (d.credits?.crew ?? []).filter(c => c.job === "Director")
   const e = { t, y, id: d.id, v: d.vote_count ?? 0 }
   if (d.poster_path) e.p = d.poster_path
-  e.r = Math.round((d.vote_average ?? 0) * 10) / 10 // TMDB's score out of 10
   const was = done.get(`${t}|${y}`)
   if (was?.o !== undefined) e.o = was.o
   if (d.runtime) e.rt = d.runtime
@@ -87,20 +86,29 @@ function save() {
 await Promise.all(Array.from({ length: 8 }, worker))
 save()
 
-// Oscars through OMDb for the well-voted films (its free key allows about a thousand calls a day)
+// OMDb gives the outside scores (IMDb, Rotten Tomatoes, Metacritic) and the Oscars. Its free key allows about a thousand calls a day, so the
+// best-known films go first and a rerun tomorrow carries on where this stopped.
 if (CONFIG.OMDB_KEY) {
-  const all = [...results.values()].filter(e => e.im && e.o === undefined && e.v >= 800).sort((a, b) => b.v - a.v).slice(0, 900)
-  console.log(`${all.length} films to check for Oscars`)
-  let i = 0
+  const all = [...results.values()].filter(e => e.im && !e.ox).sort((a, b) => (b.v ?? 0) - (a.v ?? 0)).slice(0, 950)
+  console.log(`${all.length} films to ask OMDb about`)
+  let i = 0, stopped = false
   const w = async () => {
-    while (i < all.length) {
+    while (i < all.length && !stopped) {
       const e = all[i++]
       const r = await getJson(`https://www.omdbapi.com/?apikey=${CONFIG.OMDB_KEY}&i=${e.im}`)
-      if (r?.Response === "True") e.o = +(/won (\d+) oscars?/i.exec(r.Awards ?? "")?.[1] ?? 0)
-      else if (r?.Error?.includes("limit")) { i = all.length }
+      if (r?.Error?.toLowerCase().includes("limit")) { stopped = true; break }
+      if (r?.Response !== "True") continue
+      e.ox = 1
+      const num = x => { const n = parseFloat(x); return isNaN(n) ? undefined : n }
+      const imdb = num(r.imdbRating), rt = num((r.Ratings ?? []).find(x => x.Source === "Rotten Tomatoes")?.Value), mc = num(r.Metascore)
+      if (imdb !== undefined) e.ri = imdb
+      if (rt !== undefined) e.rr = rt
+      if (mc !== undefined) e.rm = mc
+      e.o = +(/won (\d+) oscars?/i.exec(r.Awards ?? "")?.[1] ?? 0)
     }
   }
   await Promise.all(Array.from({ length: 4 }, w))
+  if (stopped) console.log("OMDb's daily limit was reached; run this again tomorrow for the rest")
   save()
 }
 const final = JSON.parse(readFileSync(OUT, "utf8")).films

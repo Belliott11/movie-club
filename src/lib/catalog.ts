@@ -7,7 +7,7 @@ import { key } from "./stats"
 export type CatalogEntry = {
   t: string; y: number; id: number
   v?: number; rt?: number; l?: string; cc?: string[]; g?: string[]; d?: string[]
-  p?: string; r?: number; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
+  p?: string; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
 }
 export type Catalog = Map<string, CatalogEntry>
 
@@ -30,6 +30,12 @@ export function useCatalog(): Catalog | null {
   return c
 }
 
+/** The average of whichever of IMDb (out of 10), Rotten Tomatoes (out of 100) and Metacritic (out of 100) have rated the film, as a score out of 5. The same sums the site uses for club films. */
+export function outsideScore(e: CatalogEntry): number | undefined {
+  const parts = [e.ri != null ? e.ri / 2 : undefined, e.rr != null ? e.rr / 20 : undefined, e.rm != null ? e.rm / 20 : undefined].filter((x): x is number => x !== undefined)
+  return parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : undefined
+}
+
 /**
  * What a card needs to know about a film, from its catalog entry. A fact the catalog couldn't establish stays undefined (so the card says
  * "can't tell"), but a tag that TMDB had keywords for and didn't list counts as no.
@@ -39,7 +45,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
   return {
     ...base,
     poster: e.p,
-    rating: e.r && (e.v ?? 0) >= 25 ? e.r / 2 : undefined, // TMDB's out-of-10 score as out of 5; too few votes means no rating to go on
+    rating: outsideScore(e),
     runtime: e.rt, lang: e.l, genres: e.g, directors: e.d,
     country: code ? countryName(code) : undefined, continent: continentOfCode(code), region: regionOfCode(code),
     bw: e.kn ? !!e.bw : undefined, silent: e.kn ? !!e.si : undefined, trueStory: e.kn ? !!e.ts : undefined,

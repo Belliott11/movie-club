@@ -27,3 +27,12 @@ test("tags TMDB has no keywords for are unknown, and a film with few votes is no
   const big = candFromEntry({ t: "Y", y: 2000, id: 3, v: 20000 }, { title: "Y", year: 2000, wantedBy: 1 })
   expect(card("oscar").fits(big, ctx)).toBeUndefined() // well voted but OMDb wasn't asked
 })
+
+test("the outside rating is the average of IMDb, Rotten Tomatoes and Metacritic that exist, out of 5", async () => {
+  const { outsideScore } = await import("./catalog")
+  expect(outsideScore({ t: "A", y: 2000, id: 1, ri: 8, rr: 90, rm: 80 })).toBeCloseTo((4 + 4.5 + 4) / 3)
+  expect(outsideScore({ t: "A", y: 2000, id: 1, ri: 6 })).toBe(3) // only IMDb has scored it
+  expect(outsideScore({ t: "A", y: 2000, id: 1 })).toBeUndefined()
+  const c = candFromEntry({ t: "A", y: 2000, id: 1, rr: 60 }, { title: "A", year: 2000, wantedBy: 1 })
+  expect(c.rating).toBe(3)
+})
