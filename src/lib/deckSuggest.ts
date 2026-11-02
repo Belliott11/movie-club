@@ -1,5 +1,6 @@
 import { searchFilm, tmdb } from "./api"
 import { MOVEMENTS, NATIONS, type Film } from "./atlas"
+import { CANNES } from "./cannes"
 import { LOW_BUDGET, OSCAR_WINNERS, WOMAN_DIRECTED } from "./deckClassics"
 import { FAMOUS_NAMES } from "./famousDirectors"
 import { GENRE_IDS } from "./customCard"
@@ -12,7 +13,7 @@ const nameOf = (code: string) => { try { return code === "US" ? "USA" : intl.of(
 
 const GENRES: Record<string, number> = { doc: 99, animation: 16, western: 37, horror: 27, romance: 10749, war: 10752, scifi: 878 }
 /** Cards decided by a TMDB keyword; the id is looked up by name since keyword ids aren't something to memorize. */
-export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story", franchise: "sequel" }
+export const KEYWORD_CARDS: Record<string, string> = { bw: "black and white", silent: "silent film", trueStory: "based on true story", franchise: "sequel", book: "based on novel or book", remake: "remake", musical: "musical" }
 const LANGS = "fr|ja|ko|es|it|de|hi|zh|sv|ru|pt|fa|da|pl|tr|ar|th|el|hu|cs"
 
 /**
@@ -132,6 +133,7 @@ export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: (
   if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
   if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
   if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)
+  if (card.id === "cannes") return fromTitles(CANNES, skip, rand)
   if (card.id === "famous") return famousIdeas(skip, rand)
   if (card.id === "word") return oneWordIdeas(skip, rand)
   if (card.id === "movement") return movementIdeas(ctx, skip, rand)

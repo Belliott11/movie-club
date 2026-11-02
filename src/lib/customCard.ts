@@ -4,7 +4,7 @@ const intl = new Intl.DisplayNames(["en"], { type: "region" })
 const countryName = (code: string) => { try { return code === "US" ? "USA" : intl.of(code) ?? code } catch { return code } }
 const langName = new Intl.DisplayNames(["en"], { type: "language" })
 
-export const TAGS: Record<string, string> = { bw: "Black and white", silent: "Silent film", trueStory: "Based on a true story", franchise: "Part of a franchise", womanDirector: "Directed by a woman", lowBudget: "Low budget" }
+export const TAGS: Record<string, string> = { bw: "Black and white", silent: "Silent film", trueStory: "Based on a true story", franchise: "Part of a franchise", womanDirector: "Directed by a woman", lowBudget: "Low budget", book: "Based on a book", remake: "A remake", musical: "A musical", cannes: "Won at Cannes" }
 export const GENRE_IDS: Record<string, number> = { Action: 28, Adventure: 12, Animation: 16, Comedy: 35, Crime: 80, Documentary: 99, Drama: 18, Family: 10751, Fantasy: 14, History: 36, Horror: 27, Music: 10402, Mystery: 9648, Romance: 10749, "Science Fiction": 878, Thriller: 53, War: 10752, Western: 37 }
 export const LANG_CHOICES: [string, string][] = [["en", "English"], ["!en", "Not English"], ["fr", "French"], ["ja", "Japanese"], ["ko", "Korean"], ["es", "Spanish"], ["it", "Italian"], ["de", "German"], ["hi", "Hindi"], ["zh", "Chinese"], ["sv", "Swedish"], ["ru", "Russian"], ["pt", "Portuguese"], ["fa", "Persian"]]
 
@@ -30,6 +30,10 @@ export function customFits(def: CardDef, c: Cand): boolean | undefined {
   if (f.tag === "trueStory") out.push(c.trueStory)
   if (f.tag === "franchise") out.push(c.franchise)
   if (f.tag === "womanDirector") out.push(c.womanDirector)
+  if (f.tag === "book") out.push(c.book)
+  if (f.tag === "remake") out.push(c.remake)
+  if (f.tag === "musical") out.push(c.musical)
+  if (f.tag === "cannes") out.push(c.cannes)
   if (f.tag === "lowBudget") out.push(tri(c.budget, b => b < 5_000_000))
   if (!out.length) return undefined // a card with no options can't pick films for you
   if (out.includes(false)) return false

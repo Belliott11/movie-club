@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react"
 import { continentOfCode, regionOfCode } from "./continents"
 import type { Cand } from "./deck"
+import { wonCannes } from "./cannes"
 import { key } from "./stats"
 
 /** One watchlist film's facts, as written by scripts/build-catalog.mjs (short names keep the file small). */
 export type CatalogEntry = {
   t: string; y: number; id: number
   v?: number; rt?: number; l?: string; cc?: string[]; g?: string[]; d?: string[]
-  p?: string; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
+  p?: string; kk?: 1; bk?: 1; rm2?: 1; mu?: 1; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
 }
 export type Catalog = Map<string, CatalogEntry>
 
@@ -51,6 +52,8 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
     bw: e.kn ? !!e.bw : undefined, silent: e.kn ? !!e.si : undefined, trueStory: e.kn ? !!e.ts : undefined,
     franchise: e.fr ? true : e.kn ? false : undefined,
     womanDirector: e.d ? !!e.wd : undefined,
+    book: e.kn ? !!e.bk : undefined, remake: e.kn ? !!e.rm2 : undefined, musical: e.kn ? !!(e.mu || e.g?.includes("Music")) : e.g?.includes("Music") ? true : undefined,
+    cannes: wonCannes(base.title, base.year),
     budget: e.b,
     oscars: e.o ?? ((e.v ?? 0) < 800 ? 0 : undefined), // OMDb was only asked about well-voted films; the rest won nothing
   }
