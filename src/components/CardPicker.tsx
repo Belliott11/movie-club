@@ -5,7 +5,7 @@ import { fieldCls } from "@/components/field"
 import { NATIONS } from "@/lib/atlas"
 import { candFromEntry } from "@/lib/catalog"
 import { buildCard, cardId, GENRE_IDS, LANG_CHOICES, TAGS } from "@/lib/customCard"
-import { DEFAULT_CARDS, type CardDef } from "@/lib/deck"
+import { type CardDef } from "@/lib/deck"
 import { key } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import { useDeckData } from "@/lib/useDeckData"
@@ -69,7 +69,6 @@ export function CardPicker({ current }: { current?: string }) {
       <p className="mb-2 text-sm text-muted-foreground">{deckCards.length} of {cards.length} cards are in the deck. Each deal is random from them, so a card can come up again. {canDesignate ? "Tick a card to put it in, untick it to take it out." : "The host chooses which of the built-in cards are in. Anyone can make a card of their own below."}</p>
       {canDesignate && (
         <div className="mb-2 flex flex-wrap gap-2">
-          <Button variant="outline" className="h-10 px-3" onClick={() => setDeckCards(null)}>Recommended ({DEFAULT_CARDS.length})</Button>
           <Button variant="outline" className="h-10 px-3" onClick={() => setDeckCards(cards.map(c => c.id))}>All</Button>
         </div>
       )}
