@@ -40,3 +40,14 @@ test("a card can come back on a later pick", () => {
   for (let i = 0; i < 400; i++) seen.add(deal([], Math.random, [CARDS[0], CARDS[1]]).id)
   expect(seen.size).toBe(2)
 })
+
+test("theme cards are loose: they point at films TMDB's keywords tie to the theme, and know when they can't tell", async () => {
+  const { CARDS } = await import("./deck")
+  const sports = CARDS.find(c => c.id === "theme-sports")!
+  const ctx = { thisYear: 2026, countries: new Set<string>(), continents: new Set<never>(), regions: new Set<never>(), movementKeys: new Set<string>() }
+  expect(sports.loose).toBe(true)
+  expect(sports.fits({ title: "Rocky", year: 1976, wantedBy: 1, themes: ["sports"] }, ctx)).toBe(true)
+  expect(sports.fits({ title: "Heat", year: 1995, wantedBy: 1, themes: ["heist"] }, ctx)).toBe(false)
+  expect(sports.fits({ title: "X", year: 2000, wantedBy: 1 }, ctx)).toBeUndefined()
+  expect(CARDS.filter(c => c.loose).length).toBeGreaterThanOrEqual(12)
+})

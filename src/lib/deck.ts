@@ -4,7 +4,7 @@ import { isFamousDirector } from "./famousDirectors"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; poster?: string; book?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
+export type Cand = { title: string; year: number; poster?: string; /** loose themes TMDB's keywords point to */ themes?: string[]; book?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
   directors?: string[]; bw?: boolean; silent?: boolean; trueStory?: boolean; franchise?: boolean; budget?: number; womanDirector?: boolean; oscars?: number }
 /** What the club has already done, so cards can ask for something new. */
 export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }
@@ -15,9 +15,14 @@ export type CardDef = {
   f: { from?: number; to?: number; minRun?: number; maxRun?: number; minRating?: number; maxRating?: number; lang?: string; genre?: string; country?: string; director?: string; word?: string; tag?: "bw" | "silent" | "trueStory" | "franchise" | "womanDirector" | "lowBudget" | "book" | "remake" | "musical" | "cannes" }
 }
 
-export type Card = { id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
+export type Card = { /** a card about an impression, not a property: the watchlist matches are only the obvious ones and anything can be argued */ loose?: boolean; id: string; title: string; rule: string; fits: (f: Cand, c: Ctx) => boolean | undefined; /** set on cards people made themselves */ custom?: CardDef; /** the films on the list, for cards that stand for a top list (used to suggest films from outside the watchlists) */ list?: [string, number][] }
 
 const known = <T,>(v: T | undefined | null, f: (v: T) => boolean) => (v == null ? undefined : f(v))
+
+import themes from "../data/themes.json"
+
+/** Cards about impressions: the watchlist films whose TMDB keywords point to the theme are the obvious fits, but any film can be argued. */
+const THEME_CARDS: Card[] = (themes as { id: string; title: string; rule: string }[]).map(t => ({ id: `theme-${t.id}`, title: t.title, rule: t.rule, loose: true, fits: f => (f.themes ? f.themes.includes(t.id) : undefined) }))
 
 /** The deck: each card is a constraint on the next pick, and says whether a given film meets it (undefined = can't tell yet). */
 export const CARDS: Card[] = [
@@ -62,6 +67,7 @@ export const CARDS: Card[] = [
   { id: "cannes", title: "Won at Cannes", rule: "Won the Palme d'Or, or the Grand Prix before it.", fits: f => f.cannes },
   { id: "oscar", title: "Oscar winner", rule: "It won at least one Academy Award.", fits: f => known(f.oscars, n => n > 0) },
   { id: "word", title: "One word", rule: "The title is a single word.", fits: f => f.title.trim().split(/\s+/).length === 1 },
+  ...THEME_CARDS,
 ]
 
 /** Keys of landmark films in movements nobody in the club has watched anything from. */

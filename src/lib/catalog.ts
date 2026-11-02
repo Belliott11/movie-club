@@ -8,7 +8,7 @@ import { key } from "./stats"
 export type CatalogEntry = {
   t: string; y: number; id: number
   v?: number; rt?: number; l?: string; cc?: string[]; g?: string[]; d?: string[]
-  p?: string; wk?: 1; wb?: 1; wr?: 1; kk?: 1; bk?: 1; rm2?: 1; mu?: 1; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
+  p?: string; tk?: 1; th?: string[]; wk?: 1; wb?: 1; wr?: 1; kk?: 1; bk?: 1; rm2?: 1; mu?: 1; ri?: number; rr?: number; rm?: number; ox?: 1; wd?: 1; bw?: 1; si?: 1; ts?: 1; fr?: 1; kn?: 1; b?: number; im?: string; o?: number
 }
 export type Catalog = Map<string, CatalogEntry>
 
@@ -46,6 +46,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
   return {
     ...base,
     poster: e.p,
+    themes: e.tk ? e.th ?? [] : undefined,
     rating: outsideScore(e),
     runtime: e.rt, lang: e.l, genres: e.g, directors: e.d,
     country: code ? countryName(code) : undefined, continent: continentOfCode(code), region: regionOfCode(code),

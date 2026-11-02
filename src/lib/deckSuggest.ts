@@ -1,5 +1,6 @@
 import { searchFilm, tmdb } from "./api"
 import { MOVEMENTS, NATIONS, type Film } from "./atlas"
+import themes from "../data/themes.json"
 import { CANNES } from "./cannes"
 import { LOW_BUDGET, OSCAR_WINNERS, WOMAN_DIRECTED } from "./deckClassics"
 import { FAMOUS_NAMES } from "./famousDirectors"
@@ -93,6 +94,22 @@ function movementIdeas(ctx: Ctx, skip: Set<string>, rand: () => number): Promise
   return fromTitles(films, skip, rand)
 }
 
+const kwIds = new Map<string, number | null>()
+/** Well-known films on a loose theme: the TMDB keywords behind it, any of which will do. */
+async function themeIdeas(themeId: string, skip: Set<string>, rand: () => number): Promise<Idea[]> {
+  const names = (themes as { id: string; kw: string[] }[]).find(t => t.id === themeId)?.kw.slice(0, 5) ?? []
+  const ids: number[] = []
+  for (const name of names) {
+    if (!kwIds.has(name)) {
+      const r = await tmdb<{ results?: { id: number; name: string }[] }>("/search/keyword", `&query=${encodeURIComponent(name)}`)
+      kwIds.set(name, r?.results?.find(k => k.name.toLowerCase() === name)?.id ?? null)
+    }
+    const id = kwIds.get(name)
+    if (id) ids.push(id)
+  }
+  return ids.length ? discoverIdeas(`&with_keywords=${ids.join("|")}`, skip, rand) : []
+}
+
 /** Films from TMDB's discover for a set of filters, most-voted first, loosening the vote floor for niche filters until something turns up. */
 async function discoverIdeas(params: string, skip: Set<string>, rand: () => number, keep: (title: string) => boolean = () => true): Promise<Idea[]> {
   for (const floor of [1000, 150, 20]) {
@@ -131,6 +148,7 @@ async function customIdeas(def: CardDef, skip: Set<string>, rand: () => number):
 export async function cardIdeas(card: Card, ctx: Ctx, skip: Set<string>, rand: () => number = Math.random): Promise<Idea[]> {
   if (card.custom) return customIdeas(card.custom, skip, rand)
   if (card.list) return fromTitles(card.list, skip, rand)
+  if (card.id.startsWith("theme-")) return themeIdeas(card.id.slice(6), skip, rand)
   if (card.id === "womanDirector") return fromTitles(WOMAN_DIRECTED, skip, rand)
   if (card.id === "lowBudget") return fromTitles(LOW_BUDGET, skip, rand)
   if (card.id === "oscar") return fromTitles(OSCAR_WINNERS, skip, rand)
