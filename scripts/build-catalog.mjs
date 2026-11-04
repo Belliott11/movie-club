@@ -36,13 +36,18 @@ console.log(`${rows.length} watchlist rows, ${films.length} different films`)
 const old = existsSync(OUT) ? JSON.parse(readFileSync(OUT, "utf8")) : { films: [] }
 const done = new Map(old.films.map(f => [`${f.t}|${f.y}`, f]))
 // films with no poster recorded are looked up again (older catalogs didn't keep it), keeping what they already know
-const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || (e.id && (!e.p || !e.kk || !e.cm || e.tk !== THEMES.length)) })
+const todo = films.filter(f => { const e = done.get(`${f.t}|${f.y}`); return !e || !e.id || (!e.p || !e.kk || !e.cm || e.tk !== THEMES.length) })
 console.log(`${todo.length} to look up`)
 
 const has = (kw, ...names) => kw.some(k => names.some(n => k === n || k.includes(n)))
 async function look({ t, y }) {
   let hit = (await tmdb("/search/movie", `&query=${encodeURIComponent(t)}&year=${y}`))?.results?.[0]
   if (!hit) hit = (await tmdb("/search/movie", `&query=${encodeURIComponent(t)}`))?.results?.find(r => Math.abs(+(r.release_date ?? "").slice(0, 4) - y) <= 1)
+  // Letterboxd and TMDB punctuate some titles differently (commas, colons, @), so try the title with the punctuation taken out
+  if (!hit) {
+    const plain = t.replace(/[^\p{L}\p{N} ]/gu, " ").replace(/\s+/g, " ").trim()
+    hit = (await tmdb("/search/movie", `&query=${encodeURIComponent(plain)}`))?.results?.find(r => Math.abs(+(r.release_date ?? "").slice(0, 4) - y) <= 1)
+  }
   if (!hit) return { t, y, id: 0 }
   const d = await tmdb(`/movie/${hit.id}`, "&append_to_response=keywords,credits,external_ids")
   if (!d?.id) return { t, y, id: 0 }
