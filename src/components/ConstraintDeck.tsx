@@ -5,6 +5,7 @@ import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { CardIdeas } from "@/components/CardIdeas"
 import { CardPicker } from "@/components/CardPicker"
+import { PickAny } from "@/components/PickAny"
 import { PickFilm } from "@/components/PickFilm"
 import { IMG } from "@/lib/api"
 import { candFromEntry } from "@/lib/catalog"
@@ -27,7 +28,7 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
  * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn (never the same card), and every deal is random from the whole deck.
  */
 export function ConstraintDeck() {
-  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist, cards } = useStore()
+  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist, cards, me } = useStore()
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
@@ -170,6 +171,8 @@ export function ConstraintDeck() {
           )}
         </div>
       )}
+
+      {canPick && me && <PickAny cardId={stage === "face-up" ? card?.id : null} />}
 
       <Collapse id="deck-cards" title={`Cards in play (${deckPool.length} of ${cards.length})`} defaultOpen={false}>
         <CardPicker current={card?.id} />
