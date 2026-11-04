@@ -28,7 +28,7 @@ type Stage = "idle" | "shuffling" | "dealing" | "face-up"
  * the club has never watched...), then lists films from the watchlists that fit. One redraw per turn (never the same card), and every deal is random from the whole deck.
  */
 export function ConstraintDeck() {
-  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist, cards, me } = useStore()
+  const { movies, lb, loadLb, loadSeal, suggest, suggestions, canPick, selector, deck, setDeck, deckCards, watchlist, cards, me, canDesignate } = useStore()
   useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
   // see the card the selector draws without reloading
   useEffect(() => { const t = setInterval(() => { if (!document.hidden) loadSeal(true) }, 8000); return () => clearInterval(t) }, [loadSeal])
@@ -134,7 +134,7 @@ export function ConstraintDeck() {
               <p className="text-lg leading-snug"><b className="font-display">{card.title}.</b> {card.rule}</p>
               {deck.by && <p className="text-xs text-muted-foreground">Dealt by {deck.by}</p>}
               <div className="flex flex-wrap gap-2">
-                {canPick ? <><Button variant="outline" className="h-11 px-4" disabled={!redrawsLeft} onClick={() => play(true)}>{redrawsLeft ? "Redraw once" : "No redraws left"}</Button><Button variant="ghost" className="h-11 px-4" onClick={() => { if (confirm("Clear the card and start over? That gives you a fresh deal and a fresh redraw.")) setDeck([], mine.drawn) }}>Start over</Button></> : <p className="text-xs text-muted-foreground">Only {selector} can redraw.</p>}
+                {canPick ? <><Button variant="outline" className="h-11 px-4" disabled={!redrawsLeft} onClick={() => play(true)}>{redrawsLeft ? "Redraw once" : "No redraws left"}</Button><Button variant="ghost" className="h-11 px-4" onClick={() => { if (confirm("Clear the card and start over? That gives you a fresh deal and a fresh redraw.")) setDeck([], mine.drawn) }}>Start over</Button></> : <><p className="text-xs text-muted-foreground">Only {selector} can redraw.</p>{canDesignate && <Button variant="ghost" className="h-11 px-4" onClick={() => { if (confirm("Clear the card on the table so a new one can be dealt?")) setDeck([], mine.drawn) }}>Start over (host)</Button>}</>}
               </div>
             </>
           )}
