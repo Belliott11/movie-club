@@ -4,7 +4,7 @@ import { isFamousDirector } from "./famousDirectors"
 import { key } from "./stats"
 
 /** A watchlist film with whatever is known about it. Missing facts mean a card that needs them can't say whether the film fits. */
-export type Cand = { title: string; year: number; poster?: string; /** loose themes TMDB's keywords point to */ themes?: string[]; book?: boolean; independent?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
+export type Cand = { title: string; year: number; poster?: string; /** TMDB id, when the catalog has it */ tmdbId?: number; /** loose themes TMDB's keywords point to */ themes?: string[]; book?: boolean; independent?: boolean; remake?: boolean; musical?: boolean; cannes?: boolean; /** the average of IMDb, Rotten Tomatoes and Metacritic, out of 5 */ rating?: number; runtime?: number | null; lang?: string; country?: string; continent?: Continent; region?: Region; genres?: string[]; wantedBy: number
   directors?: string[]; bw?: boolean; silent?: boolean; trueStory?: boolean; franchise?: boolean; budget?: number; womanDirector?: boolean; oscars?: number }
 /** What the club has already done, so cards can ask for something new. */
 export type Ctx = { thisYear: number; countries: Set<string>; continents: Set<Continent>; regions: Set<Region>; movementKeys: Set<string> }

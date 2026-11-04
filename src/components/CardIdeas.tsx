@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { IMG } from "@/lib/api"
 import type { Card, Ctx } from "@/lib/deck"
 import { cardIdeas, discoverParams, type Idea } from "@/lib/deckSuggest"
+import { PickFilm } from "@/components/PickFilm"
 import { movieHref } from "@/lib/movieLink"
 import { key } from "@/lib/stats"
 
@@ -27,6 +28,7 @@ export function CardIdeas({ card, ctx, skip, wanted, asked, onSuggest }: { card:
             <p className="mt-1 truncate text-sm leading-tight font-medium">{f.title}</p>
             <p className="text-xs text-muted-foreground">{f.year} · TMDB {f.score.toFixed(1)}</p>
             {wanted.get(key(f.title, f.year)) && <p className="text-xs font-medium text-pos">on {wanted.get(key(f.title, f.year))!.join(", ")}'s list</p>}
+            <PickFilm title={f.title} year={f.year} tmdbId={f.id} cardId={card.id} />
             <Button variant="ghost" className="mt-0.5 h-9 w-full px-1 text-xs" disabled={asked.has(key(f.title, f.year))} onClick={() => onSuggest(f.title, f.year)}>{asked.has(key(f.title, f.year)) ? "Suggested" : "Suggest"}</Button>
           </li>
         ))}

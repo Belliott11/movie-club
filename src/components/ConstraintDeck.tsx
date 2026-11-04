@@ -5,6 +5,7 @@ import { Collapse } from "@/components/Collapse"
 import { Button } from "@/components/ui/button"
 import { CardIdeas } from "@/components/CardIdeas"
 import { CardPicker } from "@/components/CardPicker"
+import { PickFilm } from "@/components/PickFilm"
 import { IMG } from "@/lib/api"
 import { candFromEntry } from "@/lib/catalog"
 import { useDeckData } from "@/lib/useDeckData"
@@ -132,7 +133,7 @@ export function ConstraintDeck() {
               <p className="text-lg leading-snug"><b className="font-display">{card.title}.</b> {card.rule}</p>
               {deck.by && <p className="text-xs text-muted-foreground">Dealt by {deck.by}</p>}
               <div className="flex flex-wrap gap-2">
-                {canPick ? <Button variant="outline" className="h-11 px-4" disabled={!redrawsLeft} onClick={() => play(true)}>{redrawsLeft ? "Redraw once" : "No redraws left"}</Button> : <p className="text-xs text-muted-foreground">Only {selector} can redraw.</p>}
+                {canPick ? <><Button variant="outline" className="h-11 px-4" disabled={!redrawsLeft} onClick={() => play(true)}>{redrawsLeft ? "Redraw once" : "No redraws left"}</Button><Button variant="ghost" className="h-11 px-4" onClick={() => { if (confirm("Clear the card and start over? That gives you a fresh deal and a fresh redraw.")) setDeck([], mine.drawn) }}>Start over</Button></> : <p className="text-xs text-muted-foreground">Only {selector} can redraw.</p>}
               </div>
             </>
           )}
@@ -152,6 +153,7 @@ export function ConstraintDeck() {
                   <p className="mt-1 truncate text-sm font-medium leading-tight">{f.title}</p>
                   <p className="text-xs text-muted-foreground">{f.year} · wanted by {f.wantedBy}</p>
                   {(card.id === "famous" || card.id === "womanDirector") && f.directors?.[0] && <p className="truncate text-xs">dir. {f.directors[0]}</p>}
+                  <PickFilm title={f.title} year={f.year} tmdbId={f.tmdbId} cardId={card.id} />
                   <Button variant="ghost" className="mt-0.5 h-9 w-full px-1 text-xs" disabled={asked.has(key(f.title, f.year))} onClick={() => suggest(f.title, f.year)}>{asked.has(key(f.title, f.year)) ? "Suggested" : "Suggest"}</Button>
                 </li>
               ))}

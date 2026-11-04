@@ -46,6 +46,7 @@ export function candFromEntry(e: CatalogEntry, base: { title: string; year: numb
   return {
     ...base,
     poster: e.p,
+    tmdbId: e.id,
     themes: e.tk ? e.th ?? [] : undefined,
     rating: outsideScore(e),
     runtime: e.rt, lang: e.l, genres: e.g, directors: e.d,
