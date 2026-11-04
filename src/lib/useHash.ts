@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react"
 
-const read = () => location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent)
+// names people are likely to type, mapped to the real tabs
+const ALIAS: Record<string, string> = { suggestions: "suggest", suggestion: "suggest", watchlists: "watch", watchlist: "watch", film: "films", movies: "films", stat: "stats", "next-up": "next", profile: "me" }
+const read = () => {
+  const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent)
+  if (parts[0] && ALIAS[parts[0].toLowerCase()]) parts[0] = ALIAS[parts[0].toLowerCase()]
+  return parts
+}
 
 /** Hash router: "#/films/12" -> ["films", "12"]. Browser back and forward just work. */
 export function useHash() {

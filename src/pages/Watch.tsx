@@ -49,11 +49,12 @@ export default function Watch() {
   const counts = new Map<string, number>()
   watchlist.forEach(w => counts.set(w.member, (counts.get(w.member) || 0) + 1))
   const watched = new Set(movies.map(m => key(m.title, m.year)))
-  const shared = new Map<string, { t: string; y: number; n: number }>()
+  const shared = new Map<string, { t: string; y: number; n: number; who: string[] }>()
   for (const w of watchlist) {
     if (watched.has(key(w.title, w.year))) continue
-    const s = shared.get(key(w.title, w.year)) || { t: w.title, y: w.year, n: 0 }
+    const s = shared.get(key(w.title, w.year)) || { t: w.title, y: w.year, n: 0, who: [] }
     s.n++
+    s.who.push(w.member)
     shared.set(key(w.title, w.year), s)
   }
   const both = [...shared.values()].filter(x => x.n > 1).sort((a, b) => b.n - a.n).slice(0, 30)
@@ -158,7 +159,7 @@ export default function Watch() {
         ) : <p className="text-muted-foreground">Nobody has imported yet. Upload an export to get the reels rolling.</p>}
       </Collapse>
       <Collapse id="watch-overlap" title="On more than one watchlist (not watched yet)">
-        {both.length ? <ul className="flex flex-col gap-3">{both.map(x => <li key={x.t + x.y}><MiniFilm title={x.t} year={x.y} note={`${x.n} people`} /></li>)}</ul> : <p className="text-muted-foreground">No overlaps yet.</p>}
+        {both.length ? <ul className="flex flex-col gap-3">{both.map(x => <li key={x.t + x.y}><MiniFilm title={x.t} year={x.y} note={`${x.n} people: ${x.who.join(", ")}`} /></li>)}</ul> : <p className="text-muted-foreground">No overlaps yet.</p>}
       </Collapse>
     </div>
   )

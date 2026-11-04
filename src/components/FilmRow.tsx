@@ -21,7 +21,7 @@ export function outsideChips(m: Movie, tmdbScore?: number | null) {
 }
 
 export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
-  const { mini, members, setRating, patchMovie, deleteMovie, canDesignate, pickCards, cards } = useStore()
+  const { mini, members, setRating, patchMovie, deleteMovie, canDesignate, pickCards, cards, me } = useStore()
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -62,7 +62,7 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
             {who.map(n => (
               <label key={n} className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                 {n}
-                <select className={fieldCls} value={m.ratings[n] ?? ""} onChange={e => setRating(m, n, e.target.value === "" ? null : +e.target.value)}>
+                <select className={fieldCls} disabled={n !== me && !canDesignate} title={n !== me && !canDesignate ? `Only ${n} can change this` : undefined} value={m.ratings[n] ?? ""} onChange={e => setRating(m, n, e.target.value === "" ? null : +e.target.value)}>
                   <option value="">–</option>
                   {HALVES.map(v => <option key={v}>{v}</option>)}
                 </select>
@@ -73,11 +73,12 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
               <AddPerson label="Add" />
             </div>
           </div>
+          {!canDesignate && <p className="-mt-2 text-xs text-muted-foreground">{me ? `You can change your own rating, ${me}. Everyone else's is theirs to change.` : "Pick your name at the top to change your rating."}</p>}
           <div className="flex flex-wrap items-end gap-2.5">
             {([["imdb", "IMDb /10"], ["rt", "Rotten Tomatoes /100"], ["mc", "Metacritic /100"], ["lb", "Letterboxd /5"]] as const).map(([k, l]) => (
               <label key={k} className="flex flex-col gap-0.5 text-xs text-muted-foreground">
                 {l}
-                <input type="number" step="any" className={`${fieldCls} w-32`} defaultValue={m[k] ?? ""} onBlur={e => patchMovie(m, { [k]: e.target.value === "" ? null : +e.target.value })} />
+                <input type="number" step="any" disabled={!canDesignate} title={canDesignate ? undefined : "Only the host can change these"} className={`${fieldCls} w-32`} defaultValue={m[k] ?? ""} onBlur={e => patchMovie(m, { [k]: e.target.value === "" ? null : +e.target.value })} />
               </label>
             ))}
           </div>

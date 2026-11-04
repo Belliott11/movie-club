@@ -21,12 +21,19 @@ import { Input } from "@/components/ui/input"
 function SuggestionCard({ s }: { s: Suggestion }) {
   const { me, vote, removeSuggestion } = useStore()
   const info = useFilmInfo(s.title, s.year)
+  const [more, setMore] = useState(false)
   return (
     <Card className="h-full gap-2 px-3">
       <a href={movieHref(s.title, s.year)} aria-label={`About ${s.title}`}>{info?.poster_path ? <img src={`${IMG}w154${info.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-full rounded-md object-cover" /> : <span className="block aspect-[2/3] w-full rounded-md bg-muted" />}</a>
       <h4 className="font-display text-lg leading-tight font-bold"><a href={movieHref(s.title, s.year)} className="hover:underline">{s.title}</a> <small className="font-sans text-sm font-medium text-muted-foreground">{s.year || ""}</small></h4>
       <p className="text-xs text-muted-foreground">{info?.vote_average ? `TMDB ${+info.vote_average.toFixed(1)}/10 · ` : ""}suggested by {s.by}</p>
-      {info?.overview && <p className="line-clamp-5 text-sm leading-snug">{info.overview}</p>}
+      {info?.overview && (
+        <div>
+          <p className={`text-sm leading-snug ${more ? "" : "line-clamp-5"}`}>{info.overview}</p>
+          {info.overview.length > 200 && <button type="button" className="min-h-9 text-xs text-muted-foreground underline" onClick={() => setMore(!more)}>{more ? "Show less" : "Read more"}</button>}
+        </div>
+      )}
+      {s.votes?.length > 0 && <p className="text-xs text-muted-foreground">Voted: {s.votes.join(", ")}</p>}
       <div className="mt-auto flex items-center gap-2">
         <Button variant={s.votes?.includes(me) ? "default" : "outline"} className="h-10 min-w-14 px-3" onClick={() => vote(s)} aria-label={`Vote for ${s.title}`}>▲ {s.votes?.length || 0}</Button>
         <Button variant="ghost" size="icon" className="ml-auto size-10" aria-label={`Remove ${s.title}`} onClick={() => removeSuggestion(s)}><X /></Button>

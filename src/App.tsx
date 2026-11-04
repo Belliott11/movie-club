@@ -3,9 +3,11 @@ import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Clapperboard } from "@/components/Clapperboard"
 import { Hero } from "@/components/Hero"
 import { Leader } from "@/components/Leader"
+import { Pending } from "@/components/Pending"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getClubCode, setClubCode, StoreProvider, useStore } from "@/lib/store"
 import { go, useHash } from "@/lib/useHash"
+import { todayIso } from "@/lib/today"
 import { usePull } from "@/lib/usePull"
 import { useSwipe } from "@/lib/useSwipe"
 import { ChartColumn, Film, Lightbulb, RefreshCw, Search, User, Users, Bookmark } from "lucide-react"
@@ -125,7 +127,11 @@ function Shell() {
     window.addEventListener("resize", place)
     const ro = new ResizeObserver(place) // the bar's size also changes when fonts load or the layout switches between phone and desktop
     if (barRef.current) ro.observe(barRef.current)
-    return () => { window.removeEventListener("resize", place); ro.disconnect() }
+    // the tab bar marks the active tab a moment after React renders, so follow that marker itself instead of guessing when it lands
+    const mo = new MutationObserver(place)
+    if (barRef.current) mo.observe(barRef.current, { subtree: true, attributes: true, attributeFilter: ["data-active"] })
+    document.fonts?.ready.then(place) // labels change width once the page's fonts arrive
+    return () => { window.removeEventListener("resize", place); ro.disconnect(); mo.disconnect() }
   }, [active, ready])
   const idx = Math.max(0, TABS.findIndex(t => t[0] === active))
   useSwipe(
@@ -170,7 +176,7 @@ function Shell() {
         title={
           <header>
             <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
-            {movies.length > 0 && <p className="mt-2 text-sm opacity-85">{movies.length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
+            {movies.length > 0 && <p className="mt-2 text-sm opacity-85">{movies.filter(m => !m.watched_on || m.watched_on <= todayIso()).length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
           </header>
         }
         controls={
@@ -213,7 +219,7 @@ function Shell() {
       </Tabs>
 
       {tab !== "films" && ready && <RateBanner />}
-      <main key={tab + (sub ?? "")}>{!sub && TABS.some(t => t[0] === tab) && tab !== "me" && <h2 className="sr-only">{TABS.find(t => t[0] === tab)![1]}</h2>}<ErrorBoundary resetKey={tab + (sub ?? "")}><Suspense fallback={<Leader />}>
+      <main key={tab + (sub ?? "")}>{!sub && TABS.some(t => t[0] === tab) && tab !== "me" && <h2 className="sr-only">{TABS.find(t => t[0] === tab)![1]}</h2>}<ErrorBoundary resetKey={tab + (sub ?? "")}><Suspense fallback={<Pending />}>
         {error ? <p role="alert">Couldn't load the club's data: {error}</p> : !ready ? <Leader /> : (
           tab === "next" ? <Next /> : tab === "suggest" ? <Suggest /> : tab === "watch" ? <Watch /> : tab === "me" ? (me ? <MemberPage name={me} own /> : <p className="text-muted-foreground">Pick your name at the top to see your own page.</p>) : tab === "wrapped" ? <Wrapped /> : tab === "movie" && sub ? <MoviePage title={sub} year={Number(rest[0]) || 0} /> : tab === "people" && sub ? <MemberPage name={sub} /> : tab === "stats" ? <Stats /> : sub ? <FilmPage id={sub} /> : <Films />
         )}
