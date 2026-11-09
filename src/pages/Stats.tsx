@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Gavel, Heart, Shuffle, Trophy, type LucideIcon } from "lucide-react"
 import { Breakdown } from "@/components/Breakdown"
 import { Collapse, setAllPanels } from "@/components/Collapse"
@@ -16,7 +16,10 @@ import { Scale } from "@/components/Scale"
 import { SortTable } from "@/components/SortTable"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { loadCatalog } from "@/lib/catalog"
+import { exportFiles } from "@/lib/exportAll"
 import { download, letterboxdCsv, ratingsCsv } from "@/lib/exporters"
+import { makeZip } from "@/lib/zip"
 import { deepCuts, divisiveOnLb, groupFavorites, tasteTwins } from "@/lib/lbstats"
 import { mergeHistories } from "@/lib/atlas"
 import { avg, awardWinners, fmt, groupAvg, memberStats, outsideAvg, overview, ratingRange, spread, tilt, trend } from "@/lib/stats"
@@ -28,8 +31,20 @@ const filmHref = (m: Movie) => `#/films/${encodeURIComponent(String(m.id))}`
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
 
 export default function Stats() {
-  const { movies, members, lb, loadLb } = useStore()
-  useEffect(() => { loadLb() }, [loadLb])
+  const { movies, members, lb, loadLb, takes, watchlist, suggestions, pickCards, cards, noLb, backup, loadSeal } = useStore()
+  const [exporting, setExporting] = useState(false)
+  useEffect(() => { loadLb(); loadSeal() }, [loadLb, loadSeal])
+  const exportAll = async () => {
+    setExporting(true)
+    try {
+      const [catalog, data] = await Promise.all([loadCatalog(), backup()])
+      const files = exportFiles({ movies, members, watchlist, suggestions, lb, takes, pickCards, cardTitles: Object.fromEntries(cards.map(c => [c.id, c.title])), noLb, catalog: [...catalog.values()], backup: data })
+      const url = URL.createObjectURL(makeZip(files))
+      const a = Object.assign(document.createElement("a"), { href: url, download: `movie-club-data-${new Date().toISOString().slice(0, 10)}.zip` })
+      document.body.append(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } finally { setExporting(false) }
+  }
   const rated = movies.filter(m => Object.keys(m.ratings).length)
   // everything the club has seen between its screenings and its members' Letterboxd histories, each film once
   const lbStats = useMemo(() => ({
@@ -241,8 +256,9 @@ export default function Stats() {
       <WatchDates />
 
       <Collapse id="download" title="Download your data" defaultOpen={false}>
-        <p className="mb-2 text-sm text-muted-foreground">A copy of everything, in case you want it somewhere else.</p>
+        <p className="mb-2 text-sm text-muted-foreground">A copy of everything, in case you want it somewhere else. The zip has a CSV for the films, every rating, takes, watchlists, suggestions, Letterboxd histories, the watchlist film facts and the people, plus the full backup and a guide to the columns.</p>
         <div className="flex flex-wrap gap-2">
+          <Button className="h-10 px-4" disabled={exporting} onClick={exportAll}>{exporting ? "Packing it up…" : "Everything for analysis (.zip)"}</Button>
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-ratings.csv", ratingsCsv(movies, members))}>Ratings spreadsheet (.csv)</Button>
           <Button variant="outline" className="h-10 px-4" onClick={() => download("movie-club-letterboxd-list.csv", letterboxdCsv(movies))}>Letterboxd list (.csv)</Button>
         </div>

@@ -5,7 +5,7 @@ const cell = (v: unknown) => {
   const s = v == null ? "" : String(v)
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
-const rows = (r: unknown[][]) => r.map(x => x.map(cell).join(",")).join("\r\n") + "\r\n"
+export const rows = (r: unknown[][]) => r.map(x => x.map(cell).join(",")).join("\r\n") + "\r\n"
 
 /** One row per film: details, each person's rating, the club average and the outside scores. */
 export function ratingsCsv(ms: Movie[], members: string[]) {
