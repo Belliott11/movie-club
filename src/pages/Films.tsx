@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { fieldCls } from "@/components/field"
 import { bestFilm, decadesOf, defaultFilter, filterFilms, pickOrder, type FilmFilter, type FilmSort } from "@/lib/stats"
 import { useStore } from "@/lib/store"
-import { todayIso } from "@/lib/today"
 
 export default function Films() {
   const { movies, attending, me, addMovie, seed, canPick, selector, deck, deckCards, cards } = useStore()
@@ -17,7 +16,6 @@ export default function Films() {
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const [tmdbId, setTmdbId] = useState<number | null>(null)
-  const [date, setDate] = useState(todayIso)
   const [f, setF] = useState<FilmFilter>(defaultFilter)
   const shown = filterFilms(movies, f)
   const pickers = [...new Set(movies.map(m => m.pick))].sort()
@@ -28,9 +26,8 @@ export default function Films() {
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const f = new FormData(e.currentTarget)
-    await addMovie(title.trim(), +year, String(f.get("pick")).trim(), {}, tmdbId, String(f.get("card") ?? "") || null, date)
-    setTitle(""); setYear(""); setTmdbId(null)
-    setDate(new Date(Date.parse(date) + 7 * 864e5).toISOString().slice(0, 10)) // stay open for the next week
+    await addMovie(title.trim(), +year, String(f.get("pick")).trim(), {}, tmdbId, String(f.get("card") ?? "") || null)
+    setAdding(false); setTitle(""); setYear(""); setTmdbId(null)
   }
 
   return (
@@ -72,7 +69,6 @@ export default function Films() {
           <form onSubmit={submit} className="flex flex-wrap items-center gap-2">
             <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
             <Input name="year" type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" />
-            <label className="flex items-center gap-2 text-sm text-muted-foreground">Watched<Input type="date" required value={date} onChange={e => setDate(e.target.value)} className="h-10 w-40" aria-label="Day watched" /></label>
             <Input name="pick" placeholder="Picked by" defaultValue={next} required className="h-10 w-36" />
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               Card
@@ -82,7 +78,7 @@ export default function Films() {
               </select>
             </label>
             <Button type="submit" className="h-10 px-4">Add film</Button>
-            <Button type="button" variant="ghost" className="h-10 px-4" onClick={() => { setAdding(false); setDate(todayIso()) }}>Done</Button>
+            <Button type="button" variant="ghost" className="h-10 px-4" onClick={() => setAdding(false)}>Cancel</Button>
           </form>
         </Card>
       ) : (

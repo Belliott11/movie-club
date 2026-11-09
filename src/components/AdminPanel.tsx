@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from "react"
 import { Avatar } from "@/components/Avatar"
+import { FilmSearch } from "@/components/FilmSearch"
 import { Collapse } from "@/components/Collapse"
 import { fieldCls } from "@/components/field"
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { download } from "@/lib/exporters"
 import { isUnused } from "@/lib/people"
 import { useStore } from "@/lib/store"
+import { todayIso } from "@/lib/today"
 
 const STARS = Array.from({ length: 10 }, (_, i) => (i + 1) / 2)
 const personHref = (n: string) => `#/people/${encodeURIComponent(n)}`
@@ -58,11 +60,37 @@ function Ratings() {
   )
 }
 
+function AddFilm() {
+  const { addMovie, members, me, cards } = useStore()
+  const [title, setTitle] = useState(""), [year, setYear] = useState(""), [tmdbId, setTmdbId] = useState<number | null>(null)
+  const [date, setDate] = useState(todayIso), [pick, setPick] = useState(me ?? members[0] ?? ""), [card, setCard] = useState("")
+  const [busy, setBusy] = useState(false)
+  return (
+    <form className="mb-3 flex flex-wrap items-center gap-2" onSubmit={async e => {
+      e.preventDefault(); setBusy(true)
+      await addMovie(title.trim(), +year, pick, {}, tmdbId, card || null, date)
+      setTitle(""); setYear(""); setTmdbId(null); setCard(""); setBusy(false)
+      setDate(new Date(Date.parse(date) + 7 * 864e5).toISOString().slice(0, 10)) // on to the next week
+    }}>
+      <p className="w-full text-sm text-muted-foreground">Add a film for any week. It takes the next film number, so enter history oldest first. The date moves on a week after each one.</p>
+      <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
+      <Input type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" aria-label="Year" />
+      <Input type="date" required value={date} onChange={e => setDate(e.target.value)} className="h-10 w-40" aria-label="Day watched" />
+      <select className={fieldCls} aria-label="Picked by" value={pick} onChange={e => setPick(e.target.value)}>{members.map(m => <option key={m}>{m}</option>)}</select>
+      <select className={fieldCls} aria-label="Card this film answered" value={card} onChange={e => setCard(e.target.value)}>
+        <option value="">No card</option>{cards.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+      </select>
+      <Button type="submit" className="h-10 px-4" disabled={busy}>{busy ? "Adding…" : "Add film"}</Button>
+    </form>
+  )
+}
+
 function Films() {
   const { movies, deleteMovie, pickCards, setPickCard, cards } = useStore()
   const [sure, setSure] = useState<number | null>(null)
   return (
     <>
+      <AddFilm />
       <p className="mb-2 text-sm text-muted-foreground">Open a film to edit its title, year or pick. The menu beside each film sets the card it answered. Only you can edit or delete films; a deleted film can be brought back from the message at the bottom.</p>
       <ul className="flex flex-col divide-y divide-border">
         {[...movies].sort((a, b) => a.seq - b.seq).map(m => (
