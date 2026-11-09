@@ -61,18 +61,17 @@ function Ratings() {
 }
 
 function AddFilm() {
-  const { addMovie, members, me, cards } = useStore()
+  const { addMovie, members, selector, cards, deck } = useStore()
   const [title, setTitle] = useState(""), [year, setYear] = useState(""), [tmdbId, setTmdbId] = useState<number | null>(null)
-  const [date, setDate] = useState(todayIso), [pick, setPick] = useState(me ?? members[0] ?? ""), [card, setCard] = useState("")
+  const [date, setDate] = useState(todayIso), [pick, setPick] = useState(selector || members[0] || ""), [card, setCard] = useState(deck.drawn.at(-1) ?? "")
   const [busy, setBusy] = useState(false)
   return (
     <form className="mb-3 flex flex-wrap items-center gap-2" onSubmit={async e => {
       e.preventDefault(); setBusy(true)
       await addMovie(title.trim(), +year, pick, {}, tmdbId, card || null, date)
-      setTitle(""); setYear(""); setTmdbId(null); setCard(""); setBusy(false)
-      setDate(new Date(Date.parse(date) + 7 * 864e5).toISOString().slice(0, 10)) // on to the next week
+      setTitle(""); setYear(""); setTmdbId(null); setBusy(false)
     }}>
-      <p className="w-full text-sm text-muted-foreground">Add a film for any week. It takes the next film number, so enter history oldest first. The date moves on a week after each one.</p>
+      <p className="w-full text-sm text-muted-foreground">Set this week&apos;s film, whoever is picking. It goes on the main page as the current film, dated today unless you change the day, with the card on the table already chosen.</p>
       <FilmSearch name="title" placeholder="Start typing a title" required value={title} onChange={t => { setTitle(t); setTmdbId(null) }} onPick={h => { setTitle(h.title); setYear(h.year ? String(h.year) : ""); setTmdbId(h.id) }} />
       <Input type="number" placeholder="Year" required value={year} onChange={e => setYear(e.target.value)} className="h-10 w-24" aria-label="Year" />
       <Input type="date" required value={date} onChange={e => setDate(e.target.value)} className="h-10 w-40" aria-label="Day watched" />
@@ -80,7 +79,7 @@ function AddFilm() {
       <select className={fieldCls} aria-label="Card this film answered" value={card} onChange={e => setCard(e.target.value)}>
         <option value="">No card</option>{cards.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
       </select>
-      <Button type="submit" className="h-10 px-4" disabled={busy}>{busy ? "Adding…" : "Add film"}</Button>
+      <Button type="submit" className="h-10 px-4" disabled={busy}>{busy ? "Adding…" : "Set this week's film"}</Button>
     </form>
   )
 }
