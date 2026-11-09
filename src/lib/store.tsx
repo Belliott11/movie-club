@@ -64,7 +64,7 @@ type Store = {
   /** Renames a person, or merges them into an existing one. Ratings, picks, watchlists and votes all move. */
   renameMember: (from: string, to: string) => Promise<void>
   removeMember: (name: string) => Promise<void>
-  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null, cardId?: string | null) => Promise<void>
+  addMovie: (title: string, year: number, pick: string, ratings?: Record<string, number>, tmdbId?: number | null, cardId?: string | null, watchedOn?: string) => Promise<void>
   setRating: (m: Movie, member: string, v: number | null) => Promise<void>
   setTake: (m: Movie, member: string, text: string) => Promise<void>
   seal: SealState
@@ -326,9 +326,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
     if (sealRef.current.shared && sb) fail((cardId ? await sb.from("club_settings").upsert({ key: `pickcard:${seq}`, value: cardId }) : await sb.from("club_settings").delete().eq("key", `pickcard:${seq}`)).error)
   }, [])
-  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null, cardId = null) => {
+  const addMovie: Store["addMovie"] = useCallback(async (title, year, pick, ratings = {}, tmdbId = null, cardId = null, watchedOn) => {
     const seq = Math.max(0, ...movRef.current.map(x => x.seq)) + 1
-    await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId, watched_on: today() })
+    await insertMovie({ seq, title, year, pick, ratings, tmdb_id: tmdbId, watched_on: watchedOn || today() })
     if (cardId) await setPickCard(seq, cardId) // the card this pick answers, kept with the film
   }, [insertMovie, setPickCard])
 
