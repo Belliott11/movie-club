@@ -25,7 +25,7 @@ export function MiniFilm({ title, year, note, action }: { title: string; year?: 
         {hit?.poster_path ? <img src={`${IMG}w92${hit.poster_path}`} alt="" loading="lazy" className="aspect-[2/3] w-11 rounded object-cover" /> : <span className="block aspect-[2/3] w-11 rounded bg-muted" />}
       </a>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium"><a href={movieHref(title, y)} className="hover:underline">{title}</a>{y ? <span className="font-normal text-muted-foreground"> {y}</span> : null}{hit?.vote_average ? <span className="text-xs font-normal text-muted-foreground"> · TMDB {hit.vote_average.toFixed(1)}</span> : null}</p>
+        <p className="leading-tight font-medium"><a href={movieHref(title, y)} className="hover:underline">{title}</a>{y ? <span className="font-normal text-muted-foreground"> {y}</span> : null}{hit?.vote_average ? <span className="text-xs font-normal text-muted-foreground"> · TMDB {hit.vote_average.toFixed(1)}</span> : null}</p>
         <FactsLine facts={facts} />
         {hit?.overview && <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{hit.overview}</p>}
         {note && <div className="text-xs text-muted-foreground">{note}</div>}

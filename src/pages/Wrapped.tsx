@@ -50,7 +50,7 @@ export default function Wrapped() {
       <section key={i} aria-live="polite" className="rise flex min-h-[26rem] flex-col justify-between gap-6 rounded-2xl bg-card p-6 ring-1 ring-foreground/10">
         {i < last ? (
           <>
-            <div className="flex flex-col gap-3">
+            <div className={`flex flex-col gap-3 ${s.film ? "" : "my-auto"}`}>
               <p className="text-sm text-muted-foreground">{s.kicker}</p>
               <h2 className="font-display text-5xl leading-[0.95] font-extrabold tracking-tight break-words">{s.big}</h2>
               <p className="max-w-[34ch] text-lg leading-snug">{s.text}</p>

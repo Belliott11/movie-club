@@ -114,7 +114,7 @@ function Shell() {
     ? { title: lbFav.title, year: lbFav.year, tmdbId: favInfo?.id as number | undefined, fallback: favInfo?.backdrop_path as string | undefined, note: favs[sub!]?.length ? `${sub}'s favorite` : `${sub}'s favorite on Letterboxd` }
     : heroFilm ? { title: heroFilm.title, year: heroFilm.year, tmdbId: heroFilm.tmdb_id, fallback: stillOf(heroFilm) } : undefined
   const { still: heroStill, count: stillCount, next: nextStill } = useStills(subject, spin)
-  const active = tab === "people" ? (sub === me ? "me" : "stats") : tab // member pages live under Stats, yours under Me
+  const active = tab === "wrapped" ? "stats" : tab === "people" ? (sub === me ? "me" : "stats") : tab // member pages live under Stats, yours under Me
   // the pill behind the active tab slides to it
   const barRef = useRef<HTMLDivElement>(null)
   const [pill, setPill] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
