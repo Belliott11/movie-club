@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card"
 import { fieldCls } from "./field"
 import { Scale } from "./Scale"
 
+const SHORT: Record<string, string> = { "Rotten Tomatoes": "RT", Metacritic: "MC", Letterboxd: "LB" } // full names are in the legend above the list
 const HALVES = Array.from({ length: 10 }, (_, i) => (i + 1) / 2)
 
 export function outsideChips(m: Movie, tmdbScore?: number | null) {
@@ -51,8 +52,8 @@ export function FilmRow({ m, best }: { m: Movie; best: boolean }) {
         </span>
         <span className="text-sm text-muted-foreground">{m.pick}'s pick · {Object.keys(m.ratings).length} {Object.keys(m.ratings).length === 1 ? "rating" : "ratings"}{cards.find(c => c.id === pickCards[String(m.seq)]) ? ` · card: ${cards.find(c => c.id === pickCards[String(m.seq)])!.title}` : ""}</span>
         <span className="col-span-2"><Scale us={g} world={o} /></span>
-        <span className="col-span-2 mt-0.5 flex flex-wrap gap-x-3.5 text-sm text-muted-foreground">
-          {chips.length ? chips.map(([l, v, u]) => <span key={l}><b className="font-semibold text-foreground">{l}</b> {fmt(v, 1)}{u}</span>) : <span>Looking up outside ratings…</span>}
+        <span className="col-span-2 mt-0.5 flex flex-wrap gap-x-3 text-sm text-muted-foreground">
+          {chips.length ? chips.map(([l, v, u]) => <span key={l} className="whitespace-nowrap"><b className="font-semibold text-foreground"><abbr title={l} className="no-underline">{SHORT[l] ?? l}</abbr></b> {fmt(v, 1)}{u === "%" ? "%" : ""}</span>) : <span>Looking up outside ratings…</span>}
         </span>
         {note && <span className="col-span-2 text-sm text-muted-foreground">{note}</span>}
       </button>

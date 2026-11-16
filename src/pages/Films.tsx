@@ -36,7 +36,7 @@ export default function Films() {
       {!filtering && <WeekCard />}
       <p className="flex flex-wrap gap-x-5 text-sm text-muted-foreground">
         <span><i className="mr-1.5 inline-block size-3 rounded-full bg-us align-[-1px]" />Our average</span>
-        <span><i className="mr-1.5 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside average (IMDb, Rotten Tomatoes, Metacritic, Letterboxd, out of 5)</span>
+        <span><i className="mr-1.5 inline-block size-3 rounded-full bg-world align-[-1px]" />Outside average, out of 5 (IMDb /10, RT Rotten Tomatoes, MC Metacritic /100, LB Letterboxd /5)</span>
       </p>
       {movies.length > 4 && (
         <div className="flex flex-wrap items-center gap-2" role="search">
