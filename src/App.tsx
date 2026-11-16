@@ -162,12 +162,12 @@ function Shell() {
         />
       )}
       {toast && (
-        <div role="status" key={toast.id} className="spring-in fixed right-3 bottom-[calc(1rem+env(safe-area-inset-bottom))] left-16 z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background shadow-xl md:inset-x-3 md:bottom-6">
+        <div role="status" key={toast.id} className="spring-in fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md items-center gap-3 rounded-xl bg-foreground px-4 py-2.5 text-sm text-background shadow-xl md:inset-x-3 md:bottom-6">
           <span className="min-w-0 flex-1">{toast.msg}</span>
           {toast.undo && <button type="button" className="min-h-11 rounded-md px-3 font-semibold underline" onClick={() => { toast.undo?.(); dismissToast() }}>Undo</button>}
         </div>
       )}
-    <div className="mx-auto w-full max-w-3xl overflow-x-clip pt-5 pr-3 pb-12 pl-[3.75rem] md:px-4">
+    <div className="mx-auto w-full max-w-3xl overflow-x-clip px-3 pt-5 pb-28 md:px-4 md:pb-12">
       <Hero
         film={subject}
         still={heroStill}
@@ -204,14 +204,15 @@ function Shell() {
       )}
 
       <Tabs value={TABS.some(t => t[0] === active) ? active : "films"} onValueChange={v => go(v as string)}>
-        <TabsList ref={barRef} className="fixed top-1/2 left-1.5 z-40 mb-0 h-auto -translate-y-1/2 flex-col gap-1 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:relative md:top-auto md:left-auto md:mb-5 md:w-full md:translate-y-0 md:flex-row md:gap-0 md:bg-muted md:shadow-none md:ring-0">
+        <TabsList ref={barRef} className="fixed inset-x-2 bottom-[calc(0.5rem+env(safe-area-inset-bottom))] z-40 mb-0 h-auto w-auto gap-0 rounded-2xl bg-card/95 p-1 shadow-xl ring-1 ring-border backdrop-blur md:relative md:inset-x-auto md:bottom-auto md:mb-5 md:w-full md:bg-muted md:shadow-none md:ring-0">
           {pill && <span aria-hidden className="absolute rounded-xl bg-primary transition-[left,top,width,height] duration-300 ease-out" style={{ left: pill.left, top: pill.top, width: pill.width, height: pill.height }} />}
           {TABS.map(([v, l]) => {
             const Icon = ICONS[v]
             return (
-              <TabsTrigger key={v} value={v} title={l} className="h-11 w-11 flex-none px-1 text-[13px] md:h-[calc(100%-1px)] md:min-h-11 md:w-auto md:flex-1 md:text-sm">
+              <TabsTrigger key={v} value={v} title={l} className="h-12 min-w-0 flex-1 flex-col gap-0.5 px-0.5 text-[10px] leading-none md:h-[calc(100%-1px)] md:min-h-11 md:flex-row md:px-1 md:text-sm">
                 <Icon className="size-5 md:hidden" aria-hidden />
-                <span className="sr-only md:not-sr-only">{l}</span>
+                <span className="max-w-full truncate md:hidden">{l === "Suggestions" ? "Suggest" : l}</span>
+                <span className="max-md:hidden">{l}</span>
               </TabsTrigger>
             )
           })}

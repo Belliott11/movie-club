@@ -7,16 +7,19 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { fieldCls } from "@/components/field"
-import { bestFilm, decadesOf, defaultFilter, filterFilms, pickOrder, type FilmFilter, type FilmSort } from "@/lib/stats"
+import { IMG } from "@/lib/api"
+import type { Movie } from "@/lib/types"
+import { bestFilm, decadesOf, defaultFilter, filterFilms, fmt, groupAvg, key, pickOrder, type FilmFilter, type FilmSort } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 
 export default function Films() {
-  const { movies, attending, me, addMovie, seed, canPick, selector, deck, deckCards, cards } = useStore()
+  const { movies, mini, attending, me, addMovie, seed, canPick, selector, deck, deckCards, cards } = useStore()
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState("")
   const [year, setYear] = useState("")
   const [tmdbId, setTmdbId] = useState<number | null>(null)
   const [f, setF] = useState<FilmFilter>(defaultFilter)
+  const [opened, setOpened] = useState<Set<Movie["id"]>>(new Set()) // older films are one-line rows until tapped
   const shown = filterFilms(movies, f)
   const pickers = [...new Set(movies.map(m => m.pick))].sort()
   const filtering = f.q || f.picker || f.decade
@@ -62,7 +65,16 @@ export default function Films() {
           <Button className="h-10 px-4" onClick={seed}>Import club history</Button>
         </Card>
       )}
-      {shown.map(m => <FilmRow key={m.id} m={m} best={m === best} />)}
+      {shown.map((m, i) => i < 5 || opened.has(m.id) ? <FilmRow key={m.id} m={m} best={m === best} /> : (
+        <button key={m.id} type="button" aria-label={`Show ${m.title} in full`} onClick={() => setOpened(new Set(opened).add(m.id))} className="-my-1 grid min-h-12 grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-xl bg-card px-3 py-1.5 text-left ring-1 ring-foreground/10 hover:bg-muted/60">
+          {mini[key(m.title, m.year)]?.p ? <img src={`${IMG}w92${mini[key(m.title, m.year)]!.p}`} alt="" loading="lazy" className="aspect-[2/3] w-7 rounded-sm object-cover" /> : <span className="aspect-[2/3] w-7 rounded-sm bg-muted" />}
+          <span className="min-w-0">
+            <span className="block truncate font-display font-bold">{m.title} <small className="font-sans text-xs font-medium text-muted-foreground">{m.year}</small></span>
+            <span className="block truncate text-xs text-muted-foreground">{m.pick}'s pick</span>
+          </span>
+          <span className={`font-display text-2xl leading-none font-extrabold ${m === best ? "text-gold" : ""}`}>{fmt(groupAvg(m))}</span>
+        </button>
+      ))}
       {filtering && shown.length === 0 && <p className="text-muted-foreground" role="status">No films match. Clear the filters to see all {movies.length}.</p>}
       {adding ? (
         <Card className="overflow-visible! px-4">

@@ -1,5 +1,6 @@
 import { Collapse } from "@/components/Collapse"
 import { MovieCalendar } from "@/components/MovieCalendar"
+import { CardHistory } from "@/components/CardHistory"
 import { WatchlistByCard } from "@/components/WatchlistByCard"
 import { MiniFilm } from "@/components/MiniFilm"
 import { AddPerson } from "@/components/AddPerson"
@@ -59,6 +60,7 @@ export default function Next() {
       <SelectorPanel upNext={order[0]?.n} />
       <ConstraintDeck />
       <WatchlistByCard />
+      <CardHistory />
       <Collapse id="next-picks" title="Best picks for tonight">
         <p className="mb-3 text-sm text-muted-foreground">Scored from the room's watchlists and what friends loved on Letterboxd. Films two or more of the room have seen are dropped. More ideas are on the Suggestions tab.</p>
         <PickControls />

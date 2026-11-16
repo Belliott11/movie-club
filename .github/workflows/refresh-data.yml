@@ -1,0 +1,42 @@
+name: Refresh film data
+# Once a week: rebuild the watchlist catalog and the top lists, and publish them if anything changed.
+# The API keys come from public/config.js, like the site's own. OMDb allows about 1,000 lookups a day, so a big
+# backlog fills in over a few weekly runs; films already looked up are not asked about again.
+on:
+  schedule:
+    - cron: "23 10 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run catalog
+        continue-on-error: true
+      - run: npm run lists
+        continue-on-error: true
+      - name: Publish if the data changed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # a blocked or failed fetch can leave a file much smaller than it was: keep the old one rather than publish less
+          for f in public/catalog.json public/lists.json; do
+            old=$(git cat-file -s "HEAD:$f"); new=$(wc -c < "$f")
+            if [ "$new" -lt $((old * 8 / 10)) ]; then echo "$f shrank from $old to $new bytes, keeping the old one"; git checkout -- "$f"; fi
+          done
+          if git diff --quiet -- public/catalog.json public/lists.json; then echo "Nothing changed"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/catalog.json public/lists.json
+          git commit -m "Weekly film data refresh"
+          git push
+          # a push made by a workflow doesn't start other workflows, so ask for the deploy directly
+          gh workflow run deploy.yml --ref main

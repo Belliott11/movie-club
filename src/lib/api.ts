@@ -90,7 +90,8 @@ const imageCache = new Map<number, Promise<FilmImages>>()
 export function filmImages(tmdbId: number): Promise<FilmImages> {
   if (!imageCache.has(tmdbId)) {
     imageCache.set(tmdbId, tmdb<{ backdrops?: any[]; posters?: any[] }>(`/movie/${tmdbId}/images`, "&include_image_language=en,null").then(r => ({
-      backdrops: (r?.backdrops || []).filter(b => b.width >= 1000).sort((a, b) => b.vote_average - a.vote_average).slice(0, 12).map(b => b.file_path as string),
+      // stills with no lettering first (TMDB marks them with no language), so a film's logo doesn't sit under our own titles
+      backdrops: (r?.backdrops || []).filter(b => b.width >= 1000).sort((a, b) => +!!a.iso_639_1 - +!!b.iso_639_1 || b.vote_average - a.vote_average).filter((b, _i, all) => !b.iso_639_1 || all.filter(x => !x.iso_639_1).length < 3).slice(0, 12).map(b => b.file_path as string),
       posters: (r?.posters || []).sort((a, b) => b.vote_average - a.vote_average).slice(0, 12).map(p => p.file_path as string),
     })))
   }
