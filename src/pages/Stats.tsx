@@ -272,7 +272,7 @@ function Stat({ label, n, format, suffix }: { label: string; n: number; format?:
   return (
     <div className="flex flex-col items-center gap-0.5 px-2">
       <span className="text-xs text-muted-foreground">{label}</span>
-      <span className="font-display text-5xl leading-none font-extrabold tracking-tight">
+      <span className="font-display text-4xl leading-none font-extrabold tracking-tight whitespace-nowrap sm:text-5xl">
         <CountUp value={n} format={format} />
         {suffix && <small className="ml-1 font-sans text-sm font-medium text-muted-foreground">{suffix}</small>}
       </span>

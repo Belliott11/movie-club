@@ -175,8 +175,8 @@ function Shell() {
         canShuffle={stillCount > 1}
         title={
           <header>
-            <h1 onClick={tapTitle} className="text-5xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
-            {movies.length > 0 && <p className="mt-2 text-sm opacity-85">{movies.filter(m => !m.watched_on || m.watched_on <= todayIso()).length} films watched · {up ? `${up} picks next` : "switch on who's here on Next up"}</p>}
+            <h1 onClick={tapTitle} className="text-4xl leading-[0.95] font-extrabold tracking-tight select-none sm:text-6xl">Movie Club</h1>
+            {movies.length > 0 && <p className="mt-1.5 truncate pr-10 text-sm opacity-85 sm:mt-2">{movies.filter(m => !m.watched_on || m.watched_on <= todayIso()).length} films watched{up ? ` · ${up} picks next` : ""}</p>}
           </header>
         }
         controls={
@@ -184,7 +184,7 @@ function Shell() {
             <button type="button" aria-label="Search films and people" onClick={() => setSearching(true)} className="flex size-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm hover:bg-black/60"><Search className="size-5" aria-hidden /></button>
             <ThemeMenu />
             <label className="flex w-fit flex-col gap-0.5 text-xs text-muted-foreground">
-              You are
+              <span className="max-sm:sr-only">You are</span>
               <select className={fieldCls} value={me} onChange={e => { if (e.target.value === "__new") setAdding(true); else { setAdding(false); setMe(e.target.value) } }}>
                 <option value="">Who are you?</option>
                 {members.map(n => <option key={n}>{n}</option>)}

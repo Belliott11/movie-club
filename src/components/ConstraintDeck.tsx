@@ -107,7 +107,7 @@ export function ConstraintDeck() {
 
       <div className="flex flex-wrap items-start gap-4">
         {/* the deck, and the card that comes off it */}
-        <div className="relative h-44 w-32 shrink-0" style={{ perspective: 800 }}>
+        <div className="relative mt-3 mb-4 h-44 w-32 shrink-0" style={{ perspective: 800 }}>
           <div className={`absolute inset-0 ${stage === "shuffling" ? "riffle" : ""}`} aria-hidden>
             {[0, 1, 2, 3].map(i => (
               <span key={i} className="absolute inset-0 rounded-xl border border-foreground/20 bg-foreground shadow-md" style={{ transform: `translate(${i * 3}px, ${i * -3}px)`, ["--x" as string]: (i % 2 ? 1 : -1) * (14 + i * 4), ["--r" as string]: (i % 2 ? 1 : -1) * (4 + i * 2), ["--d" as string]: `${i * 60}ms` }}>
