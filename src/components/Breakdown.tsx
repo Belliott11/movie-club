@@ -7,14 +7,15 @@ import { fmt, groupAvg } from "@/lib/stats"
 import { useStore } from "@/lib/store"
 import type { Movie } from "@/lib/types"
 
-/** Rows of name, a bar and the numbers. The bar shows the club's average. */
-export function Bars({ rows }: { rows: Group[] }) {
+/** Rows of name, a bar and the numbers. The bar shows the club's average, or the share of films when the list is sorted by how many. */
+export function Bars({ rows, byCount }: { rows: Group[]; byCount?: boolean }) {
+  const most = Math.max(1, ...rows.map(r => r.n))
   return (
     <ul className="flex flex-col gap-2">
       {rows.map(r => (
         <li key={r.name} title={`${r.name}: ${r.n} ${r.n === 1 ? "film" : "films"}, average ${fmt(r.avg)}`} className="-mx-1.5 grid grid-cols-[5.5rem_1fr_auto] items-center gap-2 rounded-md px-1.5 py-0.5 text-sm hover:bg-muted/70">
           <span className="truncate font-medium">{r.name}</span>
-          <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(r.avg / 5) * 100}%` }} /></span>
+          <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(byCount ? r.n / most : r.avg / 5) * 100}%` }} /></span>
           <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{fmt(r.avg)}</b> · {r.n} {r.n === 1 ? "film" : "films"}</span>
         </li>
       ))}
@@ -28,15 +29,15 @@ export function Tags({ title, groups }: { title: string; groups: Group[] }) {
   const rows = [...groups].filter(g => mode === "watched" || g.n >= 2).sort((a, b) => mode === "watched" ? b.n - a.n || b.avg - a.avg : b.avg - a.avg || b.n - a.n).slice(0, 6)
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <h4 className="font-display text-lg font-bold">{title}</h4>
         <div role="group" aria-label={`Sort ${title}`} className="flex rounded-full bg-muted p-0.5 text-sm">
           {([["watched", "Most watched"], ["rated", "Highest rated"]] as const).map(([v, l]) => (
-            <button key={v} type="button" aria-pressed={mode === v} onClick={() => setMode(v)} className={`min-h-9 rounded-full px-3 ${mode === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`}>{l}</button>
+            <button key={v} type="button" aria-pressed={mode === v} onClick={() => setMode(v)} className={`min-h-9 rounded-full px-3 whitespace-nowrap ${mode === v ? "bg-card font-semibold shadow-sm" : "text-muted-foreground"}`}>{l}</button>
           ))}
         </div>
       </div>
-      {rows.length ? <Bars rows={rows} /> : <p className="text-sm text-muted-foreground">Needs at least two films in a group.</p>}
+      {rows.length ? <Bars rows={rows} byCount={mode === "watched"} /> : <p className="text-sm text-muted-foreground">Needs at least two films in a group.</p>}
     </div>
   )
 }

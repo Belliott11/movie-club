@@ -28,8 +28,10 @@ export function Collapse({ id, title, source, defaultOpen = true, children }: { 
     <section>
       <h3 className="text-xl font-bold">
         <button type="button" aria-expanded={open} aria-controls={`panel-${id}`} onClick={() => setOpen(!open)} className="flex min-h-11 w-full items-center gap-2 text-left">
-          <span>{title}</span>
-          {tag && <span className={`shrink-0 rounded-full px-2 py-0.5 font-sans text-[11px] leading-none ${tag.tone}`}><span className="sr-only">Source: </span>{tag.label}</span>}
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span>{title}</span>
+            {tag && <span className={`shrink-0 rounded-full px-2 py-0.5 font-sans text-[11px] leading-none ${tag.tone}`}><span className="sr-only">Source: </span>{tag.label}</span>}
+          </span>
           <ChevronDown aria-hidden className={`ml-auto size-5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
         </button>
       </h3>

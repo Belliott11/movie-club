@@ -20,7 +20,7 @@ export function Timeline({ movies }: { movies: Movie[] }) {
         {months.map(m => (
           <li key={m.key} className="grid grid-cols-[5.5rem_1fr] gap-x-3 border-t border-border py-2 first:border-t-0">
             <div>
-              <p className="text-sm font-medium">{m.label.replace(" ", " ")}</p>
+              <p className="text-sm font-medium">{m.label}</p>
               <p className="text-xs text-muted-foreground">{m.films.length ? `${m.films.length} ${m.films.length === 1 ? "film" : "films"}` : "No screenings"}</p>
             </div>
             {m.films.length > 0 ? (
