@@ -85,7 +85,7 @@ export default function MemberPage({ name, own = false }: { name: string; own?: 
           </dl>
 
           <Collapse id="mp-rates" title={`How ${name} rates`}>
-            <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} />
+            <Histogram bins={histogram(movies, name)} label={`${name}'s ratings by star step`} average={avg(values)} median={median(values)} films={v => movies.filter(m => m.ratings[name] === v).map(m => ({ title: m.title, year: m.year, rating: v, href: `#/films/${encodeURIComponent(String(m.id))}` }))} />
           </Collapse>
 
           <GenreTaste movies={movies} name={name} />

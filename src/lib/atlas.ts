@@ -1,3 +1,4 @@
+import type { BarFilm } from "@/components/BarFilms"
 import { findEntry, type LbEntry } from "./letterboxd"
 import { key } from "./stats"
 
@@ -96,16 +97,17 @@ export function tallyCountries(history: LbEntry[], codeOf: (e: LbEntry) => strin
 
 /** Films and average rating per label (a decade, a genre) over a history. `labelsOf` returns nothing for films it knows nothing about. */
 export function tallyBy(history: LbEntry[], labelsOf: (e: LbEntry) => string[]) {
-  const t = new Map<string, { n: number; rated: number[] }>()
+  const t = new Map<string, { n: number; rated: number[]; films: BarFilm[] }>()
   for (const e of history) {
     for (const label of new Set(labelsOf(e))) {
-      const x = t.get(label) ?? { n: 0, rated: [] }
+      const x = t.get(label) ?? { n: 0, rated: [], films: [] }
       x.n++
+      x.films.push({ title: e[0], year: e[1], rating: e[2] })
       if (e[2] != null) x.rated.push(e[2])
       t.set(label, x)
     }
   }
-  return [...t].map(([name, x]) => ({ name, n: x.n, avg: x.rated.length ? x.rated.reduce((a, b) => a + b, 0) / x.rated.length : 0, rated: x.rated.length }))
+  return [...t].map(([name, x]) => ({ name, n: x.n, avg: x.rated.length ? x.rated.reduce((a, b) => a + b, 0) / x.rated.length : 0, rated: x.rated.length, films: x.films }))
 }
 
 export const decadeOf = (year: number) => `${Math.floor(year / 10) * 10}s`

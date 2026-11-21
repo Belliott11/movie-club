@@ -1,4 +1,6 @@
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
+import { ChevronDown } from "lucide-react"
+import { BarFilms } from "@/components/BarFilms"
 import { Collapse } from "@/components/Collapse"
 import { byTag } from "@/lib/breakdown"
 import { avg, fmt } from "@/lib/stats"
@@ -13,6 +15,7 @@ export function GenreTaste({ movies, name }: { movies: Movie[]; name: string }) 
   const mine = useMemo(() => movies.filter(m => m.ratings[name] != null), [movies, name])
   const tags = useFilmTags(mine)
   const mean = avg(mine.map(m => m.ratings[name]))
+  const [open, setOpen] = useState<string | null>(null)
   const rows = useMemo(
     () => byTag(mine, m => tags[String(m.id)]?.genres ?? [], m => m.ratings[name]).filter(g => g.n >= 2).sort((a, b) => b.n - a.n || b.avg - a.avg).slice(0, 8),
     [mine, tags, name],
@@ -22,17 +25,21 @@ export function GenreTaste({ movies, name }: { movies: Movie[]; name: string }) 
   return (
     <Collapse id="me-genres" defaultOpen={false} title={`${name}\'s taste by genre`}>
       <p className="mb-3 text-sm text-muted-foreground">Compared with {name}'s own average of {fmt(mean, 1)}. Genres with at least two films.</p>
-      <ul className="flex flex-col gap-2.5">
+      <ul className="flex flex-col gap-1">
         {rows.map(r => {
           const d = r.avg - mean, w = (Math.abs(d) / reach) * 50
           return (
-            <li key={r.name} className="grid grid-cols-[6rem_1fr_auto] items-center gap-2 text-sm">
+            <li key={r.name}>
+              <button type="button" aria-expanded={open === r.name} onClick={() => setOpen(open === r.name ? null : r.name)} title={`Show ${name}'s ${r.name.toLowerCase()} films`} className={`-mx-1.5 grid min-h-9 w-[calc(100%+0.75rem)] grid-cols-[6rem_1fr_auto_1rem] items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted/70 ${open === r.name ? "bg-muted/70" : ""}`}>
               <span className="truncate font-medium">{r.name}</span>
               <span className="relative h-3 rounded-full bg-muted" aria-hidden>
                 <span className="absolute inset-y-0 left-1/2 w-px bg-foreground/40" />
                 <span className="grow absolute inset-y-0 rounded-full" style={{ [d >= 0 ? "left" : "right"]: "50%", width: `${w}%`, background: d >= 0 ? "var(--world)" : "var(--us)", transformOrigin: d >= 0 ? "left" : "right" }} />
               </span>
               <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{fmt(r.avg, 1)}</b> · {r.n} {r.n === 1 ? "film" : "films"}</span>
+              <ChevronDown aria-hidden className={`size-4 text-muted-foreground transition-transform ${open === r.name ? "rotate-180" : ""}`} />
+              </button>
+              {open === r.name && r.films && <BarFilms films={r.films} label={`${name}'s ${r.name} films`} />}
             </li>
           )
         })}

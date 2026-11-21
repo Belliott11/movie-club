@@ -1,11 +1,14 @@
 import { groupAvg } from "./stats"
 import type { Movie } from "./types"
 
-export type Group = { name: string; n: number; avg: number }
+import type { BarFilm } from "@/components/BarFilms"
+
+/** A bar: its label, how many films, their average, and the films themselves so a tap can list them. */
+export type Group = { name: string; n: number; avg: number; films?: BarFilm[] }
 
 const summarize = (name: string, ms: Movie[], value: (m: Movie) => number | null = groupAvg): Group | null => {
   const r = ms.map(value).filter((v): v is number => v != null)
-  return r.length ? { name, n: ms.length, avg: r.reduce((a, b) => a + b, 0) / r.length } : null
+  return r.length ? { name, n: ms.length, avg: r.reduce((a, b) => a + b, 0) / r.length, films: ms.map(m => ({ title: m.title, year: m.year, rating: value(m), href: `#/films/${encodeURIComponent(String(m.id))}` })) } : null
 }
 
 /** Films and the club's average for each decade, oldest first. */

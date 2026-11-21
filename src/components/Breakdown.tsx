@@ -1,3 +1,5 @@
+import { ChevronDown } from "lucide-react"
+import { BarFilms } from "@/components/BarFilms"
 import { Collapse } from "@/components/Collapse"
 import { useEffect, useMemo, useState } from "react"
 import { byDecade, byTag, byYear, type Group } from "@/lib/breakdown"
@@ -10,15 +12,28 @@ import type { Movie } from "@/lib/types"
 /** Rows of name, a bar and the numbers. The bar shows the club's average, or the share of films when the list is sorted by how many. */
 export function Bars({ rows, byCount }: { rows: Group[]; byCount?: boolean }) {
   const most = Math.max(1, ...rows.map(r => r.n))
+  const [open, setOpen] = useState<string | null>(null)
   return (
-    <ul className="flex flex-col gap-2">
-      {rows.map(r => (
-        <li key={r.name} title={`${r.name}: ${r.n} ${r.n === 1 ? "film" : "films"}, average ${fmt(r.avg)}`} className="-mx-1.5 grid grid-cols-[5.5rem_1fr_auto] items-center gap-2 rounded-md px-1.5 py-0.5 text-sm hover:bg-muted/70">
-          <span className="truncate font-medium">{r.name}</span>
-          <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(byCount ? r.n / most : r.avg / 5) * 100}%` }} /></span>
-          <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{fmt(r.avg)}</b> · {r.n} {r.n === 1 ? "film" : "films"}</span>
-        </li>
-      ))}
+    <ul className="flex flex-col gap-1">
+      {rows.map(r => {
+        const inner = (
+          <>
+            <span className="truncate font-medium">{r.name}</span>
+            <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(byCount ? r.n / most : r.avg / 5) * 100}%` }} /></span>
+            <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{fmt(r.avg)}</b> · {r.n} {r.n === 1 ? "film" : "films"}</span>
+            {r.films && <ChevronDown aria-hidden className={`size-4 text-muted-foreground transition-transform ${open === r.name ? "rotate-180" : ""}`} />}
+          </>
+        )
+        const cls = `-mx-1.5 grid w-[calc(100%+0.75rem)] items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm ${r.films ? "grid-cols-[5.5rem_1fr_auto_1rem] hover:bg-muted/70" : "grid-cols-[5.5rem_1fr_auto]"} ${open === r.name ? "bg-muted/70" : ""}`
+        return (
+          <li key={r.name}>
+            {r.films
+              ? <button type="button" aria-expanded={open === r.name} onClick={() => setOpen(open === r.name ? null : r.name)} className={`${cls} min-h-9`} title={`Show the ${r.n} ${r.n === 1 ? "film" : "films"} in ${r.name}`}>{inner}</button>
+              : <div className={cls}>{inner}</div>}
+            {open === r.name && r.films && <BarFilms films={r.films} label={`Films in ${r.name}`} />}
+          </li>
+        )
+      })}
     </ul>
   )
 }

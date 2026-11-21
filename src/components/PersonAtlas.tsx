@@ -79,7 +79,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       {continents.length > 0 && (
         <Collapse id="atlas-continents" defaultOpen={false} title={group ? "Films by continent" : `${name}'s continents`}>
         <div className="flex flex-col gap-2">
-          <Bars rows={continents.map(c => ({ name: c.name, n: c.n, avg: c.avg }))} />
+          <Bars rows={continents.map(c => ({ name: c.name, n: c.n, avg: c.avg , films: c.films }))} />
           <p className="text-xs text-muted-foreground">Russia counts as Europe and Turkey as Asia.</p>
         </div>
         </Collapse>
@@ -88,7 +88,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       {regions.length > 0 && (
         <Collapse id="atlas-regions" defaultOpen={false} title={group ? "Films by region" : `${name}'s regions`}>
         <div className="flex flex-col gap-2">
-          <Bars rows={regions.map(r => ({ name: r.name, n: r.n, avg: r.avg }))} />
+          <Bars rows={regions.map(r => ({ name: r.name, n: r.n, avg: r.avg , films: r.films }))} />
           <p className="text-xs text-muted-foreground">Regions are slices of the world smaller than a continent, like East Asia or the Nordic countries.</p>
         </div>
         </Collapse>
@@ -97,7 +97,7 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       {decades.length > 0 && (
         <Collapse id="atlas-decades" defaultOpen={false} title={group ? "Films by decade" : `${name}'s decades`}>
         <div className="flex flex-col gap-2">
-          <Bars rows={decades.map(d => ({ name: d.name, n: d.n, avg: d.avg }))} />
+          <Bars rows={decades.map(d => ({ name: d.name, n: d.n, avg: d.avg , films: d.films }))} />
           <p className="text-xs text-muted-foreground">Bars show the average rating for each decade, with how many films went into it.</p>
         </div>
         </Collapse>

@@ -1,4 +1,5 @@
 import { useId, useState, type CSSProperties, type PointerEvent } from "react"
+import { BarFilms, type BarFilm } from "@/components/BarFilms"
 import { fmt } from "@/lib/stats"
 
 /**
@@ -10,8 +11,9 @@ export const scale = (t: number) => t < 0.5
   ? `color-mix(in oklab, var(--sun) ${t * 200}%, var(--us))`
   : `color-mix(in oklab, var(--world) ${(t - 0.5) * 200}%, var(--sun))`
 
-export function Histogram({ bins, label, average, median }: { bins: { v: number; n: number }[]; label: string; average?: number | null; median?: number | null }) {
+export function Histogram({ bins, label, average, median, films }: { bins: { v: number; n: number }[]; label: string; average?: number | null; median?: number | null; films?: (v: number) => BarFilm[] }) {
   const [hot, setHot] = useState<{ v: number; n: number } | null>(null)
+  const [picked, setPicked] = useState<number | null>(null) // the bar tapped open to list its films
   const max = Math.max(1, ...bins.map(b => b.n))
   const at = (v: number) => `${((v * 2 - 1 + 0.5) / 10) * 100}%` // centre of that half-star's column
   const top = Math.max(2, max) // the tallest bar fills the plot, gridlines sit at quarter steps of it
@@ -21,7 +23,7 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
         <div role="img" aria-label={label} className="relative flex h-32 items-end gap-1.5 border-b border-foreground/40">
           {[0.5, 1].map(f => <span key={f} aria-hidden className="absolute inset-x-0 border-t border-dashed border-border" style={{ bottom: `${f * 100}%` }} />)}
           {bins.map((b, i) => (
-            <div key={b.v} onPointerEnter={() => setHot(b)} onPointerDown={() => setHot(b)} className={`relative z-10 flex h-full flex-1 flex-col items-center justify-end rounded-t-md ${hot?.v === b.v ? "bg-foreground/10" : ""}`}>
+            <button type="button" key={b.v} disabled={!films || !b.n} aria-label={`${b.v} stars: ${b.n} ${b.n === 1 ? "rating" : "ratings"}${films && b.n ? ". Show the films" : ""}`} aria-expanded={films && b.n ? picked === b.v : undefined} onClick={() => setPicked(picked === b.v ? null : b.v)} onPointerEnter={() => setHot(b)} onPointerDown={() => setHot(b)} className={`relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-end rounded-t-md enabled:cursor-pointer disabled:cursor-default ${hot?.v === b.v || picked === b.v ? "bg-foreground/10" : ""}`}>
               <span className="fade-in mb-1 text-xs leading-none font-semibold" style={{ "--d": `${300 + i * 50}ms` } as CSSProperties}>{b.n || ""}</span>
               <span
                 className="grow-y w-full rounded-t-md"
@@ -30,7 +32,7 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
                   background: scale((b.v - 0.5) / 4.5), boxShadow: "inset 0 -10px 14px -10px rgb(0 0 0 / 0.25)",
                 } as CSSProperties}
               />
-            </div>
+            </button>
           ))}
           {average != null && (
             <span aria-hidden className="fade-in absolute -top-7 bottom-0 z-20 w-px -translate-x-1/2 bg-foreground" style={{ left: at(average), "--d": "700ms" } as CSSProperties}>
@@ -42,7 +44,8 @@ export function Histogram({ bins, label, average, median }: { bins: { v: number;
           {bins.map(b => <span key={b.v} className="flex-1 text-center text-[11px] text-muted-foreground">{b.v % 1 ? "" : b.v}</span>)}
         </div>
       </div>
-      <p className="mt-1 min-h-6 text-sm" aria-hidden>{hot ? <><b>{hot.v} stars</b>: {hot.n} {hot.n === 1 ? "rating" : "ratings"}</> : <span className="text-muted-foreground">Point at a bar for its count.</span>}</p>
+      <p className="mt-1 min-h-6 text-sm" aria-hidden>{hot ? <><b>{hot.v} stars</b>: {hot.n} {hot.n === 1 ? "rating" : "ratings"}</> : <span className="text-muted-foreground">{films ? "Tap a bar to see its films." : "Point at a bar for its count."}</span>}</p>
+      {films && picked != null && <BarFilms films={films(picked)} label={`Films rated ${picked} stars`} />}
       {median != null && <figcaption className="text-xs text-muted-foreground">Middle rating {fmt(median, 1)}</figcaption>}
       <ul className="sr-only">{bins.map(b => <li key={b.v}>{b.v} stars: {b.n}</li>)}</ul>
     </figure>
