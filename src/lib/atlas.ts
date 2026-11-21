@@ -72,6 +72,11 @@ export function mergeHistories(club: { title: string; year: number; avg: number 
 /** Countries TMDB still lists under their old codes. */
 const OLD: Record<string, string> = { SU: "RU", XC: "CZ", YU: "RS", DD: "DE", XG: "DE" }
 
+/** The films in a history from one country, counting former countries as today's, the same way the map counts them. */
+export function filmsFromCountry(history: LbEntry[], code: string, codeOf: (e: LbEntry) => string | string[] | undefined): LbEntry[] {
+  return history.filter(e => [codeOf(e) ?? []].flat().some(k => (OLD[k] ?? k) === code))
+}
+
 /** How many films of each country someone has watched, and their average rating for it. `codeOf` says which country a film is from (unknown films are left out). */
 export function tallyCountries(history: LbEntry[], codeOf: (e: LbEntry) => string | string[] | undefined) {
   const t = new Map<string, { n: number; rated: number[] }>()

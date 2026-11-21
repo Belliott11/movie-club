@@ -1,5 +1,5 @@
 import { expect, test } from "vitest"
-import { blindspots, decadeOf, mergeHistories, movementBlindspots, movementProgress, tallyBy, tallyCountries } from "./atlas"
+import { blindspots, decadeOf, filmsFromCountry, mergeHistories, movementBlindspots, movementProgress, tallyBy, tallyCountries } from "./atlas"
 import type { LbEntry } from "./letterboxd"
 
 const h: LbEntry[] = [["Rashomon", 1950, 5], ["Ikiru", 1952, 4], ["Heat", 1995, null], ["Mystery", 2000, 3]]
@@ -62,4 +62,11 @@ test("a co-production counts once for each of its countries", () => {
   expect(t.find(c => c.code === "ES")).toEqual({ code: "ES", n: 2, avg: 3.5 })
   expect(t.find(c => c.code === "MX")?.n).toBe(1)
   expect(t.find(c => c.code === "FR")).toEqual({ code: "FR", n: 1, avg: null })
+})
+
+test("filmsFromCountry finds a country's films, counting former countries as today's", () => {
+  const h: LbEntry[] = [["Solaris", 1972, 4], ["Come and See", 1985, 5], ["Jaws", 1975, 3]]
+    const codes: Record<string, string[]> = { Solaris: ["SU"], "Come and See": ["SU", "BY"], Jaws: ["US"] }
+    expect(filmsFromCountry(h, "RU", e => codes[e[0]]).map(e => e[0])).toEqual(["Solaris", "Come and See"])
+    expect(filmsFromCountry(h, "US", e => codes[e[0]]).map(e => e[0])).toEqual(["Jaws"])
 })

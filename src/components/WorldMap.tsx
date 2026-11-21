@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react"
-import { CountryFilms } from "@/components/CountryFilms"
+import { CountryFilms, type SeenFilm } from "@/components/CountryFilms"
 
 type Shapes = Record<string, { n: string; d: string }>
 
 /**
- * A world map shaded by how many films someone has watched from each country. Hover a country to read its count, click or tap it to see its best known and highest rated films.
+ * A world map shaded by how many films someone has watched from each country. Hover a country to read its count, click or tap it to see the films watched from there and its best known and highest rated films.
  * The outlines load only when the map is shown (they're about 100 kB). `counts` is films per ISO country code.
  */
-export function WorldMap({ counts, label, seen }: { counts: Record<string, number>; label: string; seen?: (title: string, year: number) => boolean }) {
+export function WorldMap({ counts, label, seen, filmsFrom, who }: { counts: Record<string, number>; label: string; seen?: (title: string, year: number) => boolean; filmsFrom?: (code: string) => SeenFilm[]; who?: string }) {
   const [shapes, setShapes] = useState<Shapes | null>(null)
   const [active, setActive] = useState<string | null>(null)
   const [picked, setPicked] = useState<string | null>(null)
@@ -18,7 +18,7 @@ export function WorldMap({ counts, label, seen }: { counts: Record<string, numbe
     const n = counts[code] ?? 0
     return n ? `color-mix(in oklab, var(--world) ${Math.round(35 + 65 * (Math.log(1 + n) / Math.log(1 + max)))}%, var(--card))` : "color-mix(in oklab, var(--foreground) 24%, var(--background))"
   }
-  const shown = active ? `${shapes[active]?.n ?? active}: ${counts[active] ?? 0} ${(counts[active] ?? 0) === 1 ? "film" : "films"}` : "Hover a country, click or tap for its films"
+  const shown = active ? `${shapes[active]?.n ?? active}: ${counts[active] ?? 0} ${(counts[active] ?? 0) === 1 ? "film" : "films"}` : filmsFrom ? "Tap a country to see the films watched from there" : "Hover a country, click or tap for its films"
   return (
     <figure data-no-swipe>
       <svg viewBox="0 0 960 500" role="img" aria-label={label} className="block h-auto w-full rounded-xl bg-background ring-1 ring-foreground/10" onPointerLeave={e => e.pointerType === "mouse" && setActive(null)}>
@@ -33,7 +33,7 @@ export function WorldMap({ counts, label, seen }: { counts: Record<string, numbe
         <b>{shown}</b>
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-hidden>fewer<span className="h-2 w-20 rounded-full" style={{ background: "linear-gradient(90deg, color-mix(in oklab, var(--world) 35%, var(--card)), var(--world))" }} />more</span>
       </figcaption>
-      {picked && <CountryFilms code={picked} name={shapes[picked]?.n ?? picked} seen={seen} />}
+      {picked && <CountryFilms code={picked} name={shapes[picked]?.n ?? picked} seen={seen} mine={filmsFrom?.(picked)} who={who} />}
     </figure>
   )
 }

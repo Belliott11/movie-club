@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Check } from "lucide-react"
 import { hasTmdb, IMG, tmdb } from "@/lib/api"
 import { movieHref } from "@/lib/movieLink"
+import { fmt } from "@/lib/stats"
 
 type Film = { id: number; title: string; year: number; poster: string | null; score: number; votes: number; overview: string }
 const KINDS = [["known", "Best known", "vote_count.desc", 0], ["top", "Highest rated", "vote_average.desc", 300]] as const
@@ -25,27 +26,48 @@ async function countryFilms(code: string, sort: string, minVotes: number): Promi
   return []
 }
 
-/** The best known and highest rated films from one country, with a tick on the ones `seen` says the person has watched. */
-export function CountryFilms({ code, name, seen }: { code: string; name: string; seen?: (title: string, year: number) => boolean }) {
-  const [kind, setKind] = useState<(typeof KINDS)[number][0]>("known")
+export type SeenFilm = { title: string; year: number; rating: number | null }
+
+/**
+ * One country's films: the ones `mine` lists as already watched (highest rated first), then TMDB's best known and highest rated,
+ * with a tick on the ones `seen` says have been watched.
+ */
+export function CountryFilms({ code, name, seen, mine = [], who = "You" }: { code: string; name: string; seen?: (title: string, year: number) => boolean; mine?: SeenFilm[]; who?: string }) {
+  const [kind, setKind] = useState<(typeof KINDS)[number][0] | "seen">(mine.length ? "seen" : "known")
   const [films, setFilms] = useState<Film[] | null>(null)
+  useEffect(() => { setKind(mine.length ? "seen" : "known") }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
+    if (kind === "seen") return
     const [, , sort, min] = KINDS.find(k => k[0] === kind)!
     let dead = false
     setFilms(null)
     countryFilms(code, sort, min).then(f => { if (!dead) setFilms(f) })
     return () => { dead = true }
   }, [code, kind])
-  if (!hasTmdb()) return null
+  if (!hasTmdb() && !mine.length) return null
+  const watched = [...mine].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1) || a.title.localeCompare(b.title))
+  const tabs: [typeof kind, string][] = [...(mine.length ? [["seen", `Seen (${mine.length})`] as [typeof kind, string]] : []), ...(hasTmdb() ? KINDS.map(([id, label]) => [id, label] as [typeof kind, string]) : [])]
   return (
     <div className="mt-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-display text-lg font-bold">Films from {name}</h4>
         <div role="radiogroup" aria-label="Which films" className="flex gap-1 rounded-full bg-muted p-1">
-          {KINDS.map(([id, label]) => <button key={id} type="button" role="radio" aria-checked={kind === id} onClick={() => setKind(id)} className={`min-h-9 rounded-full px-3 text-sm ${kind === id ? "bg-foreground font-medium text-background" : "text-muted-foreground"}`}>{label}</button>)}
+          {tabs.map(([id, label]) => <button key={id} type="button" role="radio" aria-checked={kind === id} onClick={() => setKind(id)} className={`min-h-9 rounded-full px-3 text-sm ${kind === id ? "bg-foreground font-medium text-background" : "text-muted-foreground"}`}>{label}</button>)}
         </div>
       </div>
-      {films === null ? <p className="text-sm text-muted-foreground">Loading…</p> : films.length === 0 ? <p className="text-sm text-muted-foreground">TMDB has no well-known films tagged to {name}.</p> : (
+      {kind === "seen" ? (
+        <>
+          <p className="mb-2 text-sm text-muted-foreground">{who} logged {mine.length} {mine.length === 1 ? "film" : "films"} from {name} on Letterboxd, highest rated first.</p>
+          <ul className="grid max-h-96 grid-cols-[minmax(0,1fr)] gap-x-4 overflow-y-auto sm:grid-cols-2">
+            {watched.map(f => (
+              <li key={`${f.title}|${f.year}`} className="flex min-h-9 items-baseline justify-between gap-2 border-b border-border py-1.5 text-sm">
+                <span className="min-w-0"><a href={movieHref(f.title, f.year)} className="font-medium hover:underline">{f.title}</a>{f.year ? <span className="text-muted-foreground"> {f.year}</span> : null}</span>
+                <span className="shrink-0 font-display font-bold">{f.rating != null ? `${fmt(f.rating, 1)}★` : <span className="font-sans text-xs font-normal text-muted-foreground">no rating</span>}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : films === null ? <p className="text-sm text-muted-foreground">Loading…</p> : films.length === 0 ? <p className="text-sm text-muted-foreground">TMDB has no well-known films tagged to {name}.</p> : (
         <ul className="flex flex-col gap-3">
           {films.map(f => (
             <li key={f.id} className="flex items-start gap-3">
