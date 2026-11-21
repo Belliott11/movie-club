@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { Check, ChevronDown } from "lucide-react"
 import { Collapse } from "@/components/Collapse"
 import { WorldMap } from "@/components/WorldMap"
 import { Button } from "@/components/ui/button"
 import { movieHref } from "@/lib/movieLink"
 import { Bars, Tags } from "@/components/Breakdown"
 import { continentOfCode, regionOfCode } from "@/lib/continents"
-import { blindspots, decadeOf, entryKey, filmsFromCountry, movementBlindspots, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
+import { blindspots, decadeOf, entryKey, filmsFromCountry, movementsByProgress, NATIONS, tallyBy, tallyCountries } from "@/lib/atlas"
 import { loadAllCountries, loadCountryCache, loadGenreCache, resolveCountries, topUnseen, type AllCountries, type CountryCache, type GenreCache } from "@/lib/lbCountries"
 import { findEntry, type LbEntry } from "@/lib/letterboxd"
 import { fmt } from "@/lib/stats"
@@ -32,7 +33,11 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
   const regions = useMemo(() => tallyBy(history, e => { return codesOf(e).map(regionOfCode).filter((r): r is NonNullable<typeof r> => !!r) }).filter(r => r.rated > 0).sort((a, b) => b.n - a.n), [history, cache])
   const decades = useMemo(() => tallyBy(history, e => (e[1] ? [decadeOf(e[1])] : [])).filter(d => d.rated > 0).sort((a, b) => a.name.localeCompare(b.name)), [history])
   const genres = useMemo(() => tallyBy(history, e => genreCache[entryKey(e)] ?? []), [history, genreCache])
-  const moves = useMemo(() => movementBlindspots(history).slice(0, 5), [history])
+  const moves = useMemo(() => movementsByProgress(history), [history])
+  const [country, setCountry] = useState<string | null>(null)
+  const pickCountry = (c: string) => { setCountry(c); requestAnimationFrame(() => document.getElementById("country-films")?.scrollIntoView({ behavior: "smooth", block: "nearest" })) }
+  const [allMoves, setAllMoves] = useState(false)
+  const [openMove, setOpenMove] = useState<string | null>(null)
   const [ideas, setIdeas] = useState<Record<string, { title: string; year: number } | null>>({})
   const spotKey = spots.map(s => s.code).join()
   useEffect(() => {
@@ -59,14 +64,16 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
             {running && <Button variant="ghost" className="h-11 px-4" onClick={() => { stop.current = true; setRunning(false) }}>Pause</Button>}
           </div>
         )}
-        {counts.length > 0 && <div className="mb-4"><WorldMap counts={Object.fromEntries(counts.map(c => [c.code, c.n]))} label={`World map of the films ${name} has watched, shaded by country`} seen={(t, y) => !!findEntry(history, t, y)} filmsFrom={code => filmsFromCountry(history, code, codesOf).map(e => ({ title: e[0], year: e[1], rating: e[2] }))} who={group ? "The club" : name} /></div>}
+        {counts.length > 0 && <div className="mb-4"><WorldMap counts={Object.fromEntries(counts.map(c => [c.code, c.n]))} label={`World map of the films ${name} has watched, shaded by country`} seen={(t, y) => !!findEntry(history, t, y)} filmsFrom={code => filmsFromCountry(history, code, codesOf).map(e => ({ title: e[0], year: e[1], rating: e[2] }))} who={group ? "The club" : name} picked={country} onPick={setCountry} /></div>}
         {top.length > 0 && (
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-0.5">
             {top.map(c => (
-              <li key={c.code} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-2 text-sm">
+              <li key={c.code}>
+                <button type="button" onClick={() => pickCountry(c.code)} aria-pressed={country === c.code} title={`Show the films from ${nameOf(c.code)}`} className={`-mx-1.5 grid min-h-9 w-[calc(100%+0.75rem)] grid-cols-[6.5rem_1fr_auto] items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm hover:bg-muted/70 ${country === c.code ? "bg-muted/70" : ""}`}>
                 <span className="truncate font-medium">{nameOf(c.code)}</span>
                 <span className="h-3 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-world" style={{ width: `${(c.n / max) * 100}%` }} /></span>
                 <span className="text-right text-muted-foreground"><b className="font-display text-foreground">{c.n}</b> {c.n === 1 ? "film" : "films"}{c.avg != null && <> · {fmt(c.avg, 1)}★</>}</span>
+                </button>
               </li>
             ))}
           </ul>
@@ -130,18 +137,33 @@ export function PersonAtlas({ name, history, group = false }: { name: string; hi
       )}
 
       {moves.length > 0 && (
-        <Collapse id="atlas-movements" defaultOpen={false} title="Movement blindspots">
+        <Collapse id="atlas-movements" defaultOpen={false} title="Film movements">
         <div>
-          <p className="mb-3 text-sm text-muted-foreground">Landmark films from film movements, picked by hand, so it's a starting point and not a full canon.</p>
-          <ul className="flex flex-col gap-3">
-            {moves.map(m => (
+          <p className="mb-3 text-sm text-muted-foreground">Landmark films from each movement, picked by hand, so it's a starting point and not a full canon. {group ? "A tick means someone in the club has seen it." : `A tick means ${name} has seen it.`} Tap a movement for its films.</p>
+          <ul className="flex flex-col gap-1">
+            {(allMoves ? moves : moves.slice(0, 5)).map(m => (
               <li key={m.name}>
-                <div className="flex items-baseline justify-between gap-3"><b>{m.name}</b><span className="text-sm text-muted-foreground">{m.years} · {m.seen} of {m.total} seen</span></div>
-                <span className="mt-1 block h-2 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(m.seen / m.total) * 100}%` }} /></span>
-                <p className="mt-1 text-sm text-muted-foreground">Start with {m.missing.slice(0, 3).map(([t, y]) => `${t} (${y})`).join(", ")}.</p>
+                <button type="button" aria-expanded={openMove === m.name} onClick={() => setOpenMove(openMove === m.name ? null : m.name)} className={`-mx-1.5 block min-h-11 w-[calc(100%+0.75rem)] rounded-md px-1.5 py-1.5 text-left hover:bg-muted/70 ${openMove === m.name ? "bg-muted/70" : ""}`}>
+                  <span className="flex items-baseline justify-between gap-3"><b>{m.name}</b><span className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground">{m.years} · {m.seen} of {m.total} seen<ChevronDown aria-hidden className={`size-4 self-center transition-transform ${openMove === m.name ? "rotate-180" : ""}`} /></span></span>
+                  <span className="mt-1 block h-2 rounded-full bg-muted"><span className="grow block h-full origin-left rounded-full bg-us" style={{ width: `${(m.seen / m.total) * 100}%` }} /></span>
+                </button>
+                {openMove === m.name && (
+                  <ul aria-label={`${m.name} films`} className="animate-in fade-in-0 slide-in-from-top-1 mt-1 mb-2 grid grid-cols-[minmax(0,1fr)] gap-x-4 rounded-lg bg-muted/50 px-3 py-1 duration-200 sm:grid-cols-2">
+                    {m.films.map(([t, y, alt]) => {
+                      const e = findEntry(history, t, y) ?? (alt ? findEntry(history, alt, y) : undefined)
+                      return (
+                        <li key={t} className="flex min-h-9 items-baseline justify-between gap-2 border-b border-border py-1.5 text-sm last:border-b-0">
+                          <span className="min-w-0">{e ? <Check aria-label="seen" className="mr-1 inline size-4 align-[-3px] text-pos" /> : null}<a href={movieHref(t, y)} className={`hover:underline ${e ? "font-medium" : ""}`}>{t}</a> <span className="text-muted-foreground">{y}</span></span>
+                          <span className="shrink-0 text-xs text-muted-foreground">{e ? (e[2] != null ? <b className="font-display text-sm text-foreground">{fmt(e[2], 1)}★</b> : "seen") : <button type="button" className="min-h-9 px-1 underline hover:text-foreground" onClick={() => suggest(t, y)}>Suggest</button>}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>
+          {moves.length > 5 && <Button variant="ghost" className="mt-2 h-10 px-3" onClick={() => setAllMoves(!allMoves)}>{allMoves ? "Show fewer" : `Show all ${moves.length} movements`}</Button>}
         </div>
         </Collapse>
       )}

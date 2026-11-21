@@ -48,7 +48,7 @@ export function CountryFilms({ code, name, seen, mine = [], who = "You" }: { cod
   const watched = [...mine].sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1) || a.title.localeCompare(b.title))
   const tabs: [typeof kind, string][] = [...(mine.length ? [["seen", `Seen (${mine.length})`] as [typeof kind, string]] : []), ...(hasTmdb() ? KINDS.map(([id, label]) => [id, label] as [typeof kind, string]) : [])]
   return (
-    <div className="mt-3 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
+    <div id="country-films" className="mt-3 scroll-mt-4 rounded-xl bg-card p-3 ring-1 ring-foreground/10">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-display text-lg font-bold">Films from {name}</h4>
         <div role="radiogroup" aria-label="Which films" className="flex gap-1 rounded-full bg-muted p-1">

@@ -124,6 +124,10 @@ export function movementProgress(history: LbEntry[] | undefined, films: Film[]) 
   return { seen: seen.length, total: films.length, missing: films.filter(f => !seen.includes(f)) }
 }
 
+/** Every movement with its progress, least completed first and finished ones last. */
+export const movementsByProgress = (history: LbEntry[] | undefined) =>
+  MOVEMENTS.map(m => ({ ...m, ...movementProgress(history, m.films) })).sort((a, b) => +(a.seen === a.total) - +(b.seen === b.total) || a.seen / a.total - b.seen / b.total || b.total - a.total)
+
 /** Movements ordered by how much is left to watch: least completed first, but only ones that aren't finished. */
 export const movementBlindspots = (history: LbEntry[] | undefined) =>
   MOVEMENTS.map(m => ({ ...m, ...movementProgress(history, m.films) })).filter(m => m.seen < m.total).sort((a, b) => a.seen / a.total - b.seen / b.total || b.total - a.total)
